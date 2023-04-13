@@ -1,0 +1,12 @@
+#!/bin/bash
+#PBS -S /bin/bash
+#PBS -o /home/vla/python/mpro/1.global/mpro_rate_auc_ice.log 
+#PBS -j oe
+#PBS -l nodes=1:ppn=1,mem=8192mb,walltime=720:00:00
+
+module load miniconda/3
+source activate bitc_race
+cd /home/vla/python/mpro/1.global
+date
+python /home/vla/python/mpro/scripts/run_mcmc_global.py --out_dir /home/vla/python/mpro/1.global --kinetics_fitting  --auc_fitting  --ice_fitting  --niters 10000  --nburn 2000  --nthin 10  --nchain 4  --random_key 0 
+date 
