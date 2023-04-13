@@ -1,0 +1,12 @@
+#!/bin/bash
+#PBS -S /bin/bash
+#PBS -o /home/vla/python/mpro/5.fixed_kcat_MS_DS/fixed_kcat.log 
+#PBS -j oe
+#PBS -l nodes=4:ppn=1,mem=16384mb,walltime=720:00:00
+
+module load miniconda/3
+source activate bitc_race
+cd /home/vla/python/mpro/5.fixed_kcat_MS_DS
+date
+python /home/vla/python/mpro/scripts/run_mcmc_fixed_kcat_MS_DS.py --out_dir /home/vla/python/mpro/5.fixed_kcat_MS_DS --niters 10000  --nburn 2000  --nthin 1  --nchain 4  --random_key 0 
+date 
