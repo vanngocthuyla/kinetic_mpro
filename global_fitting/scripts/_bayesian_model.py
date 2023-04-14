@@ -24,6 +24,20 @@ def uniform_prior(name, lower, upper):
     return name
 
 
+def normal_prior(name, mu, sigma):
+    """
+    Parameters:
+    ----------
+    name : string, name of variable
+    mu   : float, mean of distribution
+    sigma: float, std of distribution
+    ----------
+    return numpyro.Normal
+    """
+    name = numpyro.sample(name, dist.Normal(loc=mu, scale=sigma))
+    return name
+
+
 def logsigma_guesses(response):
     """
     Parameters:
@@ -69,6 +83,49 @@ def prior_group(params_logK, params_kcat,
             params_kcat_update[name_kcat] = params_kcat[name_kcat]
     
     return params_logK_update, params_kcat_update
+
+
+def prior_group_informative(prior_information):
+    """
+    Parameters:
+    ----------
+    prior_information : list of dict to assign prior distribution for kinetics parameters
+    Examples: 
+        prior_information = []
+        prior_information.append({'type':'logK', 'name': 'logKd', 'dist': 'normal', 'loc': 0, 'scale': 1})
+        prior_information.append({'type':'kcat', 'name': 'kcat_MS', 'dist': None, 'value': 0.})
+        prior_information.append({'type':'kcat', 'name': 'kcat_DS', 'dist': 'uniform', 'lower': kcat_min, 'upper': kcat_max})
+
+        The function returns three variables:
+            logK ~ N(0, 1)
+            kcat_MS = 0
+            kcat_DS ~ U(0, 1)
+        These variables will be saved into two lists, which is params_logK or params_kcat
+    ----------
+    return two lists of prior distribution for kinetics parameters
+    """
+
+    params_logK = {}
+    params_kcat = {}
+    for prior in prior_information:
+        if prior['type'] == 'logK':
+            if prior['dist'] is None:
+                params_logK[prior['name']] = prior['value']
+            elif prior['dist'] == 'normal':
+                params_logK[prior['name']] = normal_prior(prior['name'], prior['loc'], prior['scale'])
+            elif prior['dist'] == 'uniform':
+                params_logK[prior['name']] = uniform_prior(prior['name'], prior['lower'], prior['upper'])
+        
+        if prior['type'] == 'kcat':
+            if prior['dist'] is None:
+                params_kcat[prior['name']] = prior['value']
+            elif prior['dist'] == 'normal':
+                params_kcat[prior['name']] = normal_prior(prior['name'], prior['loc'], prior['scale'])
+            elif prior['dist'] == 'uniform':
+                params_kcat[prior['name']] = uniform_prior(prior['name'], prior['lower'], prior['upper'])
+    
+    return params_logK, params_kcat
+
 
 
 def extract_logK(params_logK):
@@ -295,6 +352,74 @@ def global_fitting_jit(data_rate, data_AUC = None, data_ice = None,
             init_params_kcat[i] = None
 
     params_logK, params_kcat = prior_group(init_params_logK, init_params_kcat, logKd_min, logKd_max, kcat_min, kcat_max)
+    [logKd, logK_S_M, logK_S_D, logK_S_DS, logK_I_M, logK_I_D, logK_I_DI, logK_S_DI] = extract_logK(params_logK)
+    [kcat_MS, kcat_DS, kcat_DSI, kcat_DSS] = extract_kcat(params_kcat)
+    
+    if data_rate is not None: 
+        [rate, kinetics_logMtot, kinetics_logStot, kinetics_logItot] = data_rate
+        rate_model = ReactionRate(kinetics_logMtot, kinetics_logStot, kinetics_logItot,
+                                  logKd, logK_S_M, logK_S_D, logK_S_DS, logK_I_M, logK_I_D, logK_I_DI, logK_S_DI, 
+                                  kcat_MS, kcat_DS, kcat_DSI, kcat_DSS)
+        log_sigma_rate_min, log_sigma_rate_max = logsigma_guesses(rate) 
+        log_sigma_rate = uniform_prior('log_sigma_rate', lower=log_sigma_rate_min, upper=log_sigma_rate_max)
+        sigma_rate = jnp.exp(log_sigma_rate)
+    
+        numpyro.sample('rate', dist.Normal(loc=rate_model, scale=sigma_rate), obs=rate)
+    
+    if data_AUC is not None: 
+        [auc, AUC_logMtot, AUC_logStot, AUC_logItot] = data_AUC
+        auc_model = MonomerConcentration(AUC_logMtot, AUC_logStot, AUC_logItot, 
+                                         logKd, logK_S_M, logK_S_D, logK_S_DS, 
+                                         logK_I_M, logK_I_D, logK_I_DI, logK_S_DI)
+        log_sigma_auc_min, log_sigma_auc_max = logsigma_guesses(auc) 
+        log_sigma_auc = uniform_prior('log_sigma_auc', lower=log_sigma_auc_min, upper=log_sigma_auc_max)
+        sigma_auc = jnp.exp(log_sigma_auc)
+        
+        numpyro.sample('auc', dist.Normal(loc=auc_model, scale=sigma_auc), obs=auc)
+
+    if data_ice is not None: 
+        [ice, ice_logMtot, ice_logStot, ice_logItot] = data_ice
+        ice_model = 1./CatalyticEfficiency(ice_logMtot, ice_logItot, 
+                                           logKd, logK_S_M, logK_S_D, logK_S_DS, 
+                                           logK_I_M, logK_I_D, logK_I_DI, logK_S_DI,
+                                           kcat_MS, kcat_DS, kcat_DSI, kcat_DSS)
+        log_sigma_ice_min, log_sigma_ice_max = logsigma_guesses(ice) 
+        log_sigma_ice = uniform_prior('log_sigma_ice', lower=log_sigma_ice_min, upper=log_sigma_ice_max)
+        sigma_ice = jnp.exp(log_sigma_ice)
+        numpyro.sample('ice', dist.Normal(loc=ice_model, scale=sigma_ice), obs=ice)
+
+
+def global_fitting_informative(data_rate, data_AUC = None, data_ice = None, 
+                               prior_inform=None, logKd_min = -20, logKd_max = 0, kcat_min=0, kcat_max=1):
+  
+    """
+    Parameters:
+    ----------
+    experiments : list of dict
+        Each dataset contains response, logMtot, lotStot, logItot
+    prior_inform: information to assign prior distribution for kinetics parameters
+    params_logK : dict of all dissociation constants
+    params_kcat : dict of all kcat 
+    logKd_min   : float, lower values of uniform distribution for prior of dissociation constants
+    logKd_max   : float, upper values of uniform distribution for prior of dissociation constants
+    kcat_min    : float, lower values of uniform distribution for prior of kcat
+    kcat_max    : float, upper values of uniform distribution for prior of kcat
+    ----------
+    Fitting the Bayesian model to estimate the kinetics parameters and noise of each dataset
+    """
+
+    # Define priors
+    if prior_inform is None:
+        init_params_logK = {}
+        for i in ['logKd', 'logK_S_M', 'logK_S_D', 'logK_S_DS', 'logK_I_M', 'logK_I_D', 'logK_I_DI', 'logK_S_DI']:
+            init_params_logK[i] = None
+        init_params_kcat = {}
+        for i in ['kcat_MS', 'kcat_DS', 'kcat_DSI', 'kcat_DSS']:
+            init_params_kcat[i] = None
+        params_logK, params_kcat = prior_group(init_params_logK, init_params_kcat, logKd_min, logKd_max, kcat_min, kcat_max)
+    else: 
+        params_logK, params_kcat = prior_group_informative(prior_inform)
+
     [logKd, logK_S_M, logK_S_D, logK_S_DS, logK_I_M, logK_I_D, logK_I_DI, logK_S_DI] = extract_logK(params_logK)
     [kcat_MS, kcat_DS, kcat_DSI, kcat_DSS] = extract_kcat(params_kcat)
     
