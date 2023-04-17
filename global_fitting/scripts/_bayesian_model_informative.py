@@ -411,17 +411,17 @@ def logsigma_guesses(response):
 
 def prior_group_informative(logKd_min = -20, logKd_max = 0, kcat_min=0, kcat_max=1):
 
-    logKd = normal_prior('logKd', -5, 0.150)
+    logKd = normal_prior('logKd', -5, 2)
     # Substrate binding
     logK_S_M = uniform_prior('logK_S_M', logKd_min, logKd_max)
     logK_S_D = uniform_prior('logK_S_D', logKd_min, logKd_max)
     logK_S_DS = uniform_prior('logK_S_DS', logKd_min, logKd_max)
     # Inhibitor binding
     logK_I_M = uniform_prior('logK_I_M', logKd_min, logKd_max)
-    logK_I_D = normal_prior('logK_I_D', -12, 0.045)
-    logK_I_DI = normal_prior('logK_I_DI', -12.2, 0.563)
+    logK_I_D = normal_prior('logK_I_D', -12, 2)
+    logK_I_DI = normal_prior('logK_I_DI', -12, 2)
     # Binding of substrate and inhibitor
-    logK_I_DS = normal_prior('logK_I_DS', -8.56, 0.15)
+    logK_I_DS = normal_prior('logK_I_DS', -9, 2)
     # kcat
     kcat_MS = 0
     kcat_DS = 0

@@ -124,7 +124,8 @@ mcmc = MCMC(kernel, num_warmup=args.nburn, num_samples=args.niters, num_chains=a
 mcmc.run(rng_key_,
          [v, kinetics_logMtot, kinetics_logStot, kinetics_logItot], 
          [auc, AUC_logMtot, AUC_logStot, AUC_logItot], 
-         [ice, ice_logMtot, ice_logStot, ice_logItot])
+         [ice, ice_logMtot, ice_logStot, ice_logItot],
+         kcat_max=10)
 mcmc.print_summary()
 
 trace = mcmc.get_samples(group_by_chain=False)
