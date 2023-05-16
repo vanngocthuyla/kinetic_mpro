@@ -14,24 +14,28 @@ warnings.simplefilter(action='ignore', category=FutureWarning)
 warnings.simplefilter("ignore", UserWarning)
 warnings.simplefilter("ignore", RuntimeWarning)
 
-from _extract_params_from_MAP import _map_kinetics
+from _MAP_finding import _map_finding
 
 parser = argparse.ArgumentParser()
 
 parser.add_argument( "--mcmc_file",             type=str, 				default="")
-parser.add_argument( "--out_dir",               type=str, 				default="")
-parser.add_argument( "--nsamples",              type=str, 				default="")
+parser.add_argument( "--evaluated_file",        type=str,               default="")
+parser.add_argument( "--data_dir",              type=str, 				default="")
+# parser.add_argument( "--nsamples",              type=str, 				default="")
 
 args = parser.parse_args()
 
-os.chdir(args.out_dir)
+os.chdir(args.data_dir)
 trace = pickle.load(open(args.mcmc_file, "rb"))
 data = az.convert_to_inference_data(trace)
 
-if len(args.nsamples)>0: 
-    n_samples = int(args.nsamples)
-else:
-    n_samples = None
+df = pd.read_csv(args.evaluated_file, header=0)
+df_2 = dict([(name, np.array(df[name])) for name in df.columns])
+# for sigma_name in ['log_sigma_rate', 'log_sigma_auc', 'log_sigma_ice']: 
+#     df_2[sigma_name] = trace[sigma_name][:len(df_2['logKd'])]
+df_2['log_sigma_rate'] = np.repeat(np.log(np.std(experiments_combine[0]['v'])/np.sqrt(len(experiments_combine[0]['v']))), len(df_2['logKd']))
+df_2['log_sigma_auc'] = np.repeat(np.log(np.std(experiments_combine[1]['M'])/np.sqrt(len(experiments_combine[1]['M']))), len(df_2['logKd']))
+df_2['log_sigma_ice'] = np.repeat(np.log(np.std(experiments_combine[2]['Km_over_kcat'])/np.sqrt(len(experiments_combine[2]['Km_over_kcat']))), len(df_2['logKd']))
 
 experiments = []
 # Fig 5b 
@@ -93,8 +97,30 @@ experiments_combined.append({'type':'catalytic_efficiency',
                              'Km_over_kcat':np.array([2170, 7640, 17800, 29700, 36600])/10.,
                              'x':'logItot'})
 
-[params, map_index] = _map_kinetics(trace, experiments_combined, nsamples=n_samples)
+# [map_params, map_index] = _map_uniform(trace, experiments_combined, nsamples=n_samples)
+
+prior_information = []
+
+prior_information.append({'type':'logK', 'name': 'logKd', 'dist': 'normal', 'loc': -2.914, 'scale': 1.702})
+prior_information.append({'type':'logK', 'name': 'logK_S_M', 'dist': 'normal', 'loc': -4.236, 'scale': 2.133})
+prior_information.append({'type':'logK', 'name': 'logK_S_D', 'dist': 'normal', 'loc': -5.957, 'scale': 3.557})
+prior_information.append({'type':'logK', 'name': 'logK_S_DS', 'dist': 'normal', 'loc': -13.743, 'scale': 3.354})
+prior_information.append({'type':'logK', 'name': 'logK_I_M', 'dist': 'normal', 'loc': -4.46, 'scale': 2.596})
+prior_information.append({'type':'logK', 'name': 'logK_I_D', 'dist': 'normal', 'loc': -14.486, 'scale': 2.043})
+prior_information.append({'type':'logK', 'name': 'logK_I_DI', 'dist': 'normal', 'loc': -18.330, 'scale': 1.909})
+prior_information.append({'type':'logK', 'name': 'logK_S_DI', 'dist': 'normal', 'loc': -14.044, 'scale': 1.930})
+
+prior_information.append({'type':'kcat', 'name': 'kcat_MS', 'dist': 'uniform', 'lower': 0, 'upper': 1})
+prior_information.append({'type':'kcat', 'name': 'kcat_DS', 'dist': 'uniform', 'lower': 0, 'upper': 1})
+prior_information.append({'type':'kcat', 'name': 'kcat_DSS', 'dist': 'normal', 'loc': 0.515, 'scale': 0.148})
+prior_information.append({'type':'kcat', 'name': 'kcat_DSI', 'dist': 'normal', 'loc': 0.632, 'scale': 0.208})
+
+# Finding MAP
+[log_probs, map_params, map_index] = _map_hill(mcmc_trace=trace, 
+                                               experiments=experiments_combine, 
+                                               params_to_evaluate=df_2, 
+                                               params_dist=prior_information)
 
 with open("output.txt", "w") as f:
   	print("MAP index:" + str(map_index), file=f)
-  	print("Kinetics parameters: \n" + str(params), file=f)
+  	print("Kinetics parameters: \n" + str(map_params), file=f)
