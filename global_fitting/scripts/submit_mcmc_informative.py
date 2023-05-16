@@ -19,7 +19,7 @@ parser.add_argument( "--random_key",            type=int, 				default=0)
 
 args = parser.parse_args()
 
-running_script = "/home/vla/python/mpro/scripts/run_mcmc_informative.py"
+running_script = "/home/vla/python/mpro/scripts/run_mcmc_normal.py"
 
 file_name = args.file_name
 

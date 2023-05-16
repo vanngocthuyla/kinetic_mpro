@@ -116,19 +116,19 @@ ice = np.hstack([experiment['Km_over_kcat'] for experiment in experiments if exp
 
 prior_information = []
 
-prior_information.append({'type':'logK', 'name': 'logKd', 'dist': 'normal', 'loc': -2, 'scale': 1.5})
-prior_information.append({'type':'logK', 'name': 'logK_S_M', 'dist': 'normal', 'loc': -2.54, 'scale': 1.372})
-prior_information.append({'type':'logK', 'name': 'logK_S_D', 'dist': 'normal', 'loc': -8, 'scale': 4})
-prior_information.append({'type':'logK', 'name': 'logK_S_DS', 'dist': 'normal', 'loc': -11, 'scale': 5.5})
-prior_information.append({'type':'logK', 'name': 'logK_I_M', 'dist': 'normal', 'loc': -4.43, 'scale': 2.5})
-prior_information.append({'type':'logK', 'name': 'logK_I_D', 'dist': 'normal', 'loc': -15.7, 'scale': 1.8})
-prior_information.append({'type':'logK', 'name': 'logK_I_DI', 'dist': 'normal', 'loc': -17.9, 'scale': 1.356})
-prior_information.append({'type':'logK', 'name': 'logK_S_DI', 'dist': 'normal', 'loc': -13.8, 'scale': 1.4})
+prior_information.append({'type':'logK', 'name': 'logKd', 'dist': 'normal', 'loc': -5, 'scale': 1})
+prior_information.append({'type':'logK', 'name': 'logK_S_M', 'dist': 'uniform', 'lower': -20, 'upper': 0})
+prior_information.append({'type':'logK', 'name': 'logK_S_D', 'dist': 'uniform', 'lower': -20, 'upper': 0})
+prior_information.append({'type':'logK', 'name': 'logK_S_DS', 'dist': 'uniform', 'lower': -20, 'upper': 0})
+prior_information.append({'type':'logK', 'name': 'logK_I_M', 'dist': 'uniform', 'lower': -20, 'upper': 0})
+prior_information.append({'type':'logK', 'name': 'logK_I_D', 'dist': 'normal', 'loc': -13, 'scale': 3})
+prior_information.append({'type':'logK', 'name': 'logK_I_DI', 'dist': 'normal', 'loc': -15, 'scale': 3})
+prior_information.append({'type':'logK', 'name': 'logK_S_DI', 'dist': 'uniform', 'lower': -20, 'upper': 0})
 
 prior_information.append({'type':'kcat', 'name': 'kcat_MS', 'dist': None, 'value': 0.})
 prior_information.append({'type':'kcat', 'name': 'kcat_DS', 'dist': None, 'value': 0.})
-prior_information.append({'type':'kcat', 'name': 'kcat_DSS', 'dist': 'normal', 'loc': 0.421, 'scale': 0.1})
-prior_information.append({'type':'kcat', 'name': 'kcat_DSI', 'dist': 'normal', 'loc': 0.603, 'scale': 0.253})
+prior_information.append({'type':'kcat', 'name': 'kcat_DSS', 'dist': 'uniform', 'lower': 0, 'upper': 1})
+prior_information.append({'type':'kcat', 'name': 'kcat_DSI', 'dist': 'uniform', 'lower': 0, 'upper': 1})
 
 print("Prior information: \n", prior_information)
 
@@ -146,10 +146,10 @@ mcmc.run(rng_key_,
 mcmc.print_summary()
 
 trace = mcmc.get_samples(group_by_chain=False)
-pickle.dump(trace, open(os.path.join(args.out_dir, 'traces_informative.pickle'), "wb"))
+pickle.dump(trace, open(os.path.join(args.out_dir, 'traces_normal.pickle'), "wb"))
 
 sample = az.convert_to_inference_data(mcmc.get_samples(group_by_chain=True))
 az.plot_trace(sample)
 plt.tight_layout();
-plt.savefig(os.path.join(args.out_dir,'trace_informative.pdf'))
+plt.savefig(os.path.join(args.out_dir,'trace_normal.pdf'))
 plt.ioff()
