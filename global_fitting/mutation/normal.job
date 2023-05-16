@@ -1,12 +1,12 @@
 #!/bin/bash
-#SBATCH -N 1
-#SBATCH -p RM
-#SBATCH -t 48:00:00
-#SBATCH --ntasks-per-node=128
-#SBATCH -o /home/exouser/python/mpro/1.normal/normal_rate.log 
+#PBS -S /bin/bash
+#PBS -o /home/vla/python/mpro/11.normal/normal.log 
+#PBS -j oe
+#PBS -l nodes=8:ppn=1,mem=65536mb,walltime=720:00:00
 
-conda activate mpro
-cd /home/exouser/python/mpro/1.normal
+module load miniconda/3
+source activate bitc_race
+cd /home/vla/python/mpro/11.normal
 date
-python /home/exouser/python/mpro/scripts/run_mcmc_normal.py --out_dir /home/exouser/python/mpro/1.normal --niters 10000  --nburn 2000  --nthin 1  --nchain 4  --random_key 0 
+python /home/vla/python/mpro/scripts/run_mcmc_normal.py --out_dir /home/vla/python/mpro/11.normal --kinetics_fitting  --auc_fitting  --ice_fitting  --niters 10000  --nburn 2000  --nthin 1  --nchain 4  --random_key 0 
 date 
