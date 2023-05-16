@@ -1,0 +1,12 @@
+#!/bin/bash
+#SBATCH -N 1
+#SBATCH -p RM
+#SBATCH -t 48:00:00
+#SBATCH --ntasks-per-node=128
+#SBATCH -o /home/exouser/python/mpro/1.normal/normal_rate.log 
+
+conda activate mpro
+cd /home/exouser/python/mpro/1.normal
+date
+python /home/exouser/python/mpro/scripts/run_mcmc_normal.py --out_dir /home/exouser/python/mpro/1.normal --niters 10000  --nburn 2000  --nthin 1  --nchain 4  --random_key 0 
+date 
