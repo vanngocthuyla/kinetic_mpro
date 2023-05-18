@@ -17,18 +17,30 @@ def extract_logK_n_idx(params_logK, idx):
     idx         : index of enzyme
     ----------
     convert dictionary of dissociation constants to an array of values depending on the index of enzyme
+    
     """
     # Dimerization
-    logKd = params_logK[f'logKd:{idx}'] 
+    if f'logKd:{idx}' in params_logK.keys(): logKd = params_logK[f'logKd:{idx}']
+    else: logKd = params_logK['logKd']
+    
     # Binding Substrate
-    logK_S_M = params_logK['logK_S_M']
-    logK_S_D = params_logK['logK_S_D']
-    logK_S_DS = params_logK['logK_S_DS']
+    if f'logK_S_M:{idx}' in params_logK.keys(): logKd = params_logK[f'logK_S_M:{idx}']
+    else: logK_S_M = params_logK['logK_S_M']
+    if f'logK_S_D:{idx}' in params_logK.keys(): logKd = params_logK[f'logK_S_D:{idx}']
+    else: logK_S_D = params_logK['logK_S_D']
+    if f'logK_S_DS:{idx}' in params_logK.keys(): logKd = params_logK[f'logK_S_DS:{idx}']
+    else: logK_S_DS = params_logK['logK_S_DS']
+    
     # Binding Inhibitor
-    logK_I_M = params_logK['logK_I_M']
-    logK_I_D = params_logK['logK_I_D']
-    logK_I_DI = params_logK['logK_I_DI']
+    if f'logK_I_M:{idx}' in params_logK.keys(): logKd = params_logK[f'logK_I_M:{idx}']
+    else: logK_I_M = params_logK['logK_I_M']
+    if f'logK_I_D:{idx}' in params_logK.keys(): logKd = params_logK[f'logK_I_D:{idx}']
+    else: logK_I_D = params_logK['logK_I_D']
+    if f'logK_I_DI:{idx}' in params_logK.keys(): logKd = params_logK[f'logK_I_DI:{idx}']
+    else: logK_I_DI = params_logK['logK_I_DI']
+    
     # Binding both substrate and inhititor
+    if f'logK_S_DI:{idx}' in params_logK.keys(): logKd = params_logK[f'logK_S_DI:{idx}']
     logK_S_DI = params_logK['logK_S_DI']
     return [logKd, logK_S_M, logK_S_D, logK_S_DS, logK_I_M, logK_I_D, logK_I_DI, logK_S_DI]
 
@@ -42,10 +54,16 @@ def extract_kcat_n_idx(params_kcat, idx):
     ----------
     convert dictionary of kcats to an array of values depending on the index of enzyme
     """
-    kcat_MS = params_kcat[f'kcat_MS:{idx}']
-    kcat_DS = params_kcat[f'kcat_DS:{idx}']
-    kcat_DSI = params_kcat[f'kcat_DSI:{idx}']
-    kcat_DSS = params_kcat[f'kcat_DSS:{idx}']
+    
+    if f'kcat_MS:{idx}' in params_kcat.keys(): kcat_MS=params_kcat[f'kcat_MS:{idx}'] 
+    else: kcat_MS=params_kcat['kcat_MS']
+    if f'kcat_DS:{idx}' in params_kcat.keys(): kcat_DS = params_kcat[f'kcat_DS:{idx}'] 
+    else: kcat_DS = params_kcat['kcat_DS']
+    if f'kcat_DSI:{idx}' in params_kcat.keys(): kcat_DSI = params_kcat[f'kcat_DSI:{idx}'] 
+    else: kcat_DSI = params_kcat['kcat_DSI']
+    if f'kcat_DSS:{idx}' in params_kcat.keys(): kcat_DSS = params_kcat[f'kcat_DSS:{idx}'] 
+    else: kcat_DSS = params_kcat['kcat_DSS']
+    
     return [kcat_MS, kcat_DS, kcat_DSI, kcat_DSS]
 
 
@@ -58,19 +76,23 @@ def check_prior_group(prior_information, n_enzymes):
     
     Examples: 
         prior_information = []
-        prior_information.append({'type':'logKd', 'name': 'logKd', 'dist': 'normal', 'loc': [0, 2], 'scale': [1, 3]})
-        prior_information.append({'type':'logK', 'name': 'logK_S_D', 'dist': 'uniform', 'lower': -20, 'upper': 0})
-        prior_information.append({'type':'kcat', 'name': 'kcat_MS', 'dist': None, 'value': [1., 0.]})
+        prior_information.append({'type':'logKd', 'name': 'logKd', 'fit': 'local', 'dist': 'normal', 'loc': [0, 2], 'scale': [1, 3]})
+        prior_information.append({'type':'logK', 'name': 'logK_S_D', 'fit': 'global', 'dist': 'uniform', 'lower': -20, 'upper': 0})
+        prior_information.append({'type':'kcat', 'name': 'kcat_MS', 'fit': 'local', 'dist': None, 'value': [1., 0.]})
     ----------
     The function returns:
-        prior_information.append({'type':'logKd', 'name': 'logKd', 'dist': 'normal', 'loc': np.array([0, 2]), 'scale': np.array([1, 3])})
-        prior_information.append({'type':'logK', 'name': 'logK_S_D', 'dist': 'uniform', 'lower': -20, 'upper': 0})
-        prior_information.append({'type':'kcat', 'name': 'kcat_MS', 'dist': None, 'value': np.array([1., 0.])})
+        prior_information.append({'type':'logKd', 'name': 'logKd', 'fit': 'local', 'dist': 'normal', 'loc': np.array([0, 2]), 'scale': np.array([1, 3])})
+        prior_information.append({'type':'logK', 'name': 'logK_S_D', 'fit': 'globals', 'dist': 'uniform', 'lower': -20, 'upper': 0})
+        prior_information.append({'type':'kcat', 'name': 'kcat_MS', 'fit': 'local', 'dist': None, 'value': np.array([1., 0.])})
     """
     prior_update = []
-    for prior in prior_information: 
+    for prior in prior_information:
+        assert prior['type'] in ['logKd', 'logK', 'kcat'], "Paramter type should be logKd, logK or kcat."
+        assert prior['fit'] in ['global', 'local'], "Please declare correctly if the parameter(s) would be fit local/global."
+        assert prior['dist'] in ['normal', 'uniform', None], "The prior of parameters can be a value (None = no distribution) or can be normal/uniform distribution."
+        
         name = prior['name']
-        if prior['type'] in ['logKd', 'kcat']:
+        if prior['fit'] == 'local':
             if prior['dist'] == 'normal': 
                 if type(prior['loc']) == float or type(prior['loc']) == int:
                     loc = np.repeat(prior['loc'], n_enzymes)
@@ -80,7 +102,7 @@ def check_prior_group(prior_information, n_enzymes):
                     scale = np.repeat(prior['scale'], n_enzymes)
                 else:
                     scale = np.asarray(prior['scale'])
-                prior_update.append({'type': prior['type'], 'name': prior['name'], 
+                prior_update.append({'type': prior['type'], 'name': prior['name'], 'fit': prior['fit'],
                                      'dist': prior['dist'], 'loc': loc, 'scale': scale})
             elif prior['dist'] == 'uniform':
                 if type(prior['lower']) == float or type(prior['lower']) == int:
@@ -91,14 +113,14 @@ def check_prior_group(prior_information, n_enzymes):
                     upper = np.repeat(prior['upper'], n_enzymes)
                 else:
                     upper = np.asarray(prior['upper'])
-                prior_update.append({'type': prior['type'], 'name': prior['name'], 
+                prior_update.append({'type': prior['type'], 'name': prior['name'], 'fit': prior['fit'],
                                      'dist': prior['dist'], 'lower': lower, 'upper': upper})
             else: 
                 if type(prior['value']) == float or type(prior['value']) == int:
                     values = np.repeat(prior['value'], n_enzymes)
                 else:
                     values = np.asarray(prior['value'])
-                prior_update.append({'type': prior['type'], 'name': prior['name'], 
+                prior_update.append({'type': prior['type'], 'name': prior['name'], 'fit': prior['fit'],
                                      'dist': prior['dist'], 'value': values})
         else:
             prior_update.append(prior)
@@ -114,11 +136,11 @@ def prior_group_multi_enzyme(prior_information, n_enzymes):
     
     Examples: 
         prior_information = []
-        prior_information.append({'type':'logKd', 'name': 'logKd', 'dist': 'normal', 'loc': np.array([0, 2]), 'scale': np.array([1, 3])})
-        prior_information.append({'type':'logK', 'name': 'logK_S_D', 'dist': 'uniform', 'lower': -20, 'upper': 0})
-        prior_information.append({'type':'kcat', 'name': 'kcat_MS', 'dist': None, 'value': np.array([1., 0.])})
+        prior_information.append({'type':'logKd', 'name': 'logKd', 'fit': 'local', 'dist': 'normal', 'loc': np.array([0, 2]), 'scale': np.array([1, 3])})
+        prior_information.append({'type':'logK', 'name': 'logK_S_D', 'fit': 'global', 'dist': 'uniform', 'lower': -20, 'upper': 0})
+        prior_information.append({'type':'kcat', 'name': 'kcat_MS', 'fit': 'local', 'dist': None, 'value': np.array([1., 0.])})
 
-        The function returns three variables:
+        The function returns five parameters:
             logK:0 ~ N(0, 1)
             logK:1 ~ N(2, 3)
             logK_S_D ~ U(-20, 0)
@@ -133,32 +155,44 @@ def prior_group_multi_enzyme(prior_information, n_enzymes):
     
     for prior in prior_information:
         name = prior['name']
-        if prior['type'] == 'logKd':
-            for n in range(n_enzymes):
+        assert prior['type'] in ['logKd', 'logK', 'kcat'], "Paramter type should be logKd, logK or kcat."
+        assert prior['fit'] in ['global', 'local'], "Please declare correctly if the parameter(s) would be fit local/global."
+        assert prior['dist'] in ['normal', 'uniform', None], "The prior of parameters can be a value (None = no distribution) or can be normal/uniform distribution."
+
+        if prior['type'] in ['logKd', 'logK']:
+            if prior['fit'] == 'local':
+                for n in range(n_enzymes):
+                    if prior['dist'] is None:
+                        params_logK[f'{name}:{n}'] = prior['value'][n]
+                    else:
+                        if prior['dist'] == 'normal':
+                            params_logK[f'{name}:{n}'] = normal_prior(f'{name}:{n}', prior['loc'][n], prior['scale'][n])
+                        elif prior['dist'] == 'uniform':
+                            params_logK[f'{name}:{n}'] = uniform_prior(f'{name}:{n}', prior['lower'][n], prior['upper'][n])
+            elif prior['fit'] == 'global': 
                 if prior['dist'] is None:
-                    params_logK[f'{name}:{n}'] = prior['value'][n]
-                else:
-                    if prior['dist'] == 'normal':
-                        params_logK[f'{name}:{n}'] = normal_prior(f'{name}:{n}', prior['loc'][n], prior['scale'][n])
-                    elif prior['dist'] == 'uniform':
-                        params_logK[f'{name}:{n}'] = uniform_prior(f'{name}:{n}', prior['lower'][n], prior['upper'][n])
-        
-        if prior['type'] == 'logK':
-            if prior['dist'] is None:
-                params_logK[name] = prior['value']
-            elif prior['dist'] == 'normal':
-                params_logK[name] = normal_prior(name, prior['loc'], prior['scale'])
-            elif prior['dist'] == 'uniform':
-                params_logK[name] = uniform_prior(name, prior['lower'], prior['upper'])
+                    params_logK[name] = prior['value']
+                elif prior['dist'] == 'normal':
+                    params_logK[name] = normal_prior(name, prior['loc'], prior['scale'])
+                elif prior['dist'] == 'uniform':
+                    params_logK[name] = uniform_prior(name, prior['lower'], prior['upper'])
 
         if prior['type'] == 'kcat':
-            for n in range(n_enzymes):
+            if prior['fit'] == 'local':
+                for n in range(n_enzymes):
+                    if prior['dist'] is None:
+                        params_kcat[f'{name}:{n}'] = prior['value'][n]
+                    elif prior['dist'] == 'normal':
+                        params_kcat[f'{name}:{n}'] = normal_prior(f'{name}:{n}', prior['loc'][n], prior['scale'][n])
+                    elif prior['dist'] == 'uniform':
+                        params_kcat[f'{name}:{n}'] = uniform_prior(f'{name}:{n}', prior['lower'][n], prior['upper'][n])
+            elif prior['fit'] == 'global':
                 if prior['dist'] is None:
-                    params_kcat[f'{name}:{n}'] = prior['value'][n]
-                elif prior['dist'] == 'normal':
-                    params_kcat[f'{name}:{n}'] = normal_prior(f'{name}:{n}', prior['loc'][n], prior['scale'][n])
+                    params_kcat[name] = prior['value']
+                if prior['dist'] == 'normal':
+                    params_kcat[name] = normal_prior(name, prior['loc'], prior['scale'])
                 elif prior['dist'] == 'uniform':
-                    params_kcat[f'{name}:{n}'] = uniform_prior(f'{name}:{n}', prior['lower'][n], prior['upper'][n])
+                    params_kcat[name] = uniform_prior(name, prior['lower'], prior['upper'])
     
     return params_logK, params_kcat
 
@@ -175,19 +209,19 @@ def define_uniform_prior_group(logKd_min=-20, logKd_max=0, kcat_min=0, kcat_max=
     Return list of dict to assign prior distribution for kinetics parameters
     """
     prior_infor = []
-    prior_infor.append({'type':'logKd', 'name': 'logKd', 'dist': 'uniform', 'lower': logKd_min, 'upper': logKd_max})
-    prior_infor.append({'type':'logK', 'name': 'logK_S_M', 'dist': 'uniform', 'lower': logKd_min, 'upper': logKd_max})
-    prior_infor.append({'type':'logK', 'name': 'logK_S_D', 'dist': 'uniform', 'lower': logKd_min, 'upper': logKd_max})
-    prior_infor.append({'type':'logK', 'name': 'logK_S_DS', 'dist': 'uniform', 'lower': logKd_min, 'upper': logKd_max})
-    prior_infor.append({'type':'logK', 'name': 'logK_I_M', 'dist': 'uniform', 'lower': logKd_min, 'upper': logKd_max})
-    prior_infor.append({'type':'logK', 'name': 'logK_I_D', 'dist': 'uniform', 'lower': logKd_min, 'upper': logKd_max})
-    prior_infor.append({'type':'logK', 'name': 'logK_I_DI', 'dist': 'uniform', 'lower': logKd_min, 'upper': logKd_max})
-    prior_infor.append({'type':'logK', 'name': 'logK_S_DI', 'dist': 'uniform', 'lower': logKd_min, 'upper': logKd_max})
+    prior_infor.append({'type':'logKd', 'name': 'logKd', 'fit': 'local', 'dist': 'uniform', 'lower': logKd_min, 'upper': logKd_max})
+    prior_infor.append({'type':'logK', 'name': 'logK_S_M', 'fit': 'gloal', 'dist': 'uniform', 'lower': logKd_min, 'upper': logKd_max})
+    prior_infor.append({'type':'logK', 'name': 'logK_S_D', 'fit': 'gloal', 'dist': 'uniform', 'lower': logKd_min, 'upper': logKd_max})
+    prior_infor.append({'type':'logK', 'name': 'logK_S_DS', 'fit': 'gloal', 'dist': 'uniform', 'lower': logKd_min, 'upper': logKd_max})
+    prior_infor.append({'type':'logK', 'name': 'logK_I_M', 'fit': 'gloal', 'dist': 'uniform', 'lower': logKd_min, 'upper': logKd_max})
+    prior_infor.append({'type':'logK', 'name': 'logK_I_D', 'fit': 'gloal', 'dist': 'uniform', 'lower': logKd_min, 'upper': logKd_max})
+    prior_infor.append({'type':'logK', 'name': 'logK_I_DI', 'fit': 'gloal', 'dist': 'uniform', 'lower': logKd_min, 'upper': logKd_max})
+    prior_infor.append({'type':'logK', 'name': 'logK_S_DI', 'fit': 'gloal', 'dist': 'uniform', 'lower': logKd_min, 'upper': logKd_max})
 
-    prior_infor.append({'type':'kcat', 'name': 'kcat_MS', 'dist': 'uniform', 'lower': kcat_min, 'upper': kcat_max})
-    prior_infor.append({'type':'kcat', 'name': 'kcat_DS', 'dist': 'uniform', 'lower': kcat_min, 'upper': kcat_max})
-    prior_infor.append({'type':'kcat', 'name': 'kcat_DSS', 'dist': 'uniform', 'lower': kcat_min, 'upper': kcat_max})
-    prior_infor.append({'type':'kcat', 'name': 'kcat_DSI', 'dist': 'uniform', 'lower': kcat_min, 'upper': kcat_max})
+    prior_infor.append({'type':'kcat', 'name': 'kcat_MS', 'fit': 'gloal', 'dist': 'uniform', 'lower': kcat_min, 'upper': kcat_max})
+    prior_infor.append({'type':'kcat', 'name': 'kcat_DS', 'fit': 'gloal', 'dist': 'uniform', 'lower': kcat_min, 'upper': kcat_max})
+    prior_infor.append({'type':'kcat', 'name': 'kcat_DSS', 'fit': 'gloal', 'dist': 'uniform', 'lower': kcat_min, 'upper': kcat_max})
+    prior_infor.append({'type':'kcat', 'name': 'kcat_DSI', 'fit': 'gloal', 'dist': 'uniform', 'lower': kcat_min, 'upper': kcat_max})
     return prior_infor
 
 
