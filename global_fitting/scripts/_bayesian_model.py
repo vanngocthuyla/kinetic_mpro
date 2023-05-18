@@ -65,6 +65,7 @@ def prior_group(params_logK, params_kcat,
     kcat_max    : float, upper values of uniform distribution for prior of kcat
     ----------
     return list of prior distribution for kinetics parameters
+    
     """
     params_logK_update = {}
     params_kcat_update = {}
@@ -103,6 +104,7 @@ def prior_group_informative(prior_information):
         These variables will be saved into two lists, which is params_logK or params_kcat
     ----------
     return two lists of prior distribution for kinetics parameters
+    
     """
 
     params_logK = {}
@@ -125,7 +127,6 @@ def prior_group_informative(prior_information):
                 params_kcat[prior['name']] = uniform_prior(prior['name'], prior['lower'], prior['upper'])
     
     return params_logK, params_kcat
-
 
 
 def extract_logK(params_logK):
@@ -182,6 +183,7 @@ def global_fitting(experiments,
     kcat_max    : float, upper values of uniform distribution for prior of kcat
     ----------
     Fitting the Bayesian model to estimate the kinetics parameters and noise of each dataset
+    
     """
     
     # Define priors
@@ -260,6 +262,7 @@ def analytical_global_fitting(experiments,
     kcat_max    : float, upper values of uniform distribution for prior of kcat
     ----------
     Fitting the Bayesian model to estimate the kinetics parameters and noise of each dataset
+    
     """
     
     # Define priors
@@ -325,7 +328,6 @@ def analytical_global_fitting(experiments,
 def global_fitting_jit(data_rate, data_AUC = None, data_ice = None, 
                        init_params_logK = None, init_params_kcat = None,
                        logKd_min = -20, logKd_max = 0, kcat_min=0, kcat_max=1):
-  
     """
     Parameters:
     ----------
@@ -339,6 +341,7 @@ def global_fitting_jit(data_rate, data_AUC = None, data_ice = None,
     kcat_max    : float, upper values of uniform distribution for prior of kcat
     ----------
     Fitting the Bayesian model to estimate the kinetics parameters and noise of each dataset
+    
     """
 
     # Define priors
@@ -389,9 +392,8 @@ def global_fitting_jit(data_rate, data_AUC = None, data_ice = None,
         numpyro.sample('ice', dist.Normal(loc=ice_model, scale=sigma_ice), obs=ice)
 
 
-def global_fitting_informative(data_rate, data_AUC = None, data_ice = None, 
-                               prior_inform=None, logKd_min = -20, logKd_max = 0, kcat_min=0, kcat_max=1):
-  
+def global_fitting_informative(data_rate, data_AUC = None, data_ice = None, prior_inform=None, 
+                               logKd_min=-20, logKd_max=0, kcat_min=0, kcat_max=1):  
     """
     Parameters:
     ----------
@@ -406,6 +408,7 @@ def global_fitting_informative(data_rate, data_AUC = None, data_ice = None,
     kcat_max    : float, upper values of uniform distribution for prior of kcat
     ----------
     Fitting the Bayesian model to estimate the kinetics parameters and noise of each dataset
+
     """
 
     # Define priors
