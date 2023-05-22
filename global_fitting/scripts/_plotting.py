@@ -1,8 +1,9 @@
 import matplotlib.pyplot as plt
 import numpy as np
+import os
 
 def plot_kinetics_data(experiments, params_logK, params_kcat, 
-					   figure_size=(6.4, 4.8), dpi=80, outfile=None): 
+					   figure_size=(6.4, 4.8), dpi=80, OURDIR=None): 
     """
     Parameters:
     ----------
@@ -10,7 +11,7 @@ def plot_kinetics_data(experiments, params_logK, params_kcat,
         Each dataset contains response, logMtot, lotStot, logItot
     params_logK : dict of all dissociation constants
         logKd       : float, Log of the dissociation constant of dimerization
-        logKd_MS_M  :  float, Log of the dissociation constant between the monomer and substrate-monomer complex
+        logKd_MS_M  : float, Log of the dissociation constant between the monomer and substrate-monomer complex
         logK_S_M    : float, Log of the dissociation constant between the substrate and free monomer
         logK_S_D    : float, Log of the dissociation constant between the substrate and free dimer
         logK_S_DS   : float, Log of the dissociation constant between the substrate and ligand-dimer complex
@@ -28,7 +29,7 @@ def plot_kinetics_data(experiments, params_logK, params_kcat,
         kcat_DSS: float, Rate constant of dimer-substrate-substrate complex
     figure_size     : (width, height) size of plot
     dpi             : quality of plot
-    outfile         : optional, string, output file for saving plot
+    OURDIR          : optional, string, output directory for saving plot
     ----------
     return plots of each experiments
     """
@@ -79,7 +80,7 @@ def plot_kinetics_data(experiments, params_logK, params_kcat,
             y_model = 1./CatalyticEfficiency(logMtot, logItot, *params_logK, *params_kcat, logStot)
         plt.plot(x, y_model)
         plt.tight_layout();
-    
-	    if outfile is not None: 
-	        plt.savefig(outfile+str(n)+'.jpg')
-	        plt.ioff()
+
+        if OURDIR is not None: 
+            plt.savefig(os.path.join(OURDIR,f"{experiment['figure']}"))
+            plt.ioff()

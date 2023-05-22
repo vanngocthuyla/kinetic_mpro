@@ -12,7 +12,7 @@ def load_data(fit_mutant_kinetics=True, fit_mutant_AUC=False, fit_mutant_ICE=Fal
             # Fig 3a red
             experiments.append({'type':'kinetics',
                                 'enzyme': 'mutant',
-                                'figure':'3a',
+                                'figure':'Mut-3a',
                                 'logMtot': np.log(np.array([6, 10, 25, 50, 75, 100, 120])*1E-6), # M
                                 'logStot': np.array([np.log(200E-6)]*7), # 5 uL of 5mM substrate diluted with 95 uL reaction mixture,
                                 'logItot': np.array([np.log(1E-20)]*7), #None
@@ -23,7 +23,7 @@ def load_data(fit_mutant_kinetics=True, fit_mutant_AUC=False, fit_mutant_ICE=Fal
             # Fig 5b 
             experiments.append({'type':'kinetics',
                                 'enzyme': 'mutant',
-                                'figure':'5b',
+                                'figure':'Mut-5b',
                                 'logMtot': np.array([np.log(10E-6)]*12),  # M
                                 'logStot': np.array([np.log(0.25E-3)]*12), #5 uL of 5mM substrate diluted with 95 uL reaction mixture,
                                 'logItot': np.log(np.array([0.25, 0.5, 1, 1.75, 2.5, 5, 10, 16.6, 33.3, 66.6, 100, 133.3])*1E-6), 
@@ -34,7 +34,7 @@ def load_data(fit_mutant_kinetics=True, fit_mutant_AUC=False, fit_mutant_ICE=Fal
             # Fig 5c
             experiments.append({'type':'kinetics',
                                 'enzyme': 'mutant',
-                                'figure':'5c',
+                                'figure':'Mut-5c',
                                 'logMtot': np.array([np.log(10E-6)]*6),
                                 'logStot': np.log(np.array([96, 64, 48, 32, 16, 8])*1E-6),
                                 'logItot': np.array([np.log(10E-6)]*6), 
@@ -45,7 +45,7 @@ def load_data(fit_mutant_kinetics=True, fit_mutant_AUC=False, fit_mutant_ICE=Fal
         # Fig 6b
         experiments.append({'type':'AUC',
                             'enzyme': 'mutant',
-                            'figure':'6b',
+                            'figure':'Mut-6b',
                             'logMtot': np.array([np.log(7E-6)]*8), # 6-7 micromolar
                             'logStot': np.array([np.log(1E-20)]*8), #None
                             'logItot': np.log(np.array([1, 3, 6, 10, 12.5, 15, 20, 50])*1E-6), 
@@ -56,7 +56,7 @@ def load_data(fit_mutant_kinetics=True, fit_mutant_AUC=False, fit_mutant_ICE=Fal
         # Fig 6d
         experiments.append({'type':'catalytic_efficiency',
                             'enzyme': 'mutant',
-                            'figure':'6d',
+                            'figure':'Mut-6d',
                             'logMtot': np.array([np.log(10E-6)]*5),
                             'logStot': np.array([np.log(1E-20)]*5), # Not used
                             'logItot': np.log((np.array([0, 23.3, 56.6, 90, 123]) + 10)*1E-6),
@@ -98,7 +98,7 @@ def load_data(fit_mutant_kinetics=True, fit_mutant_AUC=False, fit_mutant_ICE=Fal
     if fit_wildtype_Nashed and fit_E_S:
         experiments_wt.append({'type':'kinetics',
                             'enzyme': 'wild-type',
-                            'figure':'2a',
+                            'figure':'WT-2a',
                             'logMtot': np.log(np.array([0.75, 0.5, 0.375, 0.25, 0.1875, 0.125, 0.0938, 0.0625, 0.0469])*1E-6), # M
                             'logStot': np.array([np.log(200E-6)]*9), # 5 uL of 5mM substrate diluted with 95 uL reaction mixture,
                             'logItot': np.array([np.log(1E-30)]*9), #None
@@ -108,7 +108,7 @@ def load_data(fit_mutant_kinetics=True, fit_mutant_AUC=False, fit_mutant_ICE=Fal
         #Fig S2b WT ##Condition similar to 3b Mutation
         experiments_wt.append({'type':'kinetics',
                             'enzyme': 'wild-type',
-                            'figure':'2b',
+                            'figure':'WT-2b',
                             'logMtot': np.array([np.log(200E-9)]*7), # M
                             'logStot': np.log(np.array([16, 32, 64, 77, 102.4, 128, 154])*1E-6), #M
                             'logItot': np.array([np.log(1E-30)]*7), # None
@@ -118,7 +118,7 @@ def load_data(fit_mutant_kinetics=True, fit_mutant_AUC=False, fit_mutant_ICE=Fal
         #Fig S2c WT ##Condition similar to 3b Mutation
         experiments_wt.append({'type':'kinetics',
                             'enzyme': 'wild-type',
-                            'figure':'2b',
+                            'figure':'WT-2c',
                             'logMtot': np.log(np.array([2, 1, 0.5, 0.25, 0.125, 0.0625, 0.0313])*1E-6), # M
                             'logStot': np.array([np.log(200E-6)]*7), # M
                             'logItot': np.array([np.log(1E-30)]*7), # None
@@ -130,7 +130,7 @@ def load_data(fit_mutant_kinetics=True, fit_mutant_AUC=False, fit_mutant_ICE=Fal
         # Fig 1b WT SARS-Covid-2 #Vuong et al
         experiments_wt.append({'type':'kinetics',
                             'enzyme': 'wild-type',
-                            'figure':'1b',
+                            'figure':'WT-1b',
                             'logMtot': np.array([np.log(80E-9)]*24), # M
                             'logStot': np.array([np.log(100E-6)]*24),
                             'logItot': np.log(10**(np.array([-8 , -7.5 , -7 , -6.5 , -6 , -5.5 , -5 , -4.5, -8 , -7.5 , -7 , -6.5 , -6 , -5.5 , -5 , -4.5, -8 , -7.5 , -7 , -6.5 , -6 , -5.5 , -5 , -4.5]))), #M
@@ -163,4 +163,4 @@ def load_data(fit_mutant_kinetics=True, fit_mutant_AUC=False, fit_mutant_ICE=Fal
                                             'kinetics': data_rate_wt, 'AUC': None, 'ICE': None
                                             })
 
-    return experiments_multi_enzyme
+    return experiments_multi_enzyme, experiments, experiments_wt
