@@ -6,6 +6,7 @@ import argparse
 
 import pickle
 import arviz as az
+import pandas as pd
 
 import jax
 import jax.numpy as jnp
@@ -135,7 +136,7 @@ trace = mcmc.get_samples(group_by_chain=False)
 pickle.dump(trace, open(os.path.join(args.out_dir, 'traces.pickle'), "wb"))
 
 trace = mcmc.get_samples(group_by_chain=True)
-az.summary(trace).to_csv(traces_name+"_summary.csv")
+az.summary(trace).to_csv("Summary.csv")
 
 ## Trace plot
 data = az.convert_to_inference_data(trace)
