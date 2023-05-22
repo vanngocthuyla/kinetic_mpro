@@ -26,6 +26,7 @@ warnings.simplefilter("ignore", RuntimeWarning)
 
 from _bayesian_model import global_fitting_informative, extract_logK, extract_kcat
 from _plotting import plot_kinetics_data
+from _trace_analysis import extract_samples_from_trace
 
 parser = argparse.ArgumentParser()
 
