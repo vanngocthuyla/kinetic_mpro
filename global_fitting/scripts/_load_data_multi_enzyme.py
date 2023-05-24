@@ -18,6 +18,15 @@ def load_data(fit_mutant_kinetics=True, fit_mutant_AUC=False, fit_mutant_ICE=Fal
                                 'logItot': np.array([np.log(1E-20)]*7), #None
                                 'v': np.array([0.0195, 0.024, 0.081, 0.36, 0.722, 1.13, 1.64])*1E-6, # M min^{-1}
                                 'x':'logMtot'})
+
+            # Fig 3b
+            experiments.append({'type':'kinetics',
+                                'figure':'Mut-3b',
+                                'logMtot': np.array([np.log(40E-6)]*8), # M
+                                'logStot': np.log(np.array([25, 50, 75, 100, 125, 150, 175, 200])*1E-6),
+                                'logItot': np.array([np.log(1E-30)]*8), # None
+                                'v': np.array([0.0488, 0.09, 0.127, 0.161, 0.192, 0.206, 0.223, 0.227])*1E-6, # M min^{-1}
+                                'x':'logStot'})
             
         if fit_E_I:
             # Fig 5b 
