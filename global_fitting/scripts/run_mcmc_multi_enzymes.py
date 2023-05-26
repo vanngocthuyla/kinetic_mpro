@@ -61,11 +61,11 @@ print("nburn:", args.nburn)
 print("nchain:", args.nchain)
 print("nthin:", args.nthin)
 
-if separated_wt: 
+if args.separated_wt: 
     experiments, experiments_mut, experiments_wt = load_data_separated_wt(args.fit_mutant_kinetics, args.fit_mutant_AUC, args.fit_mutant_ICE, 
                                                                           args.fit_wildtype_Nashed, args.fit_wildtype_Vuong, 
                                                                           args.fit_E_S, args.fit_E_I, args.separated_wt)
-elif multi_var_mut or multi_var_wt:
+elif args.multi_var_mut or args.multi_var_wt:
     experiments, experiments_mut, experiments_wt = load_data_multi_var(args.fit_mutant_kinetics, args.fit_mutant_AUC, args.fit_mutant_ICE, 
                                                                        args.fit_wildtype_Nashed, args.fit_wildtype_Vuong, 
                                                                        args.fit_E_S, args.fit_E_I, args.multi_var_mut, args.multi_var_wt)
