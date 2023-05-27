@@ -26,6 +26,7 @@ from _bayesian_model_multi_enzymes import global_fitting_multi_enzyme_multi_var,
 from _bayesian_model import extract_logK, extract_kcat
 from _load_data_multi_enzyme import load_data, load_data_multi_var, load_data_separated_wt
 from _trace_analysis import extract_samples_from_trace
+from _plotting import plot_kinetics_data
 
 parser = argparse.ArgumentParser()
 
@@ -80,21 +81,21 @@ kcat_min = 0.
 kcat_max = 100.
 
 prior = {}
-# prior['logKd'] = {'type':'logKd', 'name': 'logKd', 'fit':'local','dist': 'normal', 'loc': [-5, -13.5], 'scale': 3}
-prior['logKd'] = {'type':'logKd', 'name': 'logKd', 'fit':'global', 'dist': 'uniform', 'lower': logKd_min, 'upper': logKd_max}
+prior['logKd'] = {'type':'logKd', 'name': 'logKd', 'fit':'local','dist': 'normal', 'loc': [-5, -13.5], 'scale': [1, 3]}
+# prior['logKd'] = {'type':'logKd', 'name': 'logKd', 'fit':'global', 'dist': 'uniform', 'lower': logKd_min, 'upper': logKd_max}
 prior['logK_S_M'] = {'type':'logK', 'name': 'logK_S_M', 'fit':'global', 'dist': 'uniform', 'lower': logKd_min, 'upper': logKd_max}
 prior['logK_S_D'] = {'type':'logK', 'name': 'logK_S_D', 'fit':'global', 'dist': 'uniform', 'lower': logKd_min, 'upper': logKd_max}
 prior['logK_S_DS'] = {'type':'logK', 'name': 'logK_S_DS', 'fit':'global', 'dist': 'uniform', 'lower': logKd_min, 'upper': logKd_max}
 prior['logK_I_M'] = {'type':'logK', 'name': 'logK_I_M', 'fit':'global', 'dist': 'uniform', 'lower': logKd_min, 'upper': logKd_max}
-prior['logK_I_D'] = {'type':'logK', 'name': 'logK_I_D', 'fit':'global', 'dist': 'uniform', 'lower': logKd_min, 'upper': logKd_max}
-prior['logK_I_DI'] = {'type':'logK', 'name': 'logK_I_DI', 'fit':'global', 'dist': 'uniform', 'lower': logKd_min, 'upper': logKd_max}
+prior['logK_I_D'] = {'type':'logK', 'name': 'logK_I_D', 'fit':'global', 'dist': 'normal', 'loc': -13, 'scale': 3}
+prior['logK_I_DI'] = {'type':'logK', 'name': 'logK_I_DI', 'fit':'global', 'dist': 'normal', 'loc': -15, 'scale': 3}
 prior['logK_S_DI'] = {'type':'logK', 'name': 'logK_S_DI', 'fit':'global', 'dist': 'uniform', 'lower': logKd_min, 'upper': logKd_max}
 
-# prior['kcat_MS'] = {'type':'kcat', 'name': 'kcat_MS', 'fit':'global', 'dist': None, 'value': 0.}
-prior['kcat_MS'] = {'type':'kcat', 'name': 'kcat_MS', 'fit':'global', 'dist': 'uniform', 'lower': kcat_min, 'upper': kcat_max}
-prior['kcat_DS'] = {'type':'kcat', 'name': 'kcat_DS', 'fit':'global', 'dist': 'uniform', 'lower': kcat_min, 'upper': kcat_max}
-prior['kcat_DSS'] = {'type':'kcat', 'name': 'kcat_DSS', 'fit':'global', 'dist': 'uniform', 'lower': kcat_min, 'upper': kcat_max}
-prior['kcat_DSI'] = {'type':'kcat', 'name': 'kcat_DSI', 'fit':'global', 'dist': 'uniform', 'lower': kcat_min, 'upper': kcat_max}
+prior['kcat_MS'] = {'type':'kcat', 'name': 'kcat_MS', 'fit':'global', 'dist': None, 'value': 0.}
+# prior['kcat_MS'] = {'type':'kcat', 'name': 'kcat_MS', 'fit':'global', 'dist': 'uniform', 'lower': kcat_min, 'upper': kcat_max}
+prior['kcat_DS'] = {'type':'kcat', 'name': 'kcat_DS', 'fit':'global', 'dist': None, 'value': 0.}
+prior['kcat_DSS'] = {'type':'kcat', 'name': 'kcat_DSS', 'fit':'local', 'dist': 'uniform', 'lower': kcat_min, 'upper': [1, kcat_max]}
+prior['kcat_DSI'] = {'type':'kcat', 'name': 'kcat_DSI', 'fit':'local', 'dist': 'uniform', 'lower': kcat_min, 'upper': [1, kcat_max]}
 
 prior_infor = []
 prior_infor.append(dict([(key, prior['logKd'][key]) for key in prior['logKd'].keys()]))
@@ -158,7 +159,6 @@ az.summary(trace).to_csv(traces_name+"_summary.csv")
 data = az.convert_to_inference_data(trace)
 az.plot_trace(data, compact=False)
 plt.tight_layout();
-# plt.savefig(os.path.join(args.out_dir, traces_name+'.pdf'))
 plt.savefig(os.path.join(args.out_dir, 'Plot_trace'))
 plt.ioff()
 

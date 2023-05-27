@@ -126,15 +126,15 @@ def load_data(fit_mutant_kinetics=True, fit_mutant_AUC=False, fit_mutant_ICE=Fal
                             'v': np.array([6.71, 3.17, 1.99, 0.89, 0.58, 0.41, 0.195, 0.147, 0.072])*1E-6, # M min^{-1}
                             'x':'logMtot'})
 
-        #Fig S2b WT ##Condition similar to 3b Mutation
-        experiments_wt.append({'type':'kinetics',
-                            'enzyme': 'wild-type',
-                            'figure':'WT-2b',
-                            'logMtot': np.array([np.log(200E-9)]*7), # M
-                            'logStot': np.log(np.array([16, 32, 64, 77, 102.4, 128, 154])*1E-6), #M
-                            'logItot': np.array([np.log(1E-20)]*7), # None
-                            'v': np.array([0.285, 0.54, 0.942, 0.972, 1.098, 1.248, 1.338])*1E-6, # M min^{-1}
-                            'x':'logStot'})
+        # #Fig S2b WT ##Condition similar to 3b Mutation
+        # experiments_wt.append({'type':'kinetics',
+        #                     'enzyme': 'wild-type',
+        #                     'figure':'WT-2b',
+        #                     'logMtot': np.array([np.log(200E-9)]*7), # M
+        #                     'logStot': np.log(np.array([16, 32, 64, 77, 102.4, 128, 154])*1E-6), #M
+        #                     'logItot': np.array([np.log(1E-20)]*7), # None
+        #                     'v': np.array([0.285, 0.54, 0.942, 0.972, 1.098, 1.248, 1.338])*1E-6, # M min^{-1}
+        #                     'x':'logStot'})
 
         #Fig S2c WT ##Condition similar to 3b Mutation
         experiments_wt.append({'type':'kinetics',
@@ -175,12 +175,12 @@ def load_data(fit_mutant_kinetics=True, fit_mutant_AUC=False, fit_mutant_ICE=Fal
     experiments_multi_enzyme = []
 
     if fit_mutant_kinetics:
-        experiments_multi_enzyme.append({'enzyme': 'mutant', 
+        experiments_multi_enzyme.append({'enzyme': 'mutant', 'index': '0', 
                                         'kinetics': data_rate_mut, 'AUC': data_auc_mut, 'ICE': data_ice_mut
                                         })
     if fit_wildtype_Nashed or fit_wildtype_Vuong:
         if fit_E_S:
-            experiments_multi_enzyme.append({'enzyme': 'wild_type', 
+            experiments_multi_enzyme.append({'enzyme': 'wild_type', 'index': '1',
                                             'kinetics': data_rate_wt, 'AUC': None, 'ICE': None
                                             })
 
@@ -507,15 +507,15 @@ def load_data_separated_wt(fit_mutant_kinetics=True, fit_mutant_AUC=False, fit_m
                                'v': np.array([6.71, 3.17, 1.99, 0.89, 0.58, 0.41, 0.195, 0.147, 0.072])*1E-6, # M min^{-1}
                                'x':'logMtot'})
 
-        #Fig S2b WT ##Condition similar to 3b Mutation
-        experiments_wt.append({'type':'kinetics',
-                               'enzyme': 'wild-type',
-                               'figure':'WT-2b',
-                               'logMtot': np.array([np.log(200E-9)]*7), # M
-                               'logStot': np.log(np.array([16, 32, 64, 77, 102.4, 128, 154])*1E-6), #M
-                               'logItot': np.array([np.log(1E-20)]*7), # None
-                               'v': np.array([0.285, 0.54, 0.942, 0.972, 1.098, 1.248, 1.338])*1E-6, # M min^{-1}
-                               'x':'logStot'})
+        # #Fig S2b WT ##Condition similar to 3b Mutation
+        # experiments_wt.append({'type':'kinetics',
+        #                        'enzyme': 'wild-type',
+        #                        'figure':'WT-2b',
+        #                        'logMtot': np.array([np.log(200E-9)]*7), # M
+        #                        'logStot': np.log(np.array([16, 32, 64, 77, 102.4, 128, 154])*1E-6), #M
+        #                        'logItot': np.array([np.log(1E-20)]*7), # None
+        #                        'v': np.array([0.285, 0.54, 0.942, 0.972, 1.098, 1.248, 1.338])*1E-6, # M min^{-1}
+        #                        'x':'logStot'})
 
         #Fig S2c WT ##Condition similar to 3b Mutation
         experiments_wt.append({'type':'kinetics',
