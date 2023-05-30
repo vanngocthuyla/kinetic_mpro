@@ -249,46 +249,27 @@ def global_fitting_multi_enzyme(experiments, prior_infor=None,
         prior_infor = check_prior_group(init_prior_infor, n_enzymes)
     params_logK, params_kcat = prior_group_multi_enzyme(prior_infor, n_enzymes)
 
-    for n, expt in enumerate(experiments):
-        [logKd, logK_S_M, logK_S_D, logK_S_DS, logK_I_M, logK_I_D, logK_I_DI, logK_S_DI] = extract_logK_n_idx(params_logK, n)
-        [kcat_MS, kcat_DS, kcat_DSI, kcat_DSS] = extract_kcat_n_idx(params_kcat, n)
+    for idx, expt in enumerate(experiments):
+        try:
+            idx_expt = expt['index']
+        except:
+            idx_expt = idx
+
+        [logKd, logK_S_M, logK_S_D, logK_S_DS, logK_I_M, logK_I_D, logK_I_DI, logK_S_DI] = extract_logK_n_idx(params_logK, idx)
+        [kcat_MS, kcat_DS, kcat_DSI, kcat_DSS] = extract_kcat_n_idx(params_kcat, idx)
     
         data_rate = expt['kinetics']
+        if data_rate is not None:
+            fitting_each_dataset('kinetics', data_rate, [logKd, logK_S_M, logK_S_D, logK_S_DS, logK_I_M, logK_I_D, logK_I_DI, logK_S_DI, kcat_MS, kcat_DS, kcat_DSI, kcat_DSS], 
+                                  f'rate:{idx_expt}', f'log_sigma_rate:{idx_expt}')
         data_AUC = expt['AUC']
-        data_ice = expt['ICE']
-
-        if data_rate is not None: 
-            [rate, kinetics_logMtot, kinetics_logStot, kinetics_logItot] = data_rate
-            rate_model = ReactionRate(kinetics_logMtot, kinetics_logStot, kinetics_logItot,
-                                      logKd, logK_S_M, logK_S_D, logK_S_DS, logK_I_M, logK_I_D, logK_I_DI, logK_S_DI, 
-                                      kcat_MS, kcat_DS, kcat_DSI, kcat_DSS)
-            log_sigma_rate_min, log_sigma_rate_max = logsigma_guesses(rate) 
-            log_sigma_rate = uniform_prior(f'log_sigma_rate:{n}', lower=log_sigma_rate_min, upper=log_sigma_rate_max)
-            sigma_rate = jnp.exp(log_sigma_rate)
-            
-            numpyro.sample(f'rate:{n}', dist.Normal(loc=rate_model, scale=sigma_rate), obs=rate)
-        
         if data_AUC is not None: 
-            [auc, AUC_logMtot, AUC_logStot, AUC_logItot] = data_AUC
-            auc_model = MonomerConcentration(AUC_logMtot, AUC_logStot, AUC_logItot, 
-                                            logKd, logK_S_M, logK_S_D, logK_S_DS, 
-                                            logK_I_M, logK_I_D, logK_I_DI, logK_S_DI)
-            log_sigma_auc_min, log_sigma_auc_max = logsigma_guesses(auc) 
-            log_sigma_auc = uniform_prior(f'log_sigma_auc:{n}', lower=log_sigma_auc_min, upper=log_sigma_auc_max)
-            sigma_auc = jnp.exp(log_sigma_auc)
-            
-            numpyro.sample(f'auc:{n}', dist.Normal(loc=auc_model, scale=sigma_auc), obs=auc)
-
+            fitting_each_dataset('AUC', data_AUC, [logKd, logK_S_M, logK_S_D, logK_S_DS, logK_I_M, logK_I_D, logK_I_DI, logK_S_DI], 
+                                 f'auc:{idx_expt}', f'log_sigma_auc:{idx_expt}')
+        data_ice = expt['ICE']
         if data_ice is not None: 
-            [ice, ice_logMtot, ice_logStot, ice_logItot] = data_ice
-            ice_model = 1./CatalyticEfficiency(ice_logMtot, ice_logItot, 
-                                              logKd, logK_S_M, logK_S_D, logK_S_DS, 
-                                              logK_I_M, logK_I_D, logK_I_DI, logK_S_DI,
-                                              kcat_MS, kcat_DS, kcat_DSI, kcat_DSS)
-            log_sigma_ice_min, log_sigma_ice_max = logsigma_guesses(ice) 
-            log_sigma_ice = uniform_prior(f'log_sigma_ice:{n}', lower=log_sigma_ice_min, upper=log_sigma_ice_max)
-            sigma_ice = jnp.exp(log_sigma_ice)
-            numpyro.sample(f'ice:{n}', dist.Normal(loc=ice_model, scale=sigma_ice), obs=ice)
+            fitting_each_dataset('ICE', data_ice, [logKd, logK_S_M, logK_S_D, logK_S_DS, logK_I_M, logK_I_D, logK_I_DI, logK_S_DI, kcat_MS, kcat_DS, kcat_DSI, kcat_DSS], 
+                                 f'ice:{idx_expt}', f'log_sigma_ice:{idx_expt}')
 
 
 def fitting_each_dataset(type_expt, data, params, name_response, name_log_sigma):
@@ -357,7 +338,11 @@ def global_fitting_multi_enzyme_multi_var(experiments, prior_infor=None,
     params_logK, params_kcat = prior_group_multi_enzyme(prior_infor, n_enzymes)
 
     for idx, expt in enumerate(experiments):
-        idx_expt = expt['index']
+        try:
+            idx_expt = expt['index']
+        except:
+            idx_expt = idx
+
         [logKd, logK_S_M, logK_S_D, logK_S_DS, logK_I_M, logK_I_D, logK_I_DI, logK_S_DI] = extract_logK_n_idx(params_logK, idx)
         [kcat_MS, kcat_DS, kcat_DSI, kcat_DSS] = extract_kcat_n_idx(params_kcat, idx)
     
@@ -378,21 +363,21 @@ def global_fitting_multi_enzyme_multi_var(experiments, prior_infor=None,
                 data_AUC = expt['AUC'][n]
                 if data_AUC is not None: 
                     fitting_each_dataset('AUC', data_AUC, [logKd, logK_S_M, logK_S_D, logK_S_DS, logK_I_M, logK_I_D, logK_I_DI, logK_S_DI], 
-                                        f'auc:{idx_expt}:{n}', f'log_sigma_auc:{idx_expt}:{n}')
+                                         f'auc:{idx_expt}:{n}', f'log_sigma_auc:{idx_expt}:{n}')
         else:            
             data_AUC = expt['AUC']
             if data_AUC is not None: 
                 fitting_each_dataset('AUC', data_AUC, [logKd, logK_S_M, logK_S_D, logK_S_DS, logK_I_M, logK_I_D, logK_I_DI, logK_S_DI], 
-                                    f'auc:{idx_expt}', f'log_sigma_auc:{idx_expt}')
+                                     f'auc:{idx_expt}', f'log_sigma_auc:{idx_expt}')
 
         if type(expt['ICE']) is dict:
             for n in range(len(expt['ICE'])):
                 data_ice = expt['ICE'][n]
                 if data_ice is not None: 
                     fitting_each_dataset('ICE', data_ice, [logKd, logK_S_M, logK_S_D, logK_S_DS, logK_I_M, logK_I_D, logK_I_DI, logK_S_DI, kcat_MS, kcat_DS, kcat_DSI, kcat_DSS], 
-                                        f'ice:{idx_expt}:{n}', f'log_sigma_ice:{idx_expt}:{n}')
+                                         f'ice:{idx_expt}:{n}', f'log_sigma_ice:{idx_expt}:{n}')
         else:
             data_ice = expt['ICE']
             if data_ice is not None: 
                 fitting_each_dataset('ICE', data_ice, [logKd, logK_S_M, logK_S_D, logK_S_DS, logK_I_M, logK_I_D, logK_I_DI, logK_S_DI, kcat_MS, kcat_DS, kcat_DSI, kcat_DSS], 
-                                    f'ice:{idx_expt}', f'log_sigma_ice:{idx_expt}')
+                                     f'ice:{idx_expt}', f'log_sigma_ice:{idx_expt}')

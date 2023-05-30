@@ -126,15 +126,15 @@ def load_data(fit_mutant_kinetics=True, fit_mutant_AUC=False, fit_mutant_ICE=Fal
                             'v': np.array([6.71, 3.17, 1.99, 0.89, 0.58, 0.41, 0.195, 0.147, 0.072])*1E-6, # M min^{-1}
                             'x':'logMtot'})
 
-        # #Fig S2b WT ##Condition similar to 3b Mutation
-        # experiments_wt.append({'type':'kinetics',
-        #                     'enzyme': 'wild-type',
-        #                     'figure':'WT-2b',
-        #                     'logMtot': np.array([np.log(200E-9)]*7), # M
-        #                     'logStot': np.log(np.array([16, 32, 64, 77, 102.4, 128, 154])*1E-6), #M
-        #                     'logItot': np.array([np.log(1E-20)]*7), # None
-        #                     'v': np.array([0.285, 0.54, 0.942, 0.972, 1.098, 1.248, 1.338])*1E-6, # M min^{-1}
-        #                     'x':'logStot'})
+        #Fig S2b WT ##Condition similar to 3b Mutation
+        experiments_wt.append({'type':'kinetics',
+                            'enzyme': 'wild-type',
+                            'figure':'WT-2b',
+                            'logMtot': np.array([np.log(200E-9)]*7), # M
+                            'logStot': np.log(np.array([16, 32, 64, 77, 102.4, 128, 154])*1E-6), #M
+                            'logItot': np.array([np.log(1E-20)]*7), # None
+                            'v': np.array([0.285, 0.54, 0.942, 0.972, 1.098, 1.248, 1.338])*1E-6, # M min^{-1}
+                            'x':'logStot'})
 
         #Fig S2c WT ##Condition similar to 3b Mutation
         experiments_wt.append({'type':'kinetics',
@@ -174,7 +174,7 @@ def load_data(fit_mutant_kinetics=True, fit_mutant_AUC=False, fit_mutant_ICE=Fal
 
     experiments_multi_enzyme = []
 
-    if fit_mutant_kinetics:
+    if fit_mutant_kinetics or fit_mutant_AUC or fit_mutant_ICE:
         experiments_multi_enzyme.append({'enzyme': 'mutant', 'index': '0', 
                                         'kinetics': data_rate_mut, 'AUC': data_auc_mut, 'ICE': data_ice_mut
                                         })
@@ -270,7 +270,7 @@ def load_data_multi_var(fit_mutant_kinetics=True, fit_mutant_AUC=False, fit_muta
                                 'x':'logItot'})
 
     if fit_mutant_kinetics:
-        if multi_var_mut is False:
+        if not multi_var_mut:
             # Collate all kinetics experiments
             kinetics_logMtot = np.hstack([experiment['logMtot'] for experiment in experiments_mut if experiment['type'] == 'kinetics'])
             kinetics_logStot = np.hstack([experiment['logStot'] for experiment in experiments_mut if experiment['type'] == 'kinetics'])
@@ -338,55 +338,61 @@ def load_data_multi_var(fit_mutant_kinetics=True, fit_mutant_AUC=False, fit_muta
                                #'v/Mtot': np.array([15, 11.4931, 9.643, 5.7465, 3.7439, 1.716, 0.702]), # min^{-1}
                                'x':'logMtot'})
 
-    if fit_wildtype_Vuong and fit_E_S and fit_E_I:
-        # Fig 1b WT SARS-Covid-2 #Vuong et al
-        experiments_wt.append({'type':'kinetics',
-                               'enzyme': 'wild-type',
-                               'figure':'WT-1b',
-                               'logMtot': np.array([np.log(80E-9)]*24), # M
-                               'logStot': np.array([np.log(100E-6)]*24),
-                               'logItot': np.log(10**(np.array([-8 , -7.5 , -7 , -6.5 , -6 , -5.5 , -5 , -4.5, -8 , -7.5 , -7 , -6.5 , -6 , -5.5 , -5 , -4.5, -8 , -7.5 , -7 , -6.5 , -6 , -5.5 , -5 , -4.5]))), #M
-                               # 'logItot': np.array([-8 , -7.5 , -7 , -6.5 , -6 , -5.5 , -5 , -4.5, -8 , -7.5 , -7 , -6.5 , -6 , -5.5 , -5 , -4.5, -8 , -7.5 , -7 , -6.5 , -6 , -5.5 , -5 , -4.5]), #M
-                               'v': np.array([9.32 , 9.15 , 9.2 , 2.42 , 0.45 , 0.25 , 0.12 , 0.05, 8.03 , 8.29 , 6.26 , 0.51 , 0.02 , 0.045 , 0 , 0.1, 7.93 , 8.21 , 7.26 , 1.26 , 0.312 , 0.15 , 0.09 , 0.08])*1E-6, # M min^{-1}
-                               'x':'logItot'})
-        
-    if fit_wildtype_Nashed or fit_wildtype_Vuong:
-        if fit_E_I and not fit_E_S:
-            data_rate_wt = None
+        if not multi_var_wt:
+            # Collate all kinetics experiments
+            kinetics_logMtot_wt = np.hstack([experiment['logMtot'] for experiment in experiments_wt if experiment['type'] == 'kinetics'])
+            kinetics_logStot_wt = np.hstack([experiment['logStot'] for experiment in experiments_wt if experiment['type'] == 'kinetics'])
+            kinetics_logItot_wt = np.hstack([experiment['logItot'] for experiment in experiments_wt if experiment['type'] == 'kinetics'])
+            v_wt = np.hstack([experiment['v'] for experiment in experiments_wt if experiment['type'] == 'kinetics'])
+            data_rate_wt = [v_wt, kinetics_logMtot_wt, kinetics_logStot_wt, kinetics_logItot_wt] 
         else:
-            if multi_var_wt is False:
-                # Collate all kinetics experiments
-                kinetics_logMtot_wt = np.hstack([experiment['logMtot'] for experiment in experiments_wt if experiment['type'] == 'kinetics'])
-                kinetics_logStot_wt = np.hstack([experiment['logStot'] for experiment in experiments_wt if experiment['type'] == 'kinetics'])
-                kinetics_logItot_wt = np.hstack([experiment['logItot'] for experiment in experiments_wt if experiment['type'] == 'kinetics'])
-                v_wt = np.hstack([experiment['v'] for experiment in experiments_wt if experiment['type'] == 'kinetics'])
-                data_rate_wt = [v_wt, kinetics_logMtot_wt, kinetics_logStot_wt, kinetics_logItot_wt] 
-            else:
-                data_rate_wt = {}
-                for n, expt in enumerate(experiments_wt): 
-                    if expt['type'] == 'kinetics':
-                        data_rate_wt[n] = [expt['v'], expt['logMtot'], expt['logStot'], expt['logItot']]
+            data_rate_wt = {}
+            for n, expt in enumerate(experiments_wt): 
+                if expt['type'] == 'kinetics':
+                    data_rate_wt[n] = [expt['v'], expt['logMtot'], expt['logStot'], expt['logItot']]
     else:
         data_rate_wt = None
 
-    experiments_multi_enzyme = []
+    experiments_wt_2 = []
+    if fit_wildtype_Vuong and fit_E_S and fit_E_I:
+        # Fig 1b WT SARS-Covid-2 #Vuong et al
+        experiments_wt_2.append({'type':'kinetics',
+                                 'enzyme': 'wild-type',
+                                 'figure':'WT-1b',
+                                 'logMtot': np.array([np.log(80E-9)]*24), # M
+                                 'logStot': np.array([np.log(100E-6)]*24),
+                                 'logItot': np.log(10**(np.array([-8 , -7.5 , -7 , -6.5 , -6 , -5.5 , -5 , -4.5, -8 , -7.5 , -7 , -6.5 , -6 , -5.5 , -5 , -4.5, -8 , -7.5 , -7 , -6.5 , -6 , -5.5 , -5 , -4.5]))), #M
+                                 # 'logItot': np.array([-8 , -7.5 , -7 , -6.5 , -6 , -5.5 , -5 , -4.5, -8 , -7.5 , -7 , -6.5 , -6 , -5.5 , -5 , -4.5, -8 , -7.5 , -7 , -6.5 , -6 , -5.5 , -5 , -4.5]), #M
+                                 'v': np.array([9.32 , 9.15 , 9.2 , 2.42 , 0.45 , 0.25 , 0.12 , 0.05, 8.03 , 8.29 , 6.26 , 0.51 , 0.02 , 0.045 , 0 , 0.1, 7.93 , 8.21 , 7.26 , 1.26 , 0.312 , 0.15 , 0.09 , 0.08])*1E-6, # M min^{-1}
+                                 'x':'logItot'})
+        kinetics_logMtot_wt_2 = np.hstack([experiment['logMtot'] for experiment in experiments_wt_2 if experiment['type'] == 'kinetics'])
+        kinetics_logStot_wt_2 = np.hstack([experiment['logStot'] for experiment in experiments_wt_2 if experiment['type'] == 'kinetics'])
+        kinetics_logItot_wt_2 = np.hstack([experiment['logItot'] for experiment in experiments_wt_2 if experiment['type'] == 'kinetics'])
+        v_wt_2 = np.hstack([experiment['v'] for experiment in experiments_wt_2 if experiment['type'] == 'kinetics'])        
+        data_rate_wt_2 = [v_wt_2, kinetics_logMtot_wt_2, kinetics_logStot_wt_2, kinetics_logItot_wt_2]
+    else:
+        data_rate_wt_2 = None
 
-    if fit_mutant_kinetics:
+    experiments_multi_enzyme = []
+    if fit_mutant_kinetics or fit_mutant_AUC or fit_mutant_ICE:
         experiments_multi_enzyme.append({'enzyme': 'mutant', 'index': 'mut', 
                                          'kinetics': data_rate_mut, 'AUC': data_auc_mut, 'ICE': data_ice_mut
                                         })
-    if fit_wildtype_Nashed or fit_wildtype_Vuong:
-        if fit_E_S:
-            experiments_multi_enzyme.append({'enzyme': 'wild_type', 'index': 'wt',
-                                             'kinetics': data_rate_wt, 'AUC': None, 'ICE': None
-                                            })
+    if fit_wildtype_Nashed and fit_E_S:
+        experiments_multi_enzyme.append({'enzyme': 'wild_type', 'index': 'wt',
+                                          'kinetics': data_rate_wt, 'AUC': None, 'ICE': None
+                                        })
+    if fit_wildtype_Vuong and fit_E_S and fit_E_I:
+        experiments_multi_enzyme.append({'enzyme': 'wild_type', 'index': 'wt_2',
+                                          'kinetics': data_rate_wt_2, 'AUC': None, 'ICE': None
+                                        })
 
-    return experiments_multi_enzyme, experiments_mut, experiments_wt
+    return experiments_multi_enzyme, experiments_mut, experiments_wt, experiments_wt_2
 
 
 def load_data_separated_wt(fit_mutant_kinetics=True, fit_mutant_AUC=False, fit_mutant_ICE=False, 
                            fit_wildtype_Nashed=False, fit_wildtype_Vuong=False, 
-                           fit_E_S=True, fit_E_I=True, separated_wt=False):
+                           fit_E_S=True, fit_E_I=True):
     """
     Parameters:
     ----------
@@ -397,7 +403,6 @@ def load_data_separated_wt(fit_mutant_kinetics=True, fit_mutant_AUC=False, fit_m
     fit_wildtype_Vuong  : bool, including kinetics dataset of wild-type Mpro from Vuong paper
     fit_E_S             : bool, fitting kinetics model of enzyme and substrate
     fit_E_I             : bool, fitting kinetics model of enzyme and inhibitor
-    separated_wt        : bool, fitting different noise for wild-type Mpro given two datasets from Nashed and Vuong paper
     ----------
 
     """
@@ -507,15 +512,15 @@ def load_data_separated_wt(fit_mutant_kinetics=True, fit_mutant_AUC=False, fit_m
                                'v': np.array([6.71, 3.17, 1.99, 0.89, 0.58, 0.41, 0.195, 0.147, 0.072])*1E-6, # M min^{-1}
                                'x':'logMtot'})
 
-        # #Fig S2b WT ##Condition similar to 3b Mutation
-        # experiments_wt.append({'type':'kinetics',
-        #                        'enzyme': 'wild-type',
-        #                        'figure':'WT-2b',
-        #                        'logMtot': np.array([np.log(200E-9)]*7), # M
-        #                        'logStot': np.log(np.array([16, 32, 64, 77, 102.4, 128, 154])*1E-6), #M
-        #                        'logItot': np.array([np.log(1E-20)]*7), # None
-        #                        'v': np.array([0.285, 0.54, 0.942, 0.972, 1.098, 1.248, 1.338])*1E-6, # M min^{-1}
-        #                        'x':'logStot'})
+        #Fig S2b WT ##Condition similar to 3b Mutation
+        experiments_wt.append({'type':'kinetics',
+                               'enzyme': 'wild-type',
+                               'figure':'WT-2b',
+                               'logMtot': np.array([np.log(200E-9)]*7), # M
+                               'logStot': np.log(np.array([16, 32, 64, 77, 102.4, 128, 154])*1E-6), #M
+                               'logItot': np.array([np.log(1E-20)]*7), # None
+                               'v': np.array([0.285, 0.54, 0.942, 0.972, 1.098, 1.248, 1.338])*1E-6, # M min^{-1}
+                               'x':'logStot'})
 
         #Fig S2c WT ##Condition similar to 3b Mutation
         experiments_wt.append({'type':'kinetics',
@@ -532,50 +537,42 @@ def load_data_separated_wt(fit_mutant_kinetics=True, fit_mutant_AUC=False, fit_m
         kinetics_logStot_wt = np.hstack([experiment['logStot'] for experiment in experiments_wt if experiment['type'] == 'kinetics'])
         kinetics_logItot_wt = np.hstack([experiment['logItot'] for experiment in experiments_wt if experiment['type'] == 'kinetics'])
         v_wt = np.hstack([experiment['v'] for experiment in experiments_wt if experiment['type'] == 'kinetics'])
-
-    if fit_wildtype_Vuong and fit_E_S and fit_E_I:
-        # Fig 1b WT SARS-Covid-2 #Vuong et al
-        experiments_wt.append({'type':'kinetics',
-                               'enzyme': 'wild-type',
-                               'figure':'WT-1b',
-                               'logMtot': np.array([np.log(80E-9)]*24), # M
-                               'logStot': np.array([np.log(100E-6)]*24),
-                               'logItot': np.log(10**(np.array([-8 , -7.5 , -7 , -6.5 , -6 , -5.5 , -5 , -4.5, -8 , -7.5 , -7 , -6.5 , -6 , -5.5 , -5 , -4.5, -8 , -7.5 , -7 , -6.5 , -6 , -5.5 , -5 , -4.5]))), #M
-                               # 'logItot': np.array([-8 , -7.5 , -7 , -6.5 , -6 , -5.5 , -5 , -4.5, -8 , -7.5 , -7 , -6.5 , -6 , -5.5 , -5 , -4.5, -8 , -7.5 , -7 , -6.5 , -6 , -5.5 , -5 , -4.5]), #M
-                               'v': np.array([9.32 , 9.15 , 9.2 , 2.42 , 0.45 , 0.25 , 0.12 , 0.05, 8.03 , 8.29 , 6.26 , 0.51 , 0.02 , 0.045 , 0 , 0.1, 7.93 , 8.21 , 7.26 , 1.26 , 0.312 , 0.15 , 0.09 , 0.08])*1E-6, # M min^{-1}
-                               'x':'logItot'})
-        
-    if fit_wildtype_Nashed or fit_wildtype_Vuong:
-        if fit_E_I and not fit_E_S:
-            data_rate_wt = None
-        else:
-            if separated_wt is False:
-                # Collate all kinetics experiments
-                kinetics_logMtot_wt = np.hstack([experiment['logMtot'] for experiment in experiments_wt if experiment['type'] == 'kinetics'])
-                kinetics_logStot_wt = np.hstack([experiment['logStot'] for experiment in experiments_wt if experiment['type'] == 'kinetics'])
-                kinetics_logItot_wt = np.hstack([experiment['logItot'] for experiment in experiments_wt if experiment['type'] == 'kinetics'])
-                v_wt = np.hstack([experiment['v'] for experiment in experiments_wt if experiment['type'] == 'kinetics'])
-                data_rate_wt = [v_wt, kinetics_logMtot_wt, kinetics_logStot_wt, kinetics_logItot_wt] 
-            else:
-                data_rate_wt = {}
-                data_rate_wt[0] = [v_wt, kinetics_logMtot_wt, kinetics_logStot_wt, kinetics_logItot_wt]
-                
-                n = len(experiments_wt)
-                expt = experiments_wt[n-1]
-                data_rate_wt[1] = [expt['v'], expt['logMtot'], expt['logStot'], expt['logItot']]
+        data_rate_wt = [v_wt, kinetics_logMtot_wt, kinetics_logStot_wt, kinetics_logItot_wt]
     else:
         data_rate_wt = None
 
-    experiments_multi_enzyme = []
+    experiments_wt_2 = []
+    if fit_wildtype_Vuong and fit_E_S and fit_E_I:
+        # Fig 1b WT SARS-Covid-2 #Vuong et al
+        experiments_wt_2.append({'type':'kinetics',
+                                 'enzyme': 'wild-type',
+                                 'figure':'WT-1b',
+                                 'logMtot': np.array([np.log(80E-9)]*24), # M
+                                 'logStot': np.array([np.log(100E-6)]*24),
+                                 'logItot': np.log(10**(np.array([-8 , -7.5 , -7 , -6.5 , -6 , -5.5 , -5 , -4.5, -8 , -7.5 , -7 , -6.5 , -6 , -5.5 , -5 , -4.5, -8 , -7.5 , -7 , -6.5 , -6 , -5.5 , -5 , -4.5]))), #M
+                                 # 'logItot': np.array([-8 , -7.5 , -7 , -6.5 , -6 , -5.5 , -5 , -4.5, -8 , -7.5 , -7 , -6.5 , -6 , -5.5 , -5 , -4.5, -8 , -7.5 , -7 , -6.5 , -6 , -5.5 , -5 , -4.5]), #M
+                                 'v': np.array([9.32 , 9.15 , 9.2 , 2.42 , 0.45 , 0.25 , 0.12 , 0.05, 8.03 , 8.29 , 6.26 , 0.51 , 0.02 , 0.045 , 0 , 0.1, 7.93 , 8.21 , 7.26 , 1.26 , 0.312 , 0.15 , 0.09 , 0.08])*1E-6, # M min^{-1}
+                                 'x':'logItot'})
+        kinetics_logMtot_wt_2 = np.hstack([experiment['logMtot'] for experiment in experiments_wt_2 if experiment['type'] == 'kinetics'])
+        kinetics_logStot_wt_2 = np.hstack([experiment['logStot'] for experiment in experiments_wt_2 if experiment['type'] == 'kinetics'])
+        kinetics_logItot_wt_2 = np.hstack([experiment['logItot'] for experiment in experiments_wt_2 if experiment['type'] == 'kinetics'])
+        v_wt_2 = np.hstack([experiment['v'] for experiment in experiments_wt_2 if experiment['type'] == 'kinetics'])        
+        data_rate_wt_2 = [v_wt_2, kinetics_logMtot_wt_2, kinetics_logStot_wt_2, kinetics_logItot_wt_2]
+    else:
+        data_rate_wt_2 = None
 
-    if fit_mutant_kinetics:
+    experiments_multi_enzyme = []
+    if fit_mutant_kinetics or fit_mutant_AUC or fit_mutant_ICE:
         experiments_multi_enzyme.append({'enzyme': 'mutant', 'index': 'mut', 
                                          'kinetics': data_rate_mut, 'AUC': data_auc_mut, 'ICE': data_ice_mut
                                         })
-    if fit_wildtype_Nashed or fit_wildtype_Vuong:
-        if fit_E_S:
-            experiments_multi_enzyme.append({'enzyme': 'wild_type', 'index': 'wt',
-                                             'kinetics': data_rate_wt, 'AUC': None, 'ICE': None
-                                            })
+    if fit_wildtype_Nashed and fit_E_S:
+        experiments_multi_enzyme.append({'enzyme': 'wild_type', 'index': 'wt',
+                                          'kinetics': data_rate_wt, 'AUC': None, 'ICE': None
+                                        })
+    if fit_wildtype_Vuong and fit_E_S and fit_E_I:
+        experiments_multi_enzyme.append({'enzyme': 'wild_type', 'index': 'wt_2',
+                                          'kinetics': data_rate_wt_2, 'AUC': None, 'ICE': None
+                                        })
 
-    return experiments_multi_enzyme, experiments_mut, experiments_wt
+    return experiments_multi_enzyme, experiments_mut, experiments_wt, experiments_wt_2
