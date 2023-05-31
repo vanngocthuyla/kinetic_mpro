@@ -77,7 +77,8 @@ def plot_kinetics_data(experiments, params_logK, params_kcat,
         elif experiment['type']=='AUC':
             y_model = MonomerConcentration(logMtot, logStot, logItot, *params_logK)
         elif experiment['type']=='catalytic_efficiency':
-            y_model = 1./CatalyticEfficiency(logMtot, logItot, *params_logK, *params_kcat, logStot)
+            y_model = 1./CatalyticEfficiency(logMtot, logItot, *params_logK, *params_kcat)
+
         plt.plot(x, y_model)
         plt.tight_layout();
 
