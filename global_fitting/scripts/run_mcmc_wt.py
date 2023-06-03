@@ -62,7 +62,6 @@ experiments, experiments_mut, experiments_wt, experiments_wt_2 = load_data_separ
                                                                                         args.fit_wildtype_Nashed, args.fit_wildtype_Vuong, 
                                                                                         args.fit_E_S, args.fit_E_I)
 
-
 logKd_min = -27.
 logKd_max = 0.
 kcat_min = 0. 
@@ -115,12 +114,14 @@ pd.DataFrame(prior_infor_update).to_csv("Prior_infor.csv", index=False)
 
 print("Prior information: \n", pd.DataFrame(prior_infor_update))
 
-if args.fit_E_S and args.fit_E_I:
+if args.fit_E_S and args.fit_E_I and args.fit_wildtype_Nashed and args.fit_wildtype_Vuong:
+    traces_name = "traces_both"
+elif args.fit_E_S and args.fit_E_I and args.fit_wildtype_Vuong: 
+    traces_name = "traces_Vuong"
+elif args.fit_E_S and args.fit_wildtype_Nashed: 
+    traces_name = "traces_Nashed"
+else:
     traces_name = "traces"
-elif args.fit_E_S: 
-    traces_name = "traces_E_S"
-elif args.fit_E_I: 
-    traces_name = "traces_E_I"
 
 rng_key, rng_key_ = random.split(random.PRNGKey(args.random_key))
 os.chdir(args.out_dir)
