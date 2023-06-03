@@ -27,7 +27,7 @@ warnings.simplefilter("ignore", RuntimeWarning)
 from _bayesian_model_multi_enzymes import check_prior_group
 from _bayesian_model_WT import global_fitting_WT, extract_logK_n_idx_WT, extract_kcat_n_idx_WT
 from _bayesian_model_WT import extract_logK_WT, extract_kcat_WT
-from _load_data_multi_enzyme import load_data, load_data_multi_var, load_data_separated_wt
+from _load_data_multi_enzyme import load_data_separated_wt
 from _trace_analysis import extract_samples_from_trace
 from _plotting import plot_kinetics_data
 
@@ -58,25 +58,26 @@ print("nburn:", args.nburn)
 print("nchain:", args.nchain)
 print("nthin:", args.nthin)
 
-experiments, experiments_mut, experiments_wt = load_data(False, False, False, 
-                                                         args.fit_wildtype_Nashed, args.fit_wildtype_Vuong, 
-                                                         args.fit_E_S, args.fit_E_I)
+experiments, experiments_mut, experiments_wt, experiments_wt_2 = load_data_separated_wt(False, False, False, 
+                                                                                        args.fit_wildtype_Nashed, args.fit_wildtype_Vuong, 
+                                                                                        args.fit_E_S, args.fit_E_I)
 
-logKd_min = -20.
+
+logKd_min = -27.
 logKd_max = 0.
 kcat_min = 0. 
-kcat_max = 100.
+kcat_max = 1000.
 
 prior = {}
 prior['logK_S_D'] = {'type':'logK', 'name': 'logK_S_D', 'fit':'global', 'dist': 'uniform', 'lower': logKd_min, 'upper': logKd_max}
 prior['logK_S_DS'] = {'type':'logK', 'name': 'logK_S_DS', 'fit':'global', 'dist': 'uniform', 'lower': logKd_min, 'upper': logKd_max}
-prior['logK_I_D'] = {'type':'logK', 'name': 'logK_I_D', 'fit':'global', 'dist': None, 'value': 0}
-prior['logK_I_DI'] = {'type':'logK', 'name': 'logK_I_DI', 'fit':'global', 'dist': None, 'value': 0}
-prior['logK_S_DI'] = {'type':'logK', 'name': 'logK_S_DI', 'fit':'global', 'dist': None, 'value': 0}
+prior['logK_I_D'] = {'type':'logK', 'name': 'logK_I_D', 'fit':'global', 'dist': 'uniform', 'lower': logKd_min, 'upper': logKd_max}
+prior['logK_I_DI'] = {'type':'logK', 'name': 'logK_I_DI', 'fit':'global', 'dist': 'uniform', 'lower': logKd_min, 'upper': logKd_max}
+prior['logK_S_DI'] = {'type':'logK', 'name': 'logK_S_DI', 'fit':'global', 'dist': 'uniform', 'lower': logKd_min, 'upper': logKd_max}
 
 prior['kcat_DS'] = {'type':'kcat', 'name': 'kcat_DS', 'fit':'global', 'dist': 'uniform', 'lower': kcat_min, 'upper': kcat_max}
 prior['kcat_DSS'] = {'type':'kcat', 'name': 'kcat_DSS', 'fit':'global', 'dist': 'uniform', 'lower': kcat_min, 'upper': kcat_max}
-prior['kcat_DSI'] = {'type':'kcat', 'name': 'kcat_DSI', 'fit':'global', 'dist': None, 'value': 0.}
+prior['kcat_DSI'] = {'type':'kcat', 'name': 'kcat_DSI', 'fit':'global', 'dist': 'uniform', 'lower': kcat_min, 'upper': kcat_max}
 
 prior_infor = []
 # prior_infor.append(dict([(key, prior['logKd'][key]) for key in prior['logKd'].keys()]))
@@ -167,5 +168,10 @@ for name in params_name_kcat:
     try: params_kcat[name] = np.mean(samples[name])
     except: params_kcat[name] = 0
 
-plot_kinetics_data(experiments_wt, extract_logK_WT(params_logK), extract_kcat_WT(params_kcat),
-                   OURDIR=args.out_dir)
+if len(experiments) == 2:
+    for n, experiments_plot in enumerate([experiments_wt, experiments_wt_2]): 
+        plot_kinetics_data(experiments_plot, extract_logK_n_idx_WT(params_logK, n), extract_kcat_n_idx_WT(params_kcat, n))
+if len(experiments)==1:
+    if args.fit_wildtype_Nashed: experiments_wt
+    else: experiments_plot = experiments_wt_2
+    plot_kinetics_data(experiments_plot, extract_logK_WT(params_logK), extract_logK_WT(params_kcat))
