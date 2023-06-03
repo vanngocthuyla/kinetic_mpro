@@ -41,7 +41,7 @@ def extract_logK_n_idx(params_logK, idx):
     
     # Binding both substrate and inhititor
     if f'logK_S_DI:{idx}' in params_logK.keys(): logKd = params_logK[f'logK_S_DI:{idx}']
-    logK_S_DI = params_logK['logK_S_DI']
+    else: logK_S_DI = params_logK['logK_S_DI']
     return [logKd, logK_S_M, logK_S_D, logK_S_DS, logK_I_M, logK_I_D, logK_I_DI, logK_S_DI]
 
 
