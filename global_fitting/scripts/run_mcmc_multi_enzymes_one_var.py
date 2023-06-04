@@ -178,7 +178,7 @@ for name in params_name_kcat:
 
 n = 0
 plot_kinetics_data(experiments_mut, extract_logK_n_idx(params_logK, n), extract_kcat_n_idx(params_kcat, n),
-                   OURDIR=args.out_dir)
+                   OUTDIR=args.out_dir)
 n = 1
 plot_kinetics_data(experiments_wt, extract_logK_n_idx(params_logK, n), extract_kcat_n_idx(params_kcat, n),
-                   OURDIR=args.out_dir)
+                   OUTDIR=args.out_dir)

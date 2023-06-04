@@ -2,8 +2,10 @@ import matplotlib.pyplot as plt
 import numpy as np
 import os
 
+from _kinetics import ReactionRate, MonomerConcentration, CatalyticEfficiency
+
 def plot_kinetics_data(experiments, params_logK, params_kcat, 
-					   figure_size=(6.4, 4.8), dpi=80, OURDIR=None): 
+					   figure_size=(6.4, 4.8), dpi=80, OUTDIR=None): 
     """
     Parameters:
     ----------
@@ -29,7 +31,7 @@ def plot_kinetics_data(experiments, params_logK, params_kcat,
         kcat_DSS: float, Rate constant of dimer-substrate-substrate complex
     figure_size     : (width, height) size of plot
     dpi             : quality of plot
-    OURDIR          : optional, string, output directory for saving plot
+    OUTDIR          : optional, string, output directory for saving plot
     ----------
     return plots of each experiments
     """
@@ -82,6 +84,6 @@ def plot_kinetics_data(experiments, params_logK, params_kcat,
         plt.plot(x, y_model)
         plt.tight_layout();
 
-        if OURDIR is not None: 
-            plt.savefig(os.path.join(OURDIR,f"{experiment['figure']}"))
+        if OUTDIR is not None: 
+            plt.savefig(os.path.join(OUTDIR,f"{experiment['figure']}"))
             plt.ioff()

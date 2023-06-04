@@ -75,7 +75,7 @@ experiments.append({'type':'kinetics',
 
 #Fig S2c WT ##Condition similar to 3b Mutation
 experiments.append({'type':'kinetics',
-                    'figure':'WT-2b',
+                    'figure':'WT-2c',
                     'logMtot': np.log(np.array([2, 1, 0.5, 0.25, 0.125, 0.0625, 0.0313])*1E-6), # M
                     'logStot': np.array([np.log(200E-6)]*7), # M
                     'logItot': np.array([np.log(1E-30)]*7), # None
@@ -171,4 +171,4 @@ for name in params_name_kcat:
     except: params_kcat[name] = 0
 
 plot_kinetics_data(experiments, extract_logK(params_logK), extract_kcat(params_kcat),
-                   OURDIR=args.out_dir)
+                   OUTDIR=args.out_dir)

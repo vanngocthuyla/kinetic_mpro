@@ -153,9 +153,14 @@ plt.ioff()
 ## Fitting plot
 params_name_kcat = []
 params_name_logK = []
-for prior in prior_information:
-    if prior['type'] == 'kcat': params_name_kcat.append(prior['name'])
-    else: params_name_logK.append(prior['name'])
+for prior in prior_infor_update:
+    if prior['fit'] == 'local':
+       for n in range(len(experiments)):
+            if prior['type'] == 'kcat': params_name_kcat.append(prior['name']+':'+str(n))
+            else: params_name_logK.append(prior['name']+':'+str(n))
+    else:
+        if prior['type'] == 'kcat': params_name_kcat.append(prior['name'])
+        else: params_name_logK.append(prior['name'])
 
 samples = extract_samples_from_trace(data, params_name_logK)
 params_logK = {}
@@ -171,8 +176,8 @@ for name in params_name_kcat:
 
 if len(experiments) == 2:
     for n, experiments_plot in enumerate([experiments_wt, experiments_wt_2]): 
-        plot_kinetics_data(experiments_plot, extract_logK_n_idx_WT(params_logK, n), extract_kcat_n_idx_WT(params_kcat, n))
+        plot_kinetics_data(experiments_plot, extract_logK_n_idx_WT(params_logK, n), extract_kcat_n_idx_WT(params_kcat, n), OUTDIR=args.out_dir)
 if len(experiments)==1:
     if args.fit_wildtype_Nashed: experiments_wt
     else: experiments_plot = experiments_wt_2
-    plot_kinetics_data(experiments_plot, extract_logK_WT(params_logK), extract_logK_WT(params_kcat))
+    plot_kinetics_data(experiments_plot, extract_logK_WT(params_logK), extract_logK_WT(params_kcat), , OUTDIR=args.out_dir)

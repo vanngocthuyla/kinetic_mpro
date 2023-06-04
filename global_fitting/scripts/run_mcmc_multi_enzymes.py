@@ -194,28 +194,28 @@ for name in params_name_kcat:
 if len(experiments) == 3:
     for n, experiments_plot in enumerate([experiments_mut, experiments_wt, experiments_wt_2]): 
         plot_kinetics_data(experiments_plot, extract_logK_n_idx(params_logK, n), extract_kcat_n_idx(params_kcat, n),
-                           OURDIR=args.out_dir)
+                           OUTDIR=args.out_dir)
 elif len(experiments)==2:
     if args.fit_mutant_kinetics or args.fit_mutant_AUC or args.fit_mutant_ICE:
         n = 0
         plot_kinetics_data(experiments_mut, extract_logK_n_idx(params_logK, n), extract_kcat_n_idx(params_kcat, n),
-                           OURDIR=args.out_dir)
+                           OUTDIR=args.out_dir)
         n = 1
         if args.fit_wildtype_Nashed: experiments_plot = experiments_wt
         else: experiments_plot = experiments_wt_2
         plot_kinetics_data(experiments_plot, extract_logK_n_idx(params_logK, n), extract_kcat_n_idx(params_kcat, n),
-                           OURDIR=args.out_dir)
+                           OUTDIR=args.out_dir)
     else:
         n = 0
         plot_kinetics_data(experiments_wt, extract_logK_n_idx(params_logK, n), extract_kcat_n_idx(params_kcat, n),
-                           OURDIR=args.out_dir)
+                           OUTDIR=args.out_dir)
         n = 1
         plot_kinetics_data(experiments_wt_2, extract_logK_n_idx(params_logK, n), extract_kcat_n_idx(params_kcat, n),
-                           OURDIR=args.out_dir)
+                           OUTDIR=args.out_dir)
 else:
     if args.fit_mutant_kinetics or args.fit_mutant_AUC or args.fit_mutant_ICE:
          experiments_plot = experiments_mut
     elif args.fit_wildtype_Nashed: experiments_plot = experiments_wt
     else: experiments_plot = experiments_wt_2
     plot_kinetics_data(experiments_plot, extract_logK(params_logK), extract_kcat(params_kcat),
-                    OURDIR=args.out_dir)
+                    OUTDIR=args.out_dir)
