@@ -3,6 +3,7 @@ import numpy as np
 import os
 
 from _kinetics import ReactionRate, MonomerConcentration, CatalyticEfficiency
+from _kinetics_WT import ReactionRate_WT
 
 
 def plot_kinetics_data(experiments, params_logK, params_kcat, 

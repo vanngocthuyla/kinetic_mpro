@@ -42,15 +42,17 @@ def extract_params_from_trace_and_prior(trace, prior_infor):
     samples_kcat = extract_samples_from_trace(data, params_name_kcat)
     params_logK = {}
     params_kcat = {}
+
+    # Extract params from trace
+    for name in params_name_logK:
+        params_logK[name] = np.mean(samples_logK[name])
+    for name in params_name_kcat:
+        params_kcat[name] = np.mean(samples_kcat[name])    
+
+    # Extract params from prior information
     for prior in prior_infor:
-        name = prior['name']
-        # Extract params from trace
-        if prior['dist'] is not None and name in params_name_logK:
-            params_logK[name] = np.mean(samples_logK[name])
-        elif prior['dist'] is not None and name in params_name_kcat:
-            params_kcat[name] = np.mean(samples_kcat[name])
-        # Extract params from prior information
-        else:
+        if prior['dist'] is None:
+            name = prior['name']
             if name.startswith('logK'):
                 if prior['fit'] == 'local':
                     for n in range(len(prior['value'])):
