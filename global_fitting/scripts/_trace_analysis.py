@@ -16,12 +16,13 @@ def extract_samples_from_trace(trace, params, burn=0, thin=0):
     return extract_samples
 
 
-def extract_params_from_trace_and_prior(trace, prior_infor):
+def extract_params_from_trace_and_prior(trace, prior_infor, estimator='mean'):
     """
     Parameters:
     ----------
     trace        : mcmc.get_samples(group_by_chain=True)
     prior_infor  : list of dict of assigned prior distribution for kinetics parameters
+    estimator    : str, 'mean' or 'median'. Return the mean of median of MCMC trace
 
     Example of prior_infor:
         [{'type': 'logKd', 'name': 'logKd',  'fit': 'local', 'dist': None, 'value': array([-11, -14])},
@@ -29,6 +30,8 @@ def extract_params_from_trace_and_prior(trace, prior_infor):
     ----------
     return two lists of kinetics parameters from trace and prior information
     """
+    assert estimator in ['mean', 'median'], print("Wrong argument! Estimator is mean or median")
+
     data = az.convert_to_inference_data(trace)
     params_name_kcat = []
     params_name_logK = []
@@ -44,10 +47,16 @@ def extract_params_from_trace_and_prior(trace, prior_infor):
     params_kcat = {}
 
     # Extract params from trace
-    for name in params_name_logK:
-        params_logK[name] = np.mean(samples_logK[name])
-    for name in params_name_kcat:
-        params_kcat[name] = np.mean(samples_kcat[name])    
+    if estimator == 'mean':
+        for name in params_name_logK:
+            params_logK[name] = np.mean(samples_logK[name])
+        for name in params_name_kcat:
+            params_kcat[name] = np.mean(samples_kcat[name])
+    else: 
+        for name in params_name_logK:
+            params_logK[name] = np.median(samples_logK[name])
+        for name in params_name_kcat:
+            params_kcat[name] = np.median(samples_kcat[name])
 
     # Extract params from prior information
     for prior in prior_infor:
