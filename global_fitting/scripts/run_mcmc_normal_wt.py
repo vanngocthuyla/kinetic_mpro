@@ -15,7 +15,6 @@ import jax.random as random
 
 import numpyro
 import numpyro.distributions as dist
-from numpyro.distributions import LogNormal, Normal, Uniform
 from numpyro.infer import MCMC, NUTS
 
 import matplotlib.pyplot as plt
@@ -126,9 +125,8 @@ rng_key, rng_key_ = random.split(random.PRNGKey(args.random_key))
 os.chdir(args.out_dir)
 
 kernel = NUTS(global_fitting_informative)
-mcmc = MCMC(kernel, num_warmup=args.nburn, num_samples=args.niters, num_chains=args.nchain, 
-            progress_bar=True)
-mcmc.run(rng_key_,
+mcmc = MCMC(kernel, num_warmup=args.nburn, num_samples=args.niters, num_chains=args.nchain, progress_bar=True)
+mcmc.run(rng_key_, 
          [v, kinetics_logMtot, kinetics_logStot, kinetics_logItot], None, None, 
          prior_information)
 mcmc.print_summary()

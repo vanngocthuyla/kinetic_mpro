@@ -14,7 +14,6 @@ import jax.random as random
 
 import numpyro
 import numpyro.distributions as dist
-from numpyro.distributions import LogNormal, Normal, Uniform
 from numpyro.infer import MCMC, NUTS
 
 import matplotlib.pyplot as plt
@@ -27,8 +26,6 @@ from _bayesian_model import global_fitting_informative
 
 parser = argparse.ArgumentParser()
 
-# parser.add_argument( "--data_dir",              type=str, 				default="")
-# parser.add_argument( "--data_file",             type=str, 				default="")
 parser.add_argument( "--out_dir",               type=str, 				default="")
 parser.add_argument( "--kinetics_fitting",      action="store_true",    default=True)
 parser.add_argument( "--auc_fitting",           action="store_true",    default=True)
@@ -136,8 +133,7 @@ rng_key, rng_key_ = random.split(random.PRNGKey(args.random_key))
 os.chdir(args.out_dir)
 
 kernel = NUTS(global_fitting_informative)
-mcmc = MCMC(kernel, num_warmup=args.nburn, num_samples=args.niters, num_chains=args.nchain, 
-            progress_bar=True)
+mcmc = MCMC(kernel, num_warmup=args.nburn, num_samples=args.niters, num_chains=args.nchain, progress_bar=True)
 mcmc.run(rng_key_,
          [v, kinetics_logMtot, kinetics_logStot, kinetics_logItot], 
          [auc, AUC_logMtot, AUC_logStot, AUC_logItot], 

@@ -1,5 +1,6 @@
 import numpy as np
 
+
 def kinetics_data_simulation(logMtot, logStot, logItot, params_logK, params_kcat, sigma,
                              type_experiment='kinetics', seed=None):
     """

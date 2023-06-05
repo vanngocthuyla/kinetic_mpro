@@ -8,8 +8,9 @@ from jax import random, vmap
 import jax.random as random
 
 from scipy.optimize import fsolve, least_squares
-
 from _chemical_reactions import ChemicalReactions
+from _prior_distribution import uniform_prior, normal_prior, logsigma_guesses
+
 
 @jax.jit
 def DimerBindingModel(logMtot, logStot, logItot,
@@ -87,6 +88,7 @@ def DimerBindingModel(logMtot, logStot, logItot,
     return log_concs
 
 
+@jax.jit
 def Enzyme_Substrate(logMtot, logStot, logKd, logK_S_M, logK_S_D, logK_S_DS):
     """
     Compute equilibrium concentrations of species for a binding model of an enzyme and a substrate
@@ -141,7 +143,7 @@ def Enzyme_Substrate(logMtot, logStot, logKd, logK_S_M, logK_S_D, logK_S_DS):
          
     return log_concs_full
 
-
+@jax.jit
 def Enzyme_Inhibitor(logMtot, logItot, logKd, logK_I_M, logK_I_D, logK_I_DI):
     """
     Compute equilibrium concentrations of species for a binding model of an enzyme and a inhibitor
@@ -367,48 +369,6 @@ def CatalyticEfficiency(logMtot, logItot,
     return catalytic_efficiency
 
 
-def uniform_prior(name, lower, upper):
-    """
-    Parameters:
-    ----------
-    name: string, name of variable
-    lower: float, lower value of uniform distribution
-    upper: float, upper value of uniform distribution
-    ----------
-    return numpyro.Uniform
-    """
-    name = numpyro.sample(name, dist.Uniform(low=lower, high=upper))
-    return name
-
-
-def normal_prior(name, mu, sigma):
-    """
-    Parameters:
-    ----------
-    name : string, name of variable
-    mu   : float, mean of distribution
-    sigma: float, std of distribution
-    ----------
-    return numpyro.Normal
-    """
-    name = numpyro.sample(name, dist.Normal(loc=mu, scale=sigma))
-    return name
-
-
-def logsigma_guesses(response):
-    """
-    Parameters:
-    ----------
-    response: jnp.array, observed data of concentration-response dataset
-    ----------
-    return range of log of sigma
-    """
-    log_sigma_guess = jnp.log(response.std()) # jnp.log(response.std())
-    log_sigma_min = log_sigma_guess - 10 #log_sigma_min.at[0].set(log_sigma_guess - 10)
-    log_sigma_max = log_sigma_guess + 5 #log_sigma_max.at[0].set(log_sigma_guess + 5)
-    return log_sigma_min, log_sigma_max
-
-
 def prior_group_informative(logKd_min = -20, logKd_max = 0, kcat_min=0, kcat_max=1):
 
     logKd = normal_prior('logKd', -5, 3)
@@ -431,8 +391,47 @@ def prior_group_informative(logKd_min = -20, logKd_max = 0, kcat_min=0, kcat_max
     return logKd, logK_S_M, logK_S_D, logK_S_DS, logK_I_M, logK_I_D, logK_I_DI, logK_I_DS, kcat_MS, kcat_DS, kcat_DSI, kcat_DSS
 
 
-def global_fitting_informative(data_rate, data_AUC=None, data_ice=None, 
-                               logKd_min=-20, logKd_max=0, kcat_min=0, kcat_max=1):
+def fitting_each_dataset(type_expt, data, params, name_response, name_log_sigma):
+    """
+    Parameters:
+    ----------
+    type_expt     : str, 'kinetics', 'AUC', or 'ICE'
+    data          : list, each dataset contains response, logMtot, lotStot, logItot
+    params        : list of kinetics parameters
+    name_reponse  : str, name of posterior
+    name_log_sigma: str, name of log_sigma for each dataset
+    ----------
+    Return likelihood from data and run the Bayesian model using given prior information of parameters
+    """
+    assert type_expt in ['kinetics', 'AUC', 'ICE'], "Experiments type should be kinetics, AUC, or ICE."
+
+    if type_expt == 'kinetics':
+        [rate, kinetics_logMtot, kinetics_logStot, kinetics_logItot] = data
+        rate_model = ReactionRate(kinetics_logMtot, kinetics_logStot, kinetics_logItot, *params)
+        log_sigma_rate_min, log_sigma_rate_max = logsigma_guesses(rate) 
+        log_sigma_rate = uniform_prior(name_log_sigma, lower=log_sigma_rate_min, upper=log_sigma_rate_max)
+        sigma_rate = jnp.exp(log_sigma_rate)
+        numpyro.sample(name_response, dist.Normal(loc=rate_model, scale=sigma_rate), obs=rate)
+
+    if type_expt == 'AUC':
+        [auc, AUC_logMtot, AUC_logStot, AUC_logItot] = data
+        auc_model = MonomerConcentration(AUC_logMtot, AUC_logStot, AUC_logItot, *params)
+        log_sigma_auc_min, log_sigma_auc_max = logsigma_guesses(auc) 
+        log_sigma_auc = uniform_prior(name_log_sigma, lower=log_sigma_auc_min, upper=log_sigma_auc_max)
+        sigma_auc = jnp.exp(log_sigma_auc)
+        
+        numpyro.sample(name_response, dist.Normal(loc=auc_model, scale=sigma_auc), obs=auc)
+
+    if type_expt == 'ICE':
+        [ice, ice_logMtot, ice_logStot, ice_logItot] = data
+        ice_model = 1./CatalyticEfficiency(ice_logMtot, ice_logItot, *params)
+        log_sigma_ice_min, log_sigma_ice_max = logsigma_guesses(ice) 
+        log_sigma_ice = uniform_prior(name_log_sigma, lower=log_sigma_ice_min, upper=log_sigma_ice_max)
+        sigma_ice = jnp.exp(log_sigma_ice)
+        numpyro.sample(name_response, dist.Normal(loc=ice_model, scale=sigma_ice), obs=ice)
+
+
+def global_fitting(data_rate, data_AUC=None, data_ice=None, logKd_min=-20, logKd_max=0, kcat_min=0, kcat_max=1):
     """
     Parameters:
     ----------
@@ -449,34 +448,13 @@ def global_fitting_informative(data_rate, data_AUC=None, data_ice=None,
     logKd, logK_S_M, logK_S_D, logK_S_DS, logK_I_M, logK_I_D, logK_I_DI, logK_I_DS, kcat_MS, kcat_DS, kcat_DSI, kcat_DSS = prior_group_informative(logKd_min, logKd_max, kcat_min, kcat_max)
 
     if data_rate is not None: 
-        [rate, kinetics_logMtot, kinetics_logStot, kinetics_logItot] = data_rate
-        rate_model = ReactionRate(kinetics_logMtot, kinetics_logStot, kinetics_logItot,
-                                  logKd, logK_S_M, logK_S_D, logK_S_DS, logK_I_M, logK_I_D, logK_I_DI, logK_I_DS, 
-                                  kcat_MS, kcat_DS, kcat_DSI, kcat_DSS)
-        log_sigma_rate_min, log_sigma_rate_max = logsigma_guesses(rate) 
-        log_sigma_rate = uniform_prior('log_sigma_rate', lower=log_sigma_rate_min, upper=log_sigma_rate_max)
-        sigma_rate = jnp.exp(log_sigma_rate)
-    
-        numpyro.sample('rate', dist.Normal(loc=rate_model, scale=sigma_rate), obs=rate)
+        fitting_each_dataset('kinetics', data_rate, [logKd, logK_S_M, logK_S_D, logK_S_DS, logK_I_M, logK_I_D, logK_I_DI, logK_I_DS, kcat_MS, kcat_DS, kcat_DSI, kcat_DSS], 
+                             'rate', 'log_sigma_rate')
     
     if data_AUC is not None: 
-        [auc, AUC_logMtot, AUC_logStot, AUC_logItot] = data_AUC
-        auc_model = MonomerConcentration(AUC_logMtot, AUC_logStot, AUC_logItot, 
-                                         logKd, logK_S_M, logK_S_D, logK_S_DS, 
-                                         logK_I_M, logK_I_D, logK_I_DI, logK_I_DS)
-        log_sigma_auc_min, log_sigma_auc_max = logsigma_guesses(auc) 
-        log_sigma_auc = uniform_prior('log_sigma_auc', lower=log_sigma_auc_min, upper=log_sigma_auc_max)
-        sigma_auc = jnp.exp(log_sigma_auc)
-        
-        numpyro.sample('auc', dist.Normal(loc=auc_model, scale=sigma_auc), obs=auc)
+        fitting_each_dataset('AUC', data_AUC, [logKd, logK_S_M, logK_S_D, logK_S_DS, logK_I_M, logK_I_D, logK_I_DI, logK_I_DS], 
+                             'auc', 'log_sigma_auc')
 
     if data_ice is not None: 
-        [ice, ice_logMtot, ice_logStot, ice_logItot] = data_ice
-        ice_model = 1./CatalyticEfficiency(ice_logMtot, ice_logItot, 
-                                           logKd, logK_S_M, logK_S_D, logK_S_DS, 
-                                           logK_I_M, logK_I_D, logK_I_DI, logK_I_DS,
-                                           kcat_MS, kcat_DS, kcat_DSI, kcat_DSS)
-        log_sigma_ice_min, log_sigma_ice_max = logsigma_guesses(ice) 
-        log_sigma_ice = uniform_prior('log_sigma_ice', lower=log_sigma_ice_min, upper=log_sigma_ice_max)
-        sigma_ice = jnp.exp(log_sigma_ice)
-        numpyro.sample('ice', dist.Normal(loc=ice_model, scale=sigma_ice), obs=ice)
+        fitting_each_dataset('ICE', data_ice, [logKd, logK_S_M, logK_S_D, logK_S_DS, logK_I_M, logK_I_D, logK_I_DI, logK_I_DS, kcat_MS, kcat_DS, kcat_DSI, kcat_DSS], 
+                             'ice', 'log_sigma_ice')

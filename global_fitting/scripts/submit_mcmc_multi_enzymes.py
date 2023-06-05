@@ -5,7 +5,7 @@ import argparse
 
 parser = argparse.ArgumentParser()
 parser.add_argument( "--out_dir",               type=str, 				default="")
-parser.add_argument( "--file_name",             type=str,               default="")
+# parser.add_argument( "--file_name",             type=str,               default="")
 
 parser.add_argument( "--fit_mutant_kinetics",   action="store_true",    default=False)
 parser.add_argument( "--fit_mutant_AUC",        action="store_true",    default=False)
@@ -23,14 +23,14 @@ parser.add_argument( "--random_key",            type=int, 				default=0)
 
 args = parser.parse_args()
 
-running_script = "/home/vla/python/mpro/scripts/run_mcmc_multi_enzymes.py"
+running_script = "/home/exouser/python/mpro/scripts/run_mcmc_multi_enzymes.py"
 
 if args.fit_E_S and args.fit_E_I:
-    file_name = "traces"
+    file_name = "combined"
 elif args.fit_E_S: 
-    file_name = "traces_E_S"
+    file_name = "combined_E_S"
 elif args.fit_E_I: 
-    file_name = "traces_E_I"
+    file_name = "combined_E_I"
 
 if args.fit_mutant_kinetics: 
     fit_mutant_kinetics = " --fit_mutant_kinetics "

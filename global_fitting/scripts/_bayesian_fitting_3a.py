@@ -5,7 +5,7 @@ import jax
 import jax.numpy as jnp
 
 from _kinetics import ReactionRate
-from _bayesian_model import uniform_prior, extract_logK, logsigma_guesses
+from _prior_distribution import uniform_prior, normal_prior, logsigma_guesses
 
 
 def prior_logK(params_logK, logKd_min = -20, logKd_max = 0):
