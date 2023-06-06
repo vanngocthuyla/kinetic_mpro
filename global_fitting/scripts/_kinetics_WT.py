@@ -206,3 +206,39 @@ def ReactionRate_WT(logMtot, logStot, logItot,
                                                     logK_S_D, logK_S_DS, logK_I_D, logK_I_DI)
     v = kcat_DS*jnp.exp(log_concs['DS']) + kcat_DSS*jnp.exp(log_concs['DSS']) + kcat_DSI*jnp.exp(log_concs['DSI'])
     return v
+
+
+def Dimerization(logMtot, logKd):
+    """
+    Parameters:
+    ----------
+    logMtot : numpy array
+        Log of the total protein concentation summed over bound and unbound species (units of log molar)
+    logKd   : float
+        Log of the dissociation constant of dimerization (units of log molar)
+    ----------
+    Return  : equilibrium concentrations of species for dimerization of protein
+    """
+    # dtype = jnp.float64
+    # logMtot = logMtot.astype(dtype)  # promote to dtype
+
+    # species = ['M', 'D']
+    # reactions = [{'M':2, 'D':-1}]
+    # conservation_equations = [{'M':+1, 'D':+2}]
+    # binding_model = ChemicalReactions(reactions, conservation_equations)
+    # log_concs = dict([(key, np.zeros(logMtot.shape[0])) for key in species])
+
+    # for n in range(logMtot.shape[0]):
+    #     log_c = binding_model.logceq(jnp.array([logKd]), jnp.array([logMtot[n]]))
+    #     for key in species:
+    #         log_concs[key][n] = log_c[binding_model.index_of_species[key]]
+    #         # log_concs[key] = log_concs[key].at[n].add(log_c[binding_model.index_of_species[key]])
+
+    Mtot = jnp.exp(logMtot)
+    Kd = jnp.exp(logKd)
+    x = (4*Mtot + Kd - jnp.sqrt(Kd**2 + 8*Mtot*Kd))/8
+    log_concs = {}
+    log_concs['D'] = np.log(x)
+    log_concs['M'] = np.log(Mtot - 2*x)
+
+    return log_concs
