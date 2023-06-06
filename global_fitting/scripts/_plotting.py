@@ -151,6 +151,7 @@ def plot_kinetics_data_WT(experiments, params_logK, params_kcat,
             y_model = ReactionRate_WT(logMtot, logStot, logItot, *params_logK, *params_kcat)
         
         plt.plot(x, y_model)
+        plt.tight_layout();
         
         if OUTDIR is not None: 
             plt.savefig(os.path.join(OUTDIR,f"{experiment['figure']}"))
