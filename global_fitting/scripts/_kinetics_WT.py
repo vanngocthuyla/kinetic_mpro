@@ -2,7 +2,6 @@ import numpy as np
 import jax
 import jax.numpy as jnp
 from jax import vmap
-from scipy.optimize import fsolve, least_squares
 
 from _chemical_reactions import ChemicalReactions
 
@@ -169,10 +168,10 @@ def DimerBindingModel_WT_no_DSI(logMtot, logStot, logItot,
 
 def ReactionRate_WT(logMtot, logStot, logItot,
                     logK_S_D, logK_S_DS, logK_I_D, logK_I_DI, logK_S_DI=None, 
-                    kcat_DS=0., kcat_DSS=1., kcat_DSI=1.):
+                    kcat_DS=0., kcat_DSI=1., kcat_DSS=1.):
     """
     Reaction Rate
-      v = kcat_+DS*[DS] + kcat_DSS*[DSS] + kcat_DSI*[DSI]
+      v = kcat_DS*[DS] + kcat_DSI*[DSI] + kcat_DSS*[DSS]
     
     Parameters
     ----------
@@ -204,7 +203,7 @@ def ReactionRate_WT(logMtot, logStot, logItot,
         else:
             log_concs = DimerBindingModel_WT_no_DSI(logMtot, logStot, logItot,
                                                     logK_S_D, logK_S_DS, logK_I_D, logK_I_DI)
-    v = kcat_DS*jnp.exp(log_concs['DS']) + kcat_DSS*jnp.exp(log_concs['DSS']) + kcat_DSI*jnp.exp(log_concs['DSI'])
+    v = kcat_DS*jnp.exp(log_concs['DS']) + kcat_DSI*jnp.exp(log_concs['DSI']) + kcat_DSS*jnp.exp(log_concs['DSS'])
     return v
 
 
