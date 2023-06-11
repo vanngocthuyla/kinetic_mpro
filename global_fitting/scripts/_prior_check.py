@@ -4,6 +4,7 @@ import numpy as np
 
 from _prior_distribution import uniform_prior, normal_prior
 
+
 def convert_prior_from_dict_to_list(prior, fit_E_S, fit_E_I):
     """
     ----------
