@@ -237,7 +237,7 @@ def check_prior_group(prior_information, n_enzymes):
         assert prior['fit'] in ['global', 'local'], "Please declare correctly if the parameter(s) would be fit local/global."
         
         dist = prior['dist']
-        if type(dist) == str:
+        if type(dist) == str or dist is None:
             if prior['fit'] == 'local':
                 prior_update.append(_check_prior_one_dist(prior, n_enzymes))
             else:
