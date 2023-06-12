@@ -156,6 +156,7 @@ def adjustable_plot_data(experiments, params_logK, params_kcat,
             y_model = 1./Adjustable_CatalyticEfficiency(logMtot, logItot, *params_logK, *params_kcat)
         
         plt.plot(x, y_model)
+        plt.tight_layout();
         
         if OUTDIR is not None: 
             plt.savefig(os.path.join(OUTDIR,f"{experiment['figure']}"))
