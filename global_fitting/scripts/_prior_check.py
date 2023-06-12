@@ -61,7 +61,7 @@ def convert_prior_from_dict_to_list(prior, fit_E_S, fit_E_I):
     return prior_infor
 
 
-def check_prior_normal(prior, n_enzymes):
+def _check_prior_normal(prior, n_enzymes):
     """
     Parameters:
     ----------
@@ -88,7 +88,7 @@ def check_prior_normal(prior, n_enzymes):
     return prior_update
 
 
-def check_prior_uniform(prior, n_enzymes):
+def _check_prior_uniform(prior, n_enzymes):
     """
     Parameters:
     ----------
@@ -115,7 +115,7 @@ def check_prior_uniform(prior, n_enzymes):
     return prior_update
 
 
-def check_prior_fixed_value(prior, n_enzymes):
+def _check_prior_fixed_value(prior, n_enzymes):
     """
     Parameters:
     ----------
@@ -140,7 +140,7 @@ def check_prior_fixed_value(prior, n_enzymes):
     return prior_update
 
 
-def check_prior_one_dist(prior, n_enzymes):
+def _check_prior_one_dist(prior, n_enzymes):
     """
     Parameters:
     ----------
@@ -161,15 +161,15 @@ def check_prior_one_dist(prior, n_enzymes):
     assert prior['dist'] in ['normal', 'uniform', None], "The prior of parameters can be a value (None = no distribution) or can be normal/uniform distribution."
       
     if prior['dist'] == 'normal': 
-        prior_update = check_prior_normal(prior, n_enzymes)
+        prior_update = _check_prior_normal(prior, n_enzymes)
     elif prior['dist'] == 'uniform':
-        prior_update = check_prior_uniform(prior, n_enzymes)
+        prior_update = _check_prior_uniform(prior, n_enzymes)
     else: 
-        prior_update = check_prior_fixed_value(prior, n_enzymes)
+        prior_update = _check_prior_fixed_value(prior, n_enzymes)
     return prior_update
 
 
-def _check_prior_multi_dist(param, index):
+def _check_prior_update_by_index(param, index):
     
     assert len(param) == len(index), "The number of values assigned for paramters should be consistent with the number of experiments."
 
@@ -185,7 +185,7 @@ def _check_prior_multi_dist(param, index):
     return np.array(param_update)
 
 
-def check_prior_multi_dist(prior, n_enzymes):
+def _check_prior_multi_dist(prior, n_enzymes):
     """
     Parameters:
     ----------
@@ -200,16 +200,16 @@ def check_prior_multi_dist(prior, n_enzymes):
         assert dist in ['normal', 'uniform', None], "The prior of parameters can be a value (None = no distribution) or can be normal/uniform distribution."
         index = np.asarray(distribution)==dist
         if dist == 'normal': 
-            prior_update = check_prior_normal(prior, n_enzymes)
-            prior_update_multi_dist['loc'] = _check_prior_multi_dist(prior_update['loc'], index)
-            prior_update_multi_dist['scale'] = _check_prior_multi_dist(prior_update['scale'], index)
+            prior_update = _check_prior_normal(prior, n_enzymes)
+            prior_update_multi_dist['loc'] = _check_prior_update_by_index(prior_update['loc'], index)
+            prior_update_multi_dist['scale'] = _check_prior_update_by_index(prior_update['scale'], index)
         elif dist == 'uniform':
-            prior_update = check_prior_uniform(prior, n_enzymes)
-            prior_update_multi_dist['lower'] = _check_prior_multi_dist(prior_update['lower'], index)
-            prior_update_multi_dist['upper'] = _check_prior_multi_dist(prior_update['upper'], index)
+            prior_update = _check_prior_uniform(prior, n_enzymes)
+            prior_update_multi_dist['lower'] = _check_prior_update_by_index(prior_update['lower'], index)
+            prior_update_multi_dist['upper'] = _check_prior_update_by_index(prior_update['upper'], index)
         else: 
-            prior_update = check_prior_fixed_value(prior, n_enzymes)
-            prior_update_multi_dist['value'] = _check_prior_multi_dist(prior_update['value'], index)
+            prior_update = _check_prior_fixed_value(prior, n_enzymes)
+            prior_update_multi_dist['value'] = _check_prior_update_by_index(prior_update['value'], index)
     return prior_update_multi_dist
 
 
@@ -239,18 +239,18 @@ def check_prior_group(prior_information, n_enzymes):
         dist = prior['dist']
         if type(dist) == str:
             if prior['fit'] == 'local':
-                prior_update.append(check_prior_one_dist(prior, n_enzymes))
+                prior_update.append(_check_prior_one_dist(prior, n_enzymes))
             else:
                 prior_update.append(prior)
         elif np.sum([(None in dist), ('uniform' in dist), ('normal' in dist)]) == 1:
             prior_2 = dict([(key, prior[key]) for key in prior.keys() if key!='dist'])
             prior_2['dist'] = dist[0]
             if prior_2['fit'] == 'local':
-                prior_update.append(check_prior_one_dist(prior_2, n_enzymes))
+                prior_update.append(_check_prior_one_dist(prior_2, n_enzymes))
             else:
                 prior_update.append(prior_2)
         else: 
-            prior_update.append(check_prior_multi_dist(prior, n_enzymes))
+            prior_update.append(_check_prior_multi_dist(prior, n_enzymes))
     return prior_update
 
 
