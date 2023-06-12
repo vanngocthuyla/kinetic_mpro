@@ -61,6 +61,158 @@ def convert_prior_from_dict_to_list(prior, fit_E_S, fit_E_I):
     return prior_infor
 
 
+def check_prior_normal(prior, n_enzymes):
+    """
+    Parameters:
+    ----------
+    prior    : dict to assign prior distribution for kinetics parameters
+    n_enzymes: number of enzymes
+    
+    Examples: 
+        n_enzymes = 2
+        prior_1 = {'type':'logKd', 'name': 'logKd', 'fit': 'local', 'dist': 'normal', 'loc': [0, 2], 'scale': [1, 3]}
+    ----------
+    The function returns:
+        prior_update_1 = {'type':'logKd', 'name': 'logKd', 'fit': 'local', 'dist': 'normal', 'loc': np.array([0, 2]), 'scale': np.array([1, 3])}
+    """
+    if type(prior['loc']) == float or type(prior['loc']) == int:
+        loc = np.repeat(prior['loc'], n_enzymes)
+    else:
+        loc = np.asarray(prior['loc'])
+    if type(prior['scale']) == float or type(prior['scale']) == int:
+        scale = np.repeat(prior['scale'], n_enzymes)
+    else:
+        scale = np.asarray(prior['scale'])
+    prior_update = {'type': prior['type'], 'name': prior['name'], 'fit': prior['fit'],
+                    'dist': prior['dist'], 'loc': loc, 'scale': scale}
+    return prior_update
+
+
+def check_prior_uniform(prior, n_enzymes):
+    """
+    Parameters:
+    ----------
+    prior    : dict to assign prior distribution for kinetics parameters
+    n_enzymes: number of enzymes
+    
+    Examples: 
+        n_enzymes = 2
+        prior_2 = {'type':'logK', 'name': 'logK_S_D', 'fit': 'global', 'dist': 'uniform', 'lower': -20, 'upper': 0}
+    ----------
+    The function returns:
+        prior_update_2 = {'type':'logK', 'name': 'logK_S_D', 'fit': 'globals', 'dist': 'uniform', 'lower': -20, 'upper': 0}
+    """
+    if type(prior['lower']) == float or type(prior['lower']) == int:
+        lower = np.repeat(prior['lower'], n_enzymes)
+    else:
+        lower = np.asarray(prior['lower'])
+    if type(prior['upper']) == float or type(prior['upper']) == int:
+        upper = np.repeat(prior['upper'], n_enzymes)
+    else:
+        upper = np.asarray(prior['upper'])
+    prior_update = {'type': prior['type'], 'name': prior['name'], 'fit': prior['fit'],
+                    'dist': prior['dist'], 'lower': lower, 'upper': upper}
+    return prior_update
+
+
+def check_prior_fixed_value(prior, n_enzymes):
+    """
+    Parameters:
+    ----------
+    prior    : dict to assign prior distribution for kinetics parameters
+    n_enzymes: number of enzymes
+    
+    Examples: 
+        n_enzymes = 2
+        prior_3 = {'type':'kcat', 'name': 'kcat_MS', 'fit': 'local', 'dist': None, 'value': [1., 0.]}
+    ----------
+    The function returns:
+        prior_update_1 = {'type':'logKd', 'name': 'logKd', 'fit': 'local', 'dist': 'normal', 'loc': np.array([0, 2]), 'scale': np.array([1, 3])}
+        prior_update_2 = {'type':'logK', 'name': 'logK_S_D', 'fit': 'globals', 'dist': 'uniform', 'lower': -20, 'upper': 0}
+        prior_update_3 = {'type':'kcat', 'name': 'kcat_MS', 'fit': 'local', 'dist': None, 'value': np.array([1., 0.])}
+    """
+    if type(prior['value']) == float or type(prior['value']) == int or prior['value'] is None:
+        values = np.repeat(prior['value'], n_enzymes)
+    else:
+        values = np.asarray(prior['value'])
+    prior_update = {'type': prior['type'], 'name': prior['name'], 'fit': prior['fit'],
+                    'dist': prior['dist'], 'value': values}
+    return prior_update
+
+
+def check_prior_one_dist(prior, n_enzymes):
+    """
+    Parameters:
+    ----------
+    prior    : dict to assign prior distribution for kinetics parameters
+    n_enzymes: number of enzymes
+    
+    Examples: 
+        n_enzymes = 2
+        prior_1 = {'type':'logKd', 'name': 'logKd', 'fit': 'local', 'dist': 'normal', 'loc': [0, 2], 'scale': [1, 3]}
+        prior_2 = {'type':'logK', 'name': 'logK_S_D', 'fit': 'global', 'dist': 'uniform', 'lower': -20, 'upper': 0}
+        prior_3 = {'type':'kcat', 'name': 'kcat_MS', 'fit': 'local', 'dist': None, 'value': [1., 0.]}
+    ----------
+    The function returns:
+        prior_update_1 = {'type':'logKd', 'name': 'logKd', 'fit': 'local', 'dist': 'normal', 'loc': np.array([0, 2]), 'scale': np.array([1, 3])}
+        prior_update_2 = {'type':'logK', 'name': 'logK_S_D', 'fit': 'globals', 'dist': 'uniform', 'lower': -20, 'upper': 0}
+        prior_update_3 = {'type':'kcat', 'name': 'kcat_MS', 'fit': 'local', 'dist': None, 'value': np.array([1., 0.])}
+    """
+    assert prior['dist'] in ['normal', 'uniform', None], "The prior of parameters can be a value (None = no distribution) or can be normal/uniform distribution."
+      
+    if prior['dist'] == 'normal': 
+        prior_update = check_prior_normal(prior, n_enzymes)
+    elif prior['dist'] == 'uniform':
+        prior_update = check_prior_uniform(prior, n_enzymes)
+    else: 
+        prior_update = check_prior_fixed_value(prior, n_enzymes)
+    return prior_update
+
+
+def _check_prior_multi_dist(param, index):
+    
+    assert len(param) == len(index), "The number of values assigned for paramters should be consistent with the number of experiments."
+
+    index_update = index*1.0
+    index_update[index_update == 0] = np.nan
+    index_update
+    param_update = []
+    for n, value in enumerate(param):
+        if np.isnan(index_update[n]): 
+            param_update.append(np.nan)
+        else:
+            param_update.append(value)
+    return np.array(param_update)
+
+
+def check_prior_multi_dist(prior, n_enzymes):
+    """
+    Parameters:
+    ----------
+    prior    : dict to assign prior distribution for kinetics parameters
+    n_enzymes: number of enzymes
+    
+    """
+    distribution = prior['dist']
+    prior_update_multi_dist = {'type': prior['type'], 'name': prior['name'], 
+                               'fit': prior['fit'], 'dist': prior['dist']}
+    for dist in distribution:
+        assert dist in ['normal', 'uniform', None], "The prior of parameters can be a value (None = no distribution) or can be normal/uniform distribution."
+        index = np.asarray(distribution)==dist
+        if dist == 'normal': 
+            prior_update = check_prior_normal(prior, n_enzymes)
+            prior_update_multi_dist['loc'] = _check_prior_multi_dist(prior_update['loc'], index)
+            prior_update_multi_dist['scale'] = _check_prior_multi_dist(prior_update['scale'], index)
+        elif dist == 'uniform':
+            prior_update = check_prior_uniform(prior, n_enzymes)
+            prior_update_multi_dist['lower'] = _check_prior_multi_dist(prior_update['lower'], index)
+            prior_update_multi_dist['upper'] = _check_prior_multi_dist(prior_update['upper'], index)
+        else: 
+            prior_update = check_prior_fixed_value(prior, n_enzymes)
+            prior_update_multi_dist['value'] = _check_prior_multi_dist(prior_update['value'], index)
+    return prior_update_multi_dist
+
+
 def check_prior_group(prior_information, n_enzymes):
     """
     Parameters:
@@ -83,45 +235,26 @@ def check_prior_group(prior_information, n_enzymes):
     for prior in prior_information:
         assert prior['type'] in ['logKd', 'logK', 'kcat'], "Paramter type should be logKd, logK or kcat."
         assert prior['fit'] in ['global', 'local'], "Please declare correctly if the parameter(s) would be fit local/global."
-        assert prior['dist'] in ['normal', 'uniform', None], "The prior of parameters can be a value (None = no distribution) or can be normal/uniform distribution."
         
-        name = prior['name']
-        if prior['fit'] == 'local':
-            if prior['dist'] == 'normal': 
-                if type(prior['loc']) == float or type(prior['loc']) == int:
-                    loc = np.repeat(prior['loc'], n_enzymes)
-                else:
-                    loc = np.asarray(prior['loc'])
-                if type(prior['scale']) == float or type(prior['scale']) == int:
-                    scale = np.repeat(prior['scale'], n_enzymes)
-                else:
-                    scale = np.asarray(prior['scale'])
-                prior_update.append({'type': prior['type'], 'name': prior['name'], 'fit': prior['fit'],
-                                     'dist': prior['dist'], 'loc': loc, 'scale': scale})
-            elif prior['dist'] == 'uniform':
-                if type(prior['lower']) == float or type(prior['lower']) == int:
-                    lower = np.repeat(prior['lower'], n_enzymes)
-                else:
-                    lower = np.asarray(prior['lower'])
-                if type(prior['upper']) == float or type(prior['upper']) == int:
-                    upper = np.repeat(prior['upper'], n_enzymes)
-                else:
-                    upper = np.asarray(prior['upper'])
-                prior_update.append({'type': prior['type'], 'name': prior['name'], 'fit': prior['fit'],
-                                     'dist': prior['dist'], 'lower': lower, 'upper': upper})
-            else: 
-                if type(prior['value']) == float or type(prior['value']) == int:
-                    values = np.repeat(prior['value'], n_enzymes)
-                else:
-                    values = np.asarray(prior['value'])
-                prior_update.append({'type': prior['type'], 'name': prior['name'], 'fit': prior['fit'],
-                                     'dist': prior['dist'], 'value': values})
-        else:
-            prior_update.append(prior)
+        dist = prior['dist']
+        if type(dist) == str:
+            if prior['fit'] == 'local':
+                prior_update.append(check_prior_one_dist(prior, n_enzymes))
+            else:
+                prior_update.append(prior)
+        elif np.sum([(None in dist), ('uniform' in dist), ('normal' in dist)]) == 1:
+            prior_2 = dict([(key, prior[key]) for key in prior.keys() if key!='dist'])
+            prior_2['dist'] = dist[0]
+            if prior_2['fit'] == 'local':
+                prior_update.append(check_prior_one_dist(prior_2, n_enzymes))
+            else:
+                prior_update.append(prior_2)
+        else: 
+            prior_update.append(check_prior_multi_dist(prior, n_enzymes))
     return prior_update
 
 
-def prior_group_multi_enzyme(prior_information, n_enzymes):
+def _prior_group_multi_enzyme(prior_information, n_enzymes, params_name):
     """
     Parameters:
     ----------
@@ -144,50 +277,54 @@ def prior_group_multi_enzyme(prior_information, n_enzymes):
     ----------
     return two lists of prior distribution for kinetics parameters
     """
-    params_logK = {}
-    params_kcat = {}
-    
+    params = {}
     for prior in prior_information:
-        name = prior['name']
-        assert prior['type'] in ['logKd', 'logK', 'kcat'], "Parameter type should be logKd, logK or kcat."
-        assert prior['fit'] in ['global', 'local'], "Please declare correctly if the parameter(s) would be fit local/global."
-        assert prior['dist'] in ['normal', 'uniform', None], "The prior of parameters can be a value (None = no distribution) or can be normal/uniform distribution."
-
-        if prior['type'] in ['logKd', 'logK']:
+        if prior['type'] in params_name:
+            assert prior['type'] in ['logKd', 'logK', 'kcat'], "Paramter type should be logKd, logK or kcat."
+            assert prior['fit'] in ['global', 'local'], "Please declare correctly if the parameter(s) would be fit local/global."
+        
+            name = prior['name']
             if prior['fit'] == 'local':
                 for n in range(n_enzymes):
-                    if prior['dist'] is None:
-                        params_logK[f'{name}:{n}'] = prior['value'][n]
+                    if type(prior['dist']) == str or prior['dist'] is None:
+                        dist = prior['dist']
                     else:
-                        if prior['dist'] == 'normal':
-                            params_logK[f'{name}:{n}'] = normal_prior(f'{name}:{n}', prior['loc'][n], prior['scale'][n])
-                        elif prior['dist'] == 'uniform':
-                            params_logK[f'{name}:{n}'] = uniform_prior(f'{name}:{n}', prior['lower'][n], prior['upper'][n])
-            elif prior['fit'] == 'global': 
-                if prior['dist'] is None:
-                    params_logK[name] = prior['value']
-                elif prior['dist'] == 'normal':
-                    params_logK[name] = normal_prior(name, prior['loc'], prior['scale'])
-                elif prior['dist'] == 'uniform':
-                    params_logK[name] = uniform_prior(name, prior['lower'], prior['upper'])
+                        dist = prior['dist'][n]
+                    if dist == 'normal':
+                        params[f'{name}:{n}'] = normal_prior(f'{name}:{n}', prior['loc'][n], prior['scale'][n])
+                    elif dist == 'uniform':
+                        params[f'{name}:{n}'] = uniform_prior(f'{name}:{n}', prior['lower'][n], prior['upper'][n])
+                    elif dist is None:
+                        if prior['value'][n] is not None:
+                            params[f'{name}:{n}'] = prior['value'][n]
+                        else:
+                            params[f'{name}:{n}'] = None        
 
-        if prior['type'] == 'kcat':
-            if prior['fit'] == 'local':
-                for n in range(n_enzymes):
-                    if prior['dist'] is None:
-                        params_kcat[f'{name}:{n}'] = prior['value'][n]
-                    elif prior['dist'] == 'normal':
-                        params_kcat[f'{name}:{n}'] = normal_prior(f'{name}:{n}', prior['loc'][n], prior['scale'][n])
-                    elif prior['dist'] == 'uniform':
-                        params_kcat[f'{name}:{n}'] = uniform_prior(f'{name}:{n}', prior['lower'][n], prior['upper'][n])
-            elif prior['fit'] == 'global':
-                if prior['dist'] is None:
-                    params_kcat[name] = prior['value']
+            elif prior['fit'] == 'global': 
                 if prior['dist'] == 'normal':
-                    params_kcat[name] = normal_prior(name, prior['loc'], prior['scale'])
+                    params[name] = normal_prior(name, prior['loc'], prior['scale'])
                 elif prior['dist'] == 'uniform':
-                    params_kcat[name] = uniform_prior(name, prior['lower'], prior['upper'])
-    
+                    params[name] = uniform_prior(name, prior['lower'], prior['upper'])
+                elif prior['dist'] is None:
+                    if prior['value'] is not None:
+                        params[name] = prior['value']
+                    else:
+                        params[name] = None
+    return params
+
+
+def prior_group_multi_enzyme(prior_information, n_enzymes):
+    """
+    Parameters:
+    ----------
+    prior_information : list of dict to assign prior distribution for kinetics parameters
+    n_enzymes         : number of enzymes
+    ----------
+    return two lists of prior distribution for kinetics parameters
+    """
+    params_logK = _prior_group_multi_enzyme(prior_information, n_enzymes, ['logKd', 'logK'])
+    params_kcat = _prior_group_multi_enzyme(prior_information, n_enzymes, ['kcat'])
+
     return params_logK, params_kcat
 
 
