@@ -242,6 +242,10 @@ def ReactionRate(logMtot, logStot, logItot,
         Rate constant of dimer-substrate-substrate complex
     All dissociation constants are in units of log molar 
     """
+    if kcat_MS is None: kcat_MS = 0.
+    if kcat_DS is None: kcat_DS = 0.
+    if kcat_DSI is None: kcat_DSI = 0.
+    if kcat_DSS is None: kcat_DSS = 0.
     if logItot is None: 
         log_concs = Enzyme_Substrate(logMtot, logStot, logKd, logK_S_M, logK_S_D, logK_S_DS)
     elif logStot is None:

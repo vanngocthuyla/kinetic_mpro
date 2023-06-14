@@ -120,10 +120,14 @@ def Adjustable_ReactionRate(logMtot, logStot, logItot,
 
     All dissociation constants are in units of log molar 
     """
+    if kcat_MS is None: kcat_MS = 0.
+    if kcat_DS is None: kcat_DS = 0.
+    if kcat_DSI is None: kcat_DSI = 0.
+    if kcat_DSS is None: kcat_DSS = 0.
     log_concs = Adjustable_DimerBindingModel(logMtot, logStot, logItot,
                                              logKd, logK_S_M, logK_S_D, logK_S_DS, 
                                              logK_I_M, logK_I_D, logK_I_DI, logK_S_DI)
-    v = kcat_MS*jnp.exp(log_concs['MS']) + kcat_DS*jnp.exp(log_concs['DS']) + kcat_DSS*jnp.exp(log_concs['DSS']) + kcat_DSI*jnp.exp(log_concs['DSI'])
+    v = kcat_MS*jnp.exp(log_concs['MS']) + kcat_DS*jnp.exp(log_concs['DS']) + kcat_DSI*jnp.exp(log_concs['DSI']) + kcat_DSS*jnp.exp(log_concs['DSS'])
     return v
 
 
