@@ -55,164 +55,79 @@ def extract_kcat(params_kcat):
     return [kcat_DS, kcat_DSI, kcat_DSS]
 
 
-def extract_logK_n_idx(params_logK, idx):
+def _extract_param_n_idx(name, params_dict, idx, shared_params=None):
     """
     Parameters:
     ----------
-    params_logK : dict of all dissociation constants
-    idx         : index of enzyme
+    name          : name of parameters extracted
+    params_dict   : dict of all dissociation constants
+    idx           : index of enzyme
+    shared_params : dict of information for shared parameters
+    ----------
+    extract a parameter given a dictionary of kinetic parameters
+
+    """
+    if f'{name}:{idx}' in params_dict.keys():  
+        if name in shared_params.keys() and idx == shared_params[name]['assigned_idx']:
+            idx_update = shared_params[name]['shared_idx']
+            param = params_dict[f'{name}:{idx_update}']
+            print(f'{name}:{idx}', "will not be used. Shared params:", f'{name}:{idx_update}')
+        else: 
+            param = params_dict[f'{name}:{idx}']
+    elif name in params_dict.keys(): param = params_dict[name]
+    else: param = None
+    return param
+
+
+def extract_logK_n_idx(params_logK, idx, shared_params=None):
+    """
+    Parameters:
+    ----------
+    params_logK   : dict of all dissociation constants
+    idx           : index of enzyme
+    shared_params : dict of information for shared parameters
     ----------
     convert dictionary of dissociation constants to an array of values depending on the index of enzyme
-    
+
+    If there is information of shared parameter, such as shared logKd between expt_1 and expt_2, given the 
+    information in shared_params:
+        shared_params = {}
+        shared_params['logKd'] = {'assigned_idx': 2, 'shared_idx': 1}
+    In this case, logKd:2 will not be used to fit and logKd:1 is used. 
+
     """
     # Dimerization
-    if f'logKd:{idx}' in params_logK.keys(): logKd = params_logK[f'logKd:{idx}']
-    elif 'logKd' in params_logK.keys(): logKd = params_logK['logKd']
-    else: logKd = None
-    
+    logKd = _extract_param_n_idx('logKd', params_logK, idx, shared_params)
+
     # Binding Substrate
-    if f'logK_S_M:{idx}' in params_logK.keys(): logK_S_M = params_logK[f'logK_S_M:{idx}']
-    elif 'logK_S_M' in params_logK.keys(): logK_S_M = params_logK['logK_S_M']
-    else: logK_S_M = None    
-    
-    if f'logK_S_D:{idx}' in params_logK.keys(): logK_S_D = params_logK[f'logK_S_D:{idx}']
-    elif 'logK_S_D' in params_logK.keys(): logK_S_D = params_logK['logK_S_D']
-    else: logK_S_D = None
-    
-    if f'logK_S_DS:{idx}' in params_logK.keys(): logK_S_DS = params_logK[f'logK_S_DS:{idx}']
-    elif 'logK_S_DS' in params_logK.keys(): logK_S_DS = params_logK['logK_S_DS']
-    else: logK_S_DS = None
-    
+    logK_S_M = _extract_param_n_idx('logK_S_M', params_logK, idx, shared_params)
+    logK_S_D = _extract_param_n_idx('logK_S_D', params_logK, idx, shared_params)
+    logK_S_DS = _extract_param_n_idx('logK_S_DS', params_logK, idx, shared_params)
+
     # Binding Inhibitor
-    if f'logK_I_M:{idx}' in params_logK.keys(): logK_I_M = params_logK[f'logK_I_M:{idx}']
-    elif 'logK_I_M' in params_logK.keys(): logK_I_M = params_logK['logK_I_M']
-    else: logK_I_M = None
+    logK_I_M = _extract_param_n_idx('logK_I_M', params_logK, idx, shared_params)
+    logK_I_D = _extract_param_n_idx('logK_I_D', params_logK, idx, shared_params)
+    logK_I_DI = _extract_param_n_idx('logK_I_DI', params_logK, idx, shared_params)
 
-    if f'logK_I_D:{idx}' in params_logK.keys(): logK_I_D = params_logK[f'logK_I_D:{idx}']
-    elif 'logK_I_D' in params_logK.keys(): logK_I_D = params_logK['logK_I_D']
-    else: logK_I_D = None
-
-    if f'logK_I_DI:{idx}' in params_logK.keys(): logK_I_DI = params_logK[f'logK_I_DI:{idx}']
-    elif 'logK_I_DI' in params_logK.keys(): logK_I_DI = params_logK['logK_I_DI']
-    else: logK_I_DI = None
-    
     # Binding both substrate and inhititor
-    if f'logK_S_DI:{idx}' in params_logK.keys(): logK_S_DI = params_logK[f'logK_S_DI:{idx}']
-    elif 'logK_S_DI' in params_logK.keys(): logK_S_DI = params_logK['logK_S_DI']
-    else: logK_S_DI = None
+    logK_S_DI = _extract_param_n_idx('logK_S_DI', params_logK, idx, shared_params)
 
     return [logKd, logK_S_M, logK_S_D, logK_S_DS, logK_I_M, logK_I_D, logK_I_DI, logK_S_DI]
 
 
-def extract_kcat_n_idx(params_kcat, idx):
+def extract_kcat_n_idx(params_kcat, idx, shared_params=None):
     """
     Parameters:
     ----------
-    params_kcat : dict of all kcats
-    idx         : index of enzyme
+    params_kcat   : dict of all kcats
+    idx           : index of enzyme
+    shared_params : dict of information for shared parameters
     ----------
     convert dictionary of kcats to an array of values depending on the index of enzyme
-    """    
-    if f'kcat_MS:{idx}' in params_kcat.keys(): kcat_MS=params_kcat[f'kcat_MS:{idx}'] 
-    elif 'kcat_MS' in params_kcat.keys(): kcat_MS=params_kcat['kcat_MS']
-    else: kcat_MS=0.
-    
-    if f'kcat_DS:{idx}' in params_kcat.keys(): kcat_DS = params_kcat[f'kcat_DS:{idx}'] 
-    elif 'kcat_DS' in params_kcat.keys(): kcat_DS=params_kcat['kcat_DS']
-    else: kcat_DS = 0.
-    
-    if f'kcat_DSI:{idx}' in params_kcat.keys(): kcat_DSI = params_kcat[f'kcat_DSI:{idx}'] 
-    elif 'kcat_DSI' in params_kcat.keys(): kcat_DSI = params_kcat['kcat_DSI']
-    else: kcat_DSI = 0.
-    
-    if f'kcat_DSS:{idx}' in params_kcat.keys(): kcat_DSS = params_kcat[f'kcat_DSS:{idx}'] 
-    elif 'kcat_DSS' in params_kcat.keys(): kcat_DSS = params_kcat['kcat_DSS']
-    else: kcat_DSS = 0.
+    """
+    kcat_MS = _extract_param_n_idx('kcat_MS', params_kcat, idx, shared_params)
+    kcat_DS = _extract_param_n_idx('kcat_DS', params_kcat, idx, shared_params)
+    kcat_DSI = _extract_param_n_idx('kcat_DSI', params_kcat, idx, shared_params)
+    kcat_DSS = _extract_param_n_idx('kcat_DSS', params_kcat, idx, shared_params)
 
     return [kcat_MS, kcat_DS, kcat_DSI, kcat_DSS]
-
-
-def extract_logK_WT(params_logK):
-    """
-    Parameters:
-    ----------
-    params_logK : dict of all dissociation constants
-    ----------
-    convert dictionary of dissociation constants to an array of values
-    """
-    logK_S_D = params_logK['logK_S_D']
-    logK_S_DS = params_logK['logK_S_DS']
-    # Binding Inhibitor
-    logK_I_D = params_logK['logK_I_D']
-    logK_I_DI = params_logK['logK_I_DI']
-    # Binding both substrate and inhititor
-    if 'logK_S_DI' in params_logK.keys():
-        logK_S_DI = params_logK['logK_S_DI']
-    else: 
-        logK_S_DI = None
-    return [logK_S_D, logK_S_DS, logK_I_D, logK_I_DI, logK_S_DI]
-
-
-def extract_kcat_WT(params_kcat):
-    """
-    Parameters:
-    ----------
-    params_kcat : dict of all kcats
-    ----------
-    convert dictionary of kcats to an array of values
-    """
-    kcat_DS = params_kcat['kcat_DS']
-    if 'kcat_DSI' in params_kcat.keys():
-        kcat_DSI = params_kcat['kcat_DSI']
-    else:
-        kcat_DSI = 0.
-    kcat_DSS = params_kcat['kcat_DSS']
-    return [kcat_DS, kcat_DSI, kcat_DSS]
-
-
-def extract_logK_n_idx_WT(params_logK, idx):
-    """
-    Parameters:
-    ----------
-    params_logK : dict of all dissociation constants
-    idx         : index of enzyme
-    ----------
-    convert dictionary of dissociation constants to an array of values depending on the index of enzyme
-    """
-    # Substrate Inhibitor
-    if f'logK_S_D:{idx}' in params_logK.keys(): logK_S_D = params_logK[f'logK_S_D:{idx}']
-    else: logK_S_D = params_logK['logK_S_D']
-    if f'logK_S_DS:{idx}' in params_logK.keys(): logK_S_DS = params_logK[f'logK_S_DS:{idx}']
-    else: logK_S_DS = params_logK['logK_S_DS']
-    # Binding Inhibitor
-    if f'logK_I_D:{idx}' in params_logK.keys(): logK_I_D = params_logK[f'logK_I_D:{idx}']
-    else: logK_I_D = params_logK['logK_I_D']
-    if f'logK_I_DI:{idx}' in params_logK.keys(): logK_I_DI = params_logK[f'logK_I_DI:{idx}']
-    else: logK_I_DI = params_logK['logK_I_DI']
-    # Binding both substrate and inhititor
-    if f'logK_S_DI:{idx}' in params_logK.keys(): 
-        logK_S_DI = params_logK[f'logK_S_DI:{idx}']
-    elif 'logK_S_DI' in params_logK.keys(): 
-        logK_S_DI = params_logK['logK_S_DI']
-    else: 
-        logK_S_DI = None
-    return [logK_S_D, logK_S_DS, logK_I_D, logK_I_DI, logK_S_DI]
-
-
-def extract_kcat_n_idx_WT(params_kcat, idx):
-    """
-    Parameters:
-    ----------
-    params_kcat : dict of all kcats
-    idx         : index of enzyme
-    ----------
-    convert dictionary of kcats to an array of values depending on the index of enzyme
-    """
-    if f'kcat_DS:{idx}' in params_kcat.keys(): kcat_DS = params_kcat[f'kcat_DS:{idx}'] 
-    else: kcat_DS = params_kcat['kcat_DS']
-    if f'kcat_DSI:{idx}' in params_kcat.keys(): kcat_DSI = params_kcat[f'kcat_DSI:{idx}'] 
-    elif 'kcat_DSI' in params_kcat.keys(): kcat_DSI = params_kcat['kcat_DSI']
-    else: kcat_DSI = 0.
-    if f'kcat_DSS:{idx}' in params_kcat.keys(): kcat_DSS = params_kcat[f'kcat_DSS:{idx}'] 
-    else: kcat_DSS = params_kcat['kcat_DSS']
-    return [kcat_DS, kcat_DSI, kcat_DSS]

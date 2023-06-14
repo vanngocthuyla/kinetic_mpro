@@ -11,8 +11,9 @@ from _params_extraction import extract_logK_n_idx, extract_kcat_n_idx
 from _prior_check import check_prior_group, prior_group_multi_enzyme, define_uniform_prior_group
 
 
-def adjustable_global_fitting(experiments, prior_infor=None, 
-                              logKd_min=-20, logKd_max=0, kcat_min=0, kcat_max=1):
+def adjustable_global_fitting(experiments, prior_infor=None,
+                              logKd_min=-20, logKd_max=0, kcat_min=0, kcat_max=1,
+                              shared_params=None):
     """
     Parameters:
     ----------
@@ -25,6 +26,7 @@ def adjustable_global_fitting(experiments, prior_infor=None,
     logKd_max   : float, upper values of uniform distribution for prior of dissociation constants
     kcat_min    : float, lower values of uniform distribution for prior of kcat
     kcat_max    : float, upper values of uniform distribution for prior of kcat
+    shared_params : dict of information for shared parameters
     ----------
     Fitting the Bayesian model to estimate the kinetics parameters and noise of each enzyme
     """
@@ -42,8 +44,8 @@ def adjustable_global_fitting(experiments, prior_infor=None,
         except:
             idx_expt = idx
 
-        [logKd, logK_S_M, logK_S_D, logK_S_DS, logK_I_M, logK_I_D, logK_I_DI, logK_S_DI] = extract_logK_n_idx(params_logK, idx)
-        [kcat_MS, kcat_DS, kcat_DSI, kcat_DSS] = extract_kcat_n_idx(params_kcat, idx)
+        [logKd, logK_S_M, logK_S_D, logK_S_DS, logK_I_M, logK_I_D, logK_I_DI, logK_S_DI] = extract_logK_n_idx(params_logK, idx, shared_params)
+        [kcat_MS, kcat_DS, kcat_DSI, kcat_DSS] = extract_kcat_n_idx(params_kcat, idx, shared_params)
     
         if type(expt['kinetics']) is dict: 
             for n in range(len(expt['kinetics'])):
