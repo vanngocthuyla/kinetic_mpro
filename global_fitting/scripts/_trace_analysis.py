@@ -73,6 +73,10 @@ def extract_params_from_trace_and_prior(trace, prior_infor, estimator='mean'):
                         params_kcat[name+':'+str(n)] = prior['value'][n]
                 else: params_kcat[name] = prior['value']
 
+    for n, params in enumerate(params_kcat):
+        if params is None:
+            params_kcat[n] = 0.
+
     return params_logK, params_kcat
 
 
