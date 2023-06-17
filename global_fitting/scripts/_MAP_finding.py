@@ -144,7 +144,6 @@ def _log_likelihood_each_enzyme(type_expt, data, trace_logK, trace_kcat, trace_l
     """
     assert type_expt in ['kinetics', 'AUC', 'ICE'], "Experiments type should be kinetics, AUC, or ICE."
     log_likelihoods = jnp.zeros(nsamples)
-    in_axes_nth.append(0)
 
     if type_expt == 'kinetics':
         [rate, kinetics_logMtot, kinetics_logStot, kinetics_logItot] = data
@@ -271,45 +270,46 @@ def _log_likelihoods(mcmc_trace, experiments, nsamples=None):
 
         trace_nth, in_axis_nth = _mcmc_trace_each_enzyme(mcmc_trace, idx, nsamples)
 
+        in_axis_nth.append(0)
         if type(expt['kinetics']) is dict: 
             for n in range(len(expt['kinetics'])):
-                print("Kinetics experiment", idx_expt)
                 data_rate = expt['kinetics'][n]
                 if data_rate is not None:
+                    print("Kinetics experiment", idx_expt)
                     trace_log_sigma = mcmc_trace[f'log_sigma_rate:{idx_expt}:{n}'][: nsamples]
                     log_likelihoods += _log_likelihood_each_enzyme('kinetics', data_rate, trace_nth, trace_nth, trace_log_sigma, in_axis_nth, nsamples)
         else:
-            print("Kinetics experiment", idx_expt)
             data_rate = expt['kinetics']
             if data_rate is not None:
+                print("Kinetics experiment", idx_expt)
                 trace_log_sigma = mcmc_trace[f'log_sigma_rate:{idx_expt}'][: nsamples]
                 log_likelihoods += _log_likelihood_each_enzyme('kinetics', data_rate, trace_nth, trace_nth, trace_log_sigma, in_axis_nth, nsamples)
         
         if type(expt['AUC']) is dict: 
             for n in range(len(expt['AUC'])):
-                print("AUC experiment", idx_expt)
                 data_AUC = expt['AUC'][n]
                 if data_AUC is not None: 
+                    print("AUC experiment", idx_expt)
                     trace_log_sigma = mcmc_trace[f'log_sigma_auc:{idx_expt}:{n}'][: nsamples]
-                    log_likelihoods += _log_likelihood_each_enzyme('AUC', data_AUC, trace_nth, trace_nth, trace_log_sigma, in_axis_nth[:8], nsamples)
+                    log_likelihoods += _log_likelihood_each_enzyme('AUC', data_AUC, trace_nth, trace_nth, trace_log_sigma, in_axis_nth[:9], nsamples)
         else:
-            print("AUC experiment", idx_expt)
             data_AUC = expt['AUC']
-            if data_AUC is not None: 
+            if data_AUC is not None:
+                print("AUC experiment", idx_expt) 
                 trace_log_sigma = mcmc_trace[f'log_sigma_auc:{idx_expt}'][: nsamples]
-                log_likelihoods += _log_likelihood_each_enzyme('AUC', data_AUC, trace_nth, trace_nth, trace_log_sigma, in_axis_nth[:8], nsamples)
+                log_likelihoods += _log_likelihood_each_enzyme('AUC', data_AUC, trace_nth, trace_nth, trace_log_sigma, in_axis_nth[:9], nsamples)
 
         if type(expt['ICE']) is dict:
             for n in range(len(expt['ICE'])):
-                print("ICE experiment", idx_expt)
                 data_ice = expt['ICE'][n]
                 if data_ice is not None: 
+                    print("ICE experiment", idx_expt)
                     trace_log_sigma = mcmc_trace[f'log_sigma_ice:{idx_expt}:{n}'][: nsamples]
                     log_likelihoods += _log_likelihood_each_enzyme('ICE', data_ice, trace_nth, trace_nth, trace_log_sigma, in_axis_nth, nsamples)
         else:
-            print("ICE experiment", idx_expt)
             data_ice = expt['ICE']
-            if data_ice is not None: 
+            if data_ice is not None:
+                print("ICE experiment", idx_expt) 
                 trace_log_sigma = mcmc_trace[f'log_sigma_ice:{idx_expt}'][: nsamples]
                 log_likelihoods += _log_likelihood_each_enzyme('ICE', data_ice, trace_nth, trace_nth, trace_log_sigma, in_axis_nth, nsamples)
 
