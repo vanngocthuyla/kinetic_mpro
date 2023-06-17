@@ -26,7 +26,8 @@ from _bayesian_model_adjustable import adjustable_global_fitting
 from _load_data import load_data_mut_wt
 from _prior_check import convert_prior_from_dict_to_list, check_prior_group
 from _params_extraction import extract_logK_n_idx, extract_kcat_n_idx
-from _trace_analysis import extract_params_from_trace_and_prior
+from _MAP_finding import map_finding
+from _trace_analysis import extract_params_from_map_and_prior
 from _plotting import adjustable_plot_data
 
 parser = argparse.ArgumentParser()
@@ -120,12 +121,20 @@ az.plot_autocorr(trace);
 plt.savefig(os.path.join(args.out_dir, 'Plot_autocorr'))
 plt.ioff()
 
+# Finding MAP
+trace = mcmc.get_samples(group_by_chain=False)
+[map_index, map_params, log_probs] = map_finding(trace, expts, prior_infor_update)
+
+with open("map.txt", "w") as f:
+    print("MAP index:" + str(map_index), file=f)
+    print("Kinetics parameters: \n" + str(map_params), file=f)
+
 ## Fitting plot
-params_logK, params_kcat = extract_params_from_trace_and_prior(trace, prior_infor_update)
+params_logK, params_kcat = extract_params_from_map_and_prior(trace, map_index, prior_infor_update)
 
 n = 0
 for expt_plot in [expts_mut, expts_wt, expts_wt_2]:
     if len(expt_plot)>0:
-        adjustable_plot_data(expt_plot, extract_logK_n_idx(params_logK, n), 
-                             extract_kcat_n_idx(params_kcat, n), OUTDIR=args.out_dir)
+        adjustable_plot_data(expt_plot, extract_logK_n_idx(params_logK, n), extract_kcat_n_idx(params_kcat, n),
+                             OUTDIR=args.out_dir)
         n = n + 1
