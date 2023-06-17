@@ -134,6 +134,29 @@ def extract_kcat_n_idx(params_kcat, idx, shared_params=None):
     return [kcat_MS, kcat_DS, kcat_DSI, kcat_DSS]
 
 
+def _convert_str_to_array_float(string):
+    
+    string = string.replace('nan', 'None').replace('  ', ' ').replace(' ', ' ').replace('[ ', '').replace('[', '').replace('] ', '').replace(']', '')
+    string = string.split(' ')
+    array = np.array(string)
+    for i in range(len(array)):
+        if array[i] == 'None':
+            array[i] = None
+        else:
+            array[i] = float(array[i])
+    return array
+
+
+def _convert_str_to_array_string(string):
+    
+    string = string.replace('nan', 'None').replace('[','').replace(']', '').replace('\'', '').replace('   ', '').replace('  ', '').replace(' ', '')
+    array = np.array(string.split(','))
+    for i in range(len(array)):
+        if array[i] == 'None':
+            array[i] = None
+    return array
+
+
 def _prior_group_name(prior_information, n_enzymes, params_name=None):
     """
     Parameters:
@@ -155,28 +178,50 @@ def _prior_group_name(prior_information, n_enzymes, params_name=None):
             name = prior['name']
             if prior['fit'] == 'local':
                 for n in range(n_enzymes):
-                    if type(prior['dist']) == str or prior['dist'] is None:
-                        dist = prior['dist']
+                    n_dist = _convert_str_to_array_string(prior['dist'])
+                    if isinstance(n_dist, np.ndarray) and len(n_dist)>1:
+                        dist = n_dist[n]
                     else:
-                        dist = prior['dist'][n]
+                        dist = n_dist
+
                     if dist == 'normal':
-                        params_dict[f'{name}:{n}'] = {'dist': 'normal', 'loc': prior['loc'][n], 'scale': prior['scale'][n]}
+                        if type(prior['loc']) == str:
+                            loc = _convert_str_to_array_float(prior['loc'])[n]
+                        else:
+                            loc = prior['loc']
+                        if type(prior['scale']) == str:
+                            scale = _convert_str_to_array_float(prior['scale'])[n]
+                        else:
+                            scale = prior['scale']
+                        params_dict[f'{name}:{n}'] = {'dist': 'normal', 'loc': float(loc), 'scale': float(scale)}
                     elif dist == 'uniform':
-                        params_dict[f'{name}:{n}'] = {'dist': 'uniform', 'lower': prior['lower'][n], 'upper': prior['upper'][n]}
-                    elif dist is None:
+                        if type(prior['lower']) == str:
+                            lower = _convert_str_to_array_float(prior['lower'])[n]
+                        else:
+                            lower = prior['lower']
+                        if type(prior['upper']) == str:
+                            upper = _convert_str_to_array_float(prior['upper'])[n]
+                        else:
+                            upper = prior['upper']
+                        params_dict[f'{name}:{n}'] = {'dist': 'uniform', 'lower': float(lower), 'upper': float(upper)}
+                    else:
                         if prior['value'][n] is not None:
-                            params_dict[f'{name}:{n}'] = {'dist': None, 'value': prior['value'][n]}
+                            if type(prior['value']) == str:
+                                value = _convert_str_to_array_float(prior['value'])[n]
+                            else:
+                                value = prior['value']
+                            params_dict[f'{name}:{n}'] = {'dist': None, 'value': value}
                         else:
                             params_dict[f'{name}:{n}'] = None
 
             elif prior['fit'] == 'global':
                 if prior['dist'] == 'normal':
-                    params_dict[name] = {'dist': 'normal', 'loc': prior['loc'], 'scale': prior['scale']}
+                    params_dict[name] = {'dist': 'normal', 'loc': float(prior['loc']), 'scale': float(prior['scale'])}
                 elif prior['dist'] == 'uniform':
-                    params_dict[name] = {'dist': 'uniform', 'lower': prior['lower'], 'upper': prior['upper']}
-                elif prior['dist'] is None:
+                    params_dict[name] = {'dist': 'uniform', 'lower': float(prior['lower']), 'upper': float(prior['upper'])}
+                elif prior['dist'] is None or np.isnan(prior['dist']):
                     if prior['value'] is not None:
-                        params_dict[name] = {'dist': None, 'value': prior['value']}
+                        params_dict[name] = {'dist': None, 'value': float(prior['value'])}
                     else:
                         params_dict[name] = None
     return params_dict
