@@ -6,6 +6,7 @@ import argparse
 
 import pickle
 import arviz as az
+import pandas as pd
 
 import jax
 import jax.numpy as jnp
@@ -18,6 +19,7 @@ from _MAP_finding import map_finding
 from _trace_analysis import extract_params_from_map_and_prior
 from _params_extraction import extract_logK_n_idx, extract_kcat_n_idx
 from _load_data import load_data_mut_wt
+from _plotting import adjustable_plot_data
 
 parser = argparse.ArgumentParser()
 

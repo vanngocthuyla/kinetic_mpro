@@ -392,3 +392,23 @@ def _gaussian_pdf(x, mean, std):
     """
     # return stats.norm.pdf((x-mean)/std, 0, 1)
     return jnp.exp(dist.Normal(loc=0, scale=1).log_prob((x-mean)/std))
+
+
+def _log_normal_likelihood(response_actual, response_model, sigma):
+    """
+    PDF of log likelihood of normal distribution
+
+    Parameters
+    ----------
+    response_actual : jnp.array, response of data
+    response_model  : jnp.array, predicted data
+    sigma           : standard deviation
+    ----------
+    Return:
+        Sum of log PDF of response_actual given normal distribution N(response_model, sigma^2)
+    """
+    # zs = (response_model - response_actual)/sigma
+    # norm_rv = stats.norm(loc=0, scale=1)
+    # return np.sum(norm_rv.logpdf(zs))
+    # return jnp.sum(dist.Normal(0, 1).log_prob((response_model - response_actual)/sigma))
+    return jnp.nansum(dist.Normal(0, 1).log_prob((response_model - response_actual)/sigma))
