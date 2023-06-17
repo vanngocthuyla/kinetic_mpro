@@ -5,7 +5,109 @@ from scipy import stats
 import numpyro.distributions as dist
 
 from _prior_distribution import logsigma_guesses
-from _kinetics import ReactionRate, MonomerConcentration, CatalyticEfficiency
+from _kinetics_adjustable import Adjustable_ReactionRate, Adjustable_MonomerConcentration, Adjustable_CatalyticEfficiency
+from _params_extraction import _prior_group_name
+
+
+def _log_prior_sigma(mcmc_trace, data, sigma_name, nsamples):
+    """
+    Sum of log prior of all log_sigma, assuming they follows uniform distribution
+
+    Parameters:
+    ----------
+    mcmc_trace      : list of dict, trace of Bayesian sampling
+    response        : list of jnp.array, data from each experiment
+    nsamples        : int, number of samples to find MAP
+    ----------
+    
+    """ 
+    [response, logMtot, logStot, logItot] = data
+    log_sigma_min, log_sigma_max = logsigma_guesses(response)
+    f_log_prior_sigma = vmap(lambda sigma: _uniform_pdf(sigma, log_sigma_min, log_sigma_max))
+    param_trace = mcmc_trace[sigma_name][: nsamples]
+    return jnp.log(f_log_prior_sigma(param_trace))
+
+
+def _log_priors(mcmc_trace, experiments, prior_infor, nsamples=None):
+    """
+    Sum of log prior of all parameters, assuming they follows uniform distribution
+
+    Parameters:
+    ----------
+    mcmc_trace      : list of dict, trace of Bayesian sampling
+    experiments     : list of dict
+        Each dataset contains response, logMtot, lotStot, logItot
+    prior_infor     : list of dict to assign prior distribution for kinetics parameters
+    params_logK_name: list of all dissociation constant names
+    params_kcat_name: list of all kcat names 
+    nsamples        : int, number of samples to find MAP
+    ----------
+    Return: 
+        An array which size equals to mcmc_trace[:samples], each position corresponds 
+        to sum of log prior calculated by values of parameters from mcmc_trace
+    """ 
+    params_name_logK = []
+    params_name_kcat = []
+    for name in mcmc_trace.keys():
+        if name.startswith('logK'):
+            params_name_logK.append(name)
+        if name.startswith('kcat'):
+            params_name_kcat.append(name)
+    
+    if nsamples is None:
+        nsamples = len(mcmc_trace[params_name_logK[0]])
+    assert nsamples <= len(mcmc_trace[params_name_logK[0]]), "nsamples too big"
+
+    log_priors = jnp.zeros(nsamples)
+
+    # log_prior of all logK and kcat
+    infor = _prior_group_name(prior_infor, len(experiments), ['logKd', 'logK', 'kcat'])
+    for name in params_name_logK+params_name_kcat:
+        param_trace = mcmc_trace[name][: nsamples]
+        param_infor = infor[name]
+        if param_infor['dist'] == 'normal':
+            f_prior_normal = vmap(lambda param: _gaussian_pdf(param, param_infor['loc'], param_infor['scale']))
+            log_priors += jnp.log(f_prior_normal(param_trace))
+        if param_infor['dist'] == 'uniform': 
+            f_prior_uniform = vmap(lambda param: _uniform_pdf(param, param_infor['lower'], param_infor['upper']))
+            log_priors += jnp.log(f_prior_uniform(param_trace))
+
+    # log_prior of all sigma
+    for idx, expt in enumerate(experiments):
+        try: idx_expt = expt['index']
+        except: idx_expt = idx
+
+        if type(expt['kinetics']) is dict: 
+            for n in range(len(expt['kinetics'])):
+                data_rate = expt['kinetics'][n]
+                if data_rate is not None:
+                    log_priors += _log_prior_sigma(mcmc_trace, data_rate, f'log_sigma_rate:{idx_expt}:{n}', nsamples)
+        else:
+            data_rate = expt['kinetics']
+            if data_rate is not None:
+                log_priors += _log_prior_sigma(mcmc_trace, data_rate, f'log_sigma_rate:{idx_expt}', nsamples)
+        
+        if type(expt['AUC']) is dict:
+            for n in range(len(expt['AUC'])):
+                data_AUC = expt['AUC'][n]
+                if data_AUC is not None: 
+                    log_priors += _log_prior_sigma(mcmc_trace, data_AUC, f'log_sigma_auc:{idx_expt}:{n}', nsamples)
+        else:            
+            data_AUC = expt['AUC']
+            if data_AUC is not None: 
+                log_priors += _log_prior_sigma(mcmc_trace, data_AUC, f'log_sigma_auc:{idx_expt}', nsamples)
+
+        if type(expt['ICE']) is dict:
+            for n in range(len(expt['ICE'])):
+                data_ice = expt['ICE'][n]
+                if data_ice is not None:
+                    log_priors += _log_prior_sigma(mcmc_trace, data_ice, f'log_sigma_ice:{idx_expt}:{n}', nsamples)
+        else:
+            data_ice = expt['ICE']
+            if data_ice is not None: 
+                log_priors += _log_prior_sigma(mcmc_trace, data_ice, f'log_sigma_ice:{idx_expt}', nsamples)
+    
+    return np.array(log_priors)
 
 
 def _log_likelihood_normal(response_actual, response_model, sigma):
@@ -26,6 +128,234 @@ def _log_likelihood_normal(response_actual, response_model, sigma):
     # return np.sum(norm_rv.logpdf(zs))
     # return jnp.sum(dist.Normal(0, 1).log_prob((response_model - response_actual)/sigma))
     return jnp.nansum(dist.Normal(0, 1).log_prob((response_model - response_actual)/sigma))
+
+
+def _log_likelihood_each_enzyme(type_expt, data, trace_logK, trace_kcat, trace_log_sigma, in_axes_nth, nsamples): 
+    """
+    Parameters:
+    ----------
+    type_expt     : str, 'kinetics', 'AUC', or 'ICE'
+    data          : list, each dataset contains response, logMtot, lotStot, logItot
+    trace_logK    : trace of all logK
+    trace_logK    : trace of all kcat
+    trace_sigma   : trace of log_sigma
+    ----------
+    Return log likelihood depending on the type of experiment and mcmc_trace
+    """
+    assert type_expt in ['kinetics', 'AUC', 'ICE'], "Experiments type should be kinetics, AUC, or ICE."
+    log_likelihoods = jnp.zeros(nsamples)
+    in_axes_nth.append(0)
+
+    if type_expt == 'kinetics':
+        [rate, kinetics_logMtot, kinetics_logStot, kinetics_logItot] = data
+        f = vmap(lambda logKd, logK_S_M, logK_S_D, logK_S_DS, logK_I_M, logK_I_D, logK_I_DI, logK_S_DI, kcat_MS, kcat_DS, kcat_DSI, kcat_DSS, log_sigma: _log_normal_likelihood(rate, 
+                                                                                                                                                                                Adjustable_ReactionRate(kinetics_logMtot, kinetics_logStot, kinetics_logItot, 
+                                                                                                                                                                                                        logKd, logK_S_M, logK_S_D, logK_S_DS, 
+                                                                                                                                                                                                        logK_I_M, logK_I_D, logK_I_DI, logK_S_DI, 
+                                                                                                                                                                                                        kcat_MS, kcat_DS, kcat_DSI, kcat_DSS),
+                                                                                                                                                                                jnp.exp(log_sigma)),
+                 in_axes=list(in_axes_nth))
+        log_likelihoods += f(trace_logK['logKd'], trace_logK['logK_S_M'], trace_logK['logK_S_D'], 
+                             trace_logK['logK_S_DS'], trace_logK['logK_I_M'], trace_logK['logK_I_D'], 
+                             trace_logK['logK_I_DI'], trace_logK['logK_S_DI'], trace_kcat['kcat_MS'], 
+                             trace_kcat['kcat_DS'], trace_kcat['kcat_DSI'], trace_kcat['kcat_DSS'], 
+                             trace_log_sigma)
+    if type_expt == 'AUC':
+        [auc, AUC_logMtot, AUC_logStot, AUC_logItot] = data
+
+        f = vmap(lambda logKd, logK_S_M, logK_S_D, logK_S_DS, logK_I_M, logK_I_D, logK_I_DI, logK_S_DI, log_sigma: _log_normal_likelihood(auc,
+                                                                                                                                          Adjustable_MonomerConcentration(AUC_logMtot, AUC_logStot, AUC_logItot,
+                                                                                                                                                                          logKd, logK_S_M, logK_S_D, logK_S_DS, 
+                                                                                                                                                                          logK_I_M, logK_I_D, logK_I_DI, logK_S_DI),
+                                                                                                                                          jnp.exp(log_sigma)),
+                 in_axes=list(in_axes_nth))
+        log_likelihoods += f(trace_logK['logKd'], trace_logK['logK_S_M'], trace_logK['logK_S_D'], 
+                             trace_logK['logK_S_DS'], trace_logK['logK_I_M'], trace_logK['logK_I_D'], 
+                             trace_logK['logK_I_DI'], trace_logK['logK_S_DI'], 
+                             trace_log_sigma)
+    
+    if type_expt == 'ICE':
+        [ice, ice_logMtot, ice_logStot, ice_logItot] = data
+        f = vmap(lambda logKd, logK_S_M, logK_S_D, logK_S_DS, logK_I_M, logK_I_D, logK_I_DI, logK_S_DI, kcat_MS, kcat_DS, kcat_DSI, kcat_DSS, log_sigma: _log_normal_likelihood(ice, 
+                                                                                                                                                                                1./Adjustable_CatalyticEfficiency(ice_logMtot, ice_logItot,
+                                                                                                                                                                                                                  logKd, logK_S_M, logK_S_D, logK_S_DS, 
+                                                                                                                                                                                                                  logK_I_M, logK_I_D, logK_I_DI, logK_S_DI, 
+                                                                                                                                                                                                                  kcat_MS, kcat_DS, kcat_DSI, kcat_DSS), 
+                                                                                                                                                                                jnp.exp(log_sigma)),
+                 in_axes=list(in_axes_nth))
+        log_likelihoods += f(trace_logK['logKd'], trace_logK['logK_S_M'], trace_logK['logK_S_D'], 
+                             trace_logK['logK_S_DS'], trace_logK['logK_I_M'], trace_logK['logK_I_D'], 
+                             trace_logK['logK_I_DI'], trace_logK['logK_S_DI'], trace_kcat['kcat_MS'], 
+                             trace_kcat['kcat_DS'], trace_kcat['kcat_DSI'], trace_kcat['kcat_DSS'], 
+                             trace_log_sigma)
+    return log_likelihoods
+
+
+def _mcmc_trace_each_enzyme(mcmc_trace, idx, nsamples):
+    """
+    Parameters:
+    ----------
+    mcmc_trace      : list of dict, trace of Bayesian sampling
+    ----------
+    Return: 
+        mcmc_trace for experiment[idx]
+    """
+    params_name_logK = []
+    params_name_kcat = []
+    for name in mcmc_trace.keys():
+        if name.startswith('logK'):
+            params_name_logK.append(name)
+        if name.startswith('kcat'):
+            params_name_kcat.append(name)
+    
+    full_params_logK_name = ['logKd', 'logK_S_M', 'logK_S_D', 'logK_S_DS', 'logK_I_M', 'logK_I_D', 'logK_I_DI', 'logK_S_DI']
+    full_params_kcat_name = ['kcat_MS', 'kcat_DS', 'kcat_DSI', 'kcat_DSS']
+
+    trace_nth = {}
+    in_axis_nth = []
+    for name in full_params_logK_name:
+        if f'{name}:{idx}' in params_name_logK:
+            trace_nth[name] = mcmc_trace[f'{name}:{idx}'][: nsamples]
+            in_axis_nth.append(0)
+        elif name in params_name_logK:
+            trace_nth[name] = mcmc_trace[name][: nsamples]
+            in_axis_nth.append(0)
+        else: 
+            trace_nth[name] = None
+            in_axis_nth.append(None)
+
+    for name in full_params_kcat_name:
+        if f'{name}:{idx}' in params_name_kcat:
+            trace_nth[name] = mcmc_trace[f'{name}:{idx}'][: nsamples]
+            in_axis_nth.append(0)
+        elif name in params_name_kcat:
+            trace_nth[name] = mcmc_trace[name][: nsamples]
+            in_axis_nth.append(0)
+        else: 
+            trace_nth[name] = jnp.zeros(nsamples)
+            in_axis_nth.append(0)
+    
+    return trace_nth, in_axis_nth
+
+
+def _log_likelihoods(mcmc_trace, experiments, nsamples=None):
+    """
+    Sum of log likelihood of all parameters given their distribution information in params_dist
+
+    Parameters:
+    ----------
+    mcmc_trace      : list of dict, trace of Bayesian sampling
+    experiments     : list of dict
+        Each dataset contains response, logMtot, lotStot, logItot
+    ----------
+    Return: 
+        Sum of log likelihood given experiments and mcmc_trace
+    """    
+    params_name_logK = []
+    params_name_kcat = []
+    for name in mcmc_trace.keys():
+        if name.startswith('logK'):
+            params_name_logK.append(name)
+        if name.startswith('kcat'):
+            params_name_kcat.append(name)
+
+    if nsamples is None:
+        nsamples = len(mcmc_trace[params_name_logK[0]])
+    assert nsamples <= len(mcmc_trace[params_name_logK[0]]), "nsamples too big"
+
+    log_likelihoods = jnp.zeros(nsamples)
+
+    for idx, expt in enumerate(experiments):
+        try: idx_expt = expt['index']
+        except: idx_expt = idx
+
+        trace_nth, in_axis_nth = _mcmc_trace_each_enzyme(mcmc_trace, idx, nsamples)
+
+        if type(expt['kinetics']) is dict: 
+            for n in range(len(expt['kinetics'])):
+                print("Kinetics experiment", idx_expt)
+                data_rate = expt['kinetics'][n]
+                if data_rate is not None:
+                    trace_log_sigma = mcmc_trace[f'log_sigma_rate:{idx_expt}:{n}'][: nsamples]
+                    log_likelihoods += _log_likelihood_each_enzyme('kinetics', data_rate, trace_nth, trace_nth, trace_log_sigma, in_axis_nth, nsamples)
+        else:
+            print("Kinetics experiment", idx_expt)
+            data_rate = expt['kinetics']
+            if data_rate is not None:
+                trace_log_sigma = mcmc_trace[f'log_sigma_rate:{idx_expt}'][: nsamples]
+                log_likelihoods += _log_likelihood_each_enzyme('kinetics', data_rate, trace_nth, trace_nth, trace_log_sigma, in_axis_nth, nsamples)
+        
+        if type(expt['AUC']) is dict: 
+            for n in range(len(expt['AUC'])):
+                print("AUC experiment", idx_expt)
+                data_AUC = expt['AUC'][n]
+                if data_AUC is not None: 
+                    trace_log_sigma = mcmc_trace[f'log_sigma_auc:{idx_expt}:{n}'][: nsamples]
+                    log_likelihoods += _log_likelihood_each_enzyme('AUC', data_AUC, trace_nth, trace_nth, trace_log_sigma, in_axis_nth[:8], nsamples)
+        else:
+            print("AUC experiment", idx_expt)
+            data_AUC = expt['AUC']
+            if data_AUC is not None: 
+                trace_log_sigma = mcmc_trace[f'log_sigma_auc:{idx_expt}'][: nsamples]
+                log_likelihoods += _log_likelihood_each_enzyme('AUC', data_AUC, trace_nth, trace_nth, trace_log_sigma, in_axis_nth[:8], nsamples)
+
+        if type(expt['ICE']) is dict:
+            for n in range(len(expt['ICE'])):
+                print("ICE experiment", idx_expt)
+                data_ice = expt['ICE'][n]
+                if data_ice is not None: 
+                    trace_log_sigma = mcmc_trace[f'log_sigma_ice:{idx_expt}:{n}'][: nsamples]
+                    log_likelihoods += _log_likelihood_each_enzyme('ICE', data_ice, trace_nth, trace_nth, trace_log_sigma, in_axis_nth, nsamples)
+        else:
+            print("ICE experiment", idx_expt)
+            data_ice = expt['ICE']
+            if data_ice is not None: 
+                trace_log_sigma = mcmc_trace[f'log_sigma_ice:{idx_expt}'][: nsamples]
+                log_likelihoods += _log_likelihood_each_enzyme('ICE', data_ice, trace_nth, trace_nth, trace_log_sigma, in_axis_nth, nsamples)
+
+    return np.array(log_likelihoods)
+
+
+def map_finding(mcmc_trace, experiments, prior_infor, nsamples=None):
+    """
+    Evaluate probability of a parameter set using posterior distribution
+    Finding MAP (maximum a posterior) given prior distributions of parameters information
+
+    Parameters:
+    ----------
+    mcmc_trace      : list of dict, trace of Bayesian sampling trace (group_by_chain=False)
+    experiments     : list of dict
+        Each dataset contains response, logMtot, lotStot, logItot
+    prior_infor     : list of dict to assign prior distribution for kinetics parameters
+    ----------
+    Return          : values of parameters that maximize the posterior
+    """
+    params_name_logK = []
+    params_name_kcat = []
+    for name in mcmc_trace.keys():
+        if name.startswith('logK'):
+            params_name_logK.append(name)
+        if name.startswith('kcat'):
+            params_name_kcat.append(name)
+
+    if nsamples is None:
+        nsamples = len(mcmc_trace[params_name_logK[0]])
+    assert nsamples <= len(mcmc_trace[params_name_logK[0]]), "nsamples too big"       
+
+    print("Calculing log of priors.")
+    log_priors = _log_priors(mcmc_trace, experiments, prior_infor, nsamples)
+    print("Calculing log likelihoods:")
+    log_likelihoods = _log_likelihoods(mcmc_trace, experiments, nsamples)
+    log_probs = log_priors + log_likelihoods
+    # map_idx = np.argmax(log_probs)
+    map_idx = np.nanargmax(log_probs)
+    print("Map index: %d" % map_idx)
+
+    map_params = {}
+    for name in mcmc_trace.keys():
+        map_params[name] = mcmc_trace[name][map_idx]
+
+    return [map_idx, map_params, log_probs]
 
 
 def _uniform_pdf(x, lower, upper):
@@ -62,352 +392,3 @@ def _gaussian_pdf(x, mean, std):
     """
     # return stats.norm.pdf((x-mean)/std, 0, 1)
     return jnp.exp(dist.Normal(loc=0, scale=1).log_prob((x-mean)/std))
-
-
-def _log_prior_uniform(mcmc_trace, experiments, params_logK_name=None, params_kcat_name=None, nsamples=None):
-    """
-    Sum of log prior of all parameters, assuming they follows uniform distribution
-
-    Parameters:
-    ----------
-    mcmc_trace      : list of dict, trace of Bayesian sampling
-    experiments     : list of dict
-        Each dataset contains response, logMtot, lotStot, logItot
-    params_logK_name: list of all dissociation constant names
-    params_kcat_name: list of all kcat names 
-    nsamples        : int, number of samples to find MAP
-    ----------
-    Return: 
-        An array which size equals to mcmc_trace[:samples], each position corresponds 
-        to sum of log prior calculated by values of parameters from mcmc_trace
-    """
-    if params_logK_name is None: 
-        params_logK_name = ['logKd', 'logK_S_M', 'logK_S_D', 'logK_S_DS', 'logK_I_M', 'logK_I_D', 'logK_I_DI', 'logK_S_DI']
-    if params_kcat_name is None: 
-        params_kcat_name = ['kcat_MS', 'kcat_DS', 'kcat_DSI', 'kcat_DSS']
-
-    if nsamples is None:
-        nsamples = len(mcmc_trace[params_logK_name[0]])
-    assert nsamples <= len(mcmc_trace[params_logK_name[0]]), "nsamples too big"
-
-    log_priors = jnp.zeros(nsamples)
-    f_log_prior_logK = vmap(lambda param: _uniform_pdf(param, -20, 0))
-    for name in params_logK_name:
-        param_trace = mcmc_trace[name][: nsamples]
-        log_priors += jnp.log(f_log_prior_logK(param_trace))
-    
-    f_log_prior_kcat = vmap(lambda param: _uniform_pdf(param, 0, 1))
-    for name in params_kcat_name:
-        param_trace = mcmc_trace[name][: nsamples]
-        log_priors += jnp.log(f_log_prior_kcat(param_trace))
-
-    for (n, experiment) in enumerate(experiments):
-        name_tech = experiment['type']
-
-        if name_tech == 'kinetics':
-            rate = experiment['v']
-            log_sigma_min, log_sigma_max = logsigma_guesses(rate)
-
-            f_log_prior_sigma = vmap(lambda sigma: _uniform_pdf(sigma, log_sigma_min, log_sigma_max))
-            param_trace = mcmc_trace[f'{name_tech}_log_sigma:{n}'][: nsamples]
-            log_priors += jnp.log(f_log_prior_sigma(param_trace))
-
-        if name_tech == 'AUC':
-            auc = experiment['M']
-            log_sigma_min, log_sigma_max = logsigma_guesses(auc)
-
-            f_log_prior_sigma = vmap(lambda sigma: _uniform_pdf(sigma, log_sigma_min, log_sigma_max))
-            param_trace = mcmc_trace[f'{name_tech}_log_sigma:{n}'][: nsamples]
-            log_priors += jnp.log(f_log_prior_sigma(param_trace))
-        
-        if name_tech == 'catalytic_efficiency':
-            ice = experiment['Km_over_kcat']
-            log_sigma_min, log_sigma_max = logsigma_guesses(ice)
-
-            f_log_prior_sigma = vmap(lambda sigma: _uniform_pdf(sigma, log_sigma_min, log_sigma_max))
-            param_trace = mcmc_trace[f'{name_tech}_log_sigma:{n}'][: nsamples]
-            log_priors += jnp.log(f_log_prior_sigma(param_trace))
-    
-    return np.array(log_priors)
-
-
-def _log_prior(experiments, evaluated_params, params_dist):
-    """
-    Sum of log prior of all parameters given their distribution information in params_dist
-
-    Parameters:
-    ----------
-    experiments     : list of dict
-        Each dataset contains response, logMtot, lotStot, logItot
-    evaluated_params: list of evaluated parameter set
-    params_dist     : list of dict
-        Each dataset contains type, name, distribution and its parameter. For example: 
-        
-        params_dist = []
-        params_dist.append({'type':'logK', 'name': 'logKd', 'dist': 'normal', 'loc': -5, 'scale': 2}
-        params_dist.append({'type':'kcat', 'name': 'kcat_MS', 'dist': 'uniform', 'lower': 0, 'upper': 1})
-    ----------
-    Return: 
-        An array which size equals to length of evaluated_params, each position corresponds 
-        to sum of log prior distributions
-    """
-    nsamples = len(evaluated_params[params_dist[0]['name']])
-    log_priors = jnp.zeros(nsamples)
-
-    normal_priors = {}
-    uniform_priors = {}
-
-    for params in params_dist:
-        if params['dist'] == 'normal':
-            normal_priors[params['name']] = {'loc': params['loc'], 'scale': params['scale']}
-            
-        if params['dist'] == 'uniform':
-            uniform_priors[params['name']] = {'lower': params['lower'], 'upper': params['upper']}
-
-    for name in normal_priors:
-        param_list = evaluated_params[name]
-        f_prior = vmap(lambda param: _gaussian_pdf(param, normal_priors[name]['loc'], normal_priors[name]['scale']))
-        log_priors += jnp.log(f_prior(param_list))
-
-    for name in uniform_priors:
-        param_list = evaluated_params[name]
-        f_prior = vmap(lambda param: _uniform_pdf(param, uniform_priors[name]['lower'], uniform_priors[name]['upper']))
-        log_priors += jnp.log(f_prior(param_list))
-
-    for (n, experiment) in enumerate(experiments):
-        name_tech = experiment['type']
-
-        if name_tech == 'kinetics':
-            rate = experiment['v']
-            log_sigma_min, log_sigma_max = logsigma_guesses(rate)
-
-            f_prior_sigma = vmap(lambda sigma: _uniform_pdf(sigma, log_sigma_min, log_sigma_max))
-            try: 
-                param_list = evaluated_params['log_sigma_rate']
-            except:
-                param_list = evaluated_params[experiment['log_sigma']]
-            log_priors += jnp.log(f_prior_sigma(param_list))
-
-        if name_tech == 'AUC':
-            auc = experiment['M']
-            log_sigma_min, log_sigma_max = logsigma_guesses(auc)
-
-            f_prior_sigma = vmap(lambda sigma: _uniform_pdf(sigma, log_sigma_min, log_sigma_max))
-            try:
-                param_list = evaluated_params['log_sigma_auc']
-            except:
-                param_list = evaluated_params[experiment['log_sigma']]
-            log_priors += jnp.log(f_prior_sigma(param_list))
-        
-        if name_tech == 'catalytic_efficiency':
-            ice = experiment['Km_over_kcat']
-            log_sigma_min, log_sigma_max = logsigma_guesses(ice)
-
-            f_prior_sigma = vmap(lambda sigma: _uniform_pdf(sigma, log_sigma_min, log_sigma_max))
-            try:
-                param_list = evaluated_params['log_sigma_ice']
-            except:
-                param_list = evaluated_params[experiment['log_sigma']]
-            log_priors += jnp.log(f_prior_sigma(param_list))
-    
-    return np.array(log_priors)
-
-
-def _log_likelihood(experiments, evaluated_params, params_dist):
-    """
-    Sum of log likelihood of all parameters given their distribution information in params_dist
-
-    Parameters:
-    ----------
-    experiments     : list of dict
-        Each dataset contains response, logMtot, lotStot, logItot
-    evaluated_params: list of evaluated parameter set
-    params_dist     : list of dict
-        Each dataset contains type, name, distribution and its parameter. For example: 
-        
-        params_dist = []
-        params_dist.append({'type':'logK', 'name': 'logKd', 'dist': 'normal', 'loc': -5, 'scale': 2}
-        params_dist.append({'type':'kcat', 'name': 'kcat_MS', 'dist': 'uniform', 'lower': 0, 'upper': 1})
-    ----------
-    Return: 
-        An array which size equals to length of evaluated_params, each position corresponds 
-        to sum of log likelihood calculated by values of parameters from evaluated_params
-    """
-    params_logK_name = []
-    params_kcat_name = []
-    for param in params_dist:
-        if param['type'] == 'logK':
-            params_logK_name.append(param['name'])
-        if param['type'] == 'kcat':
-            params_kcat_name.append(param['name'])
-
-    full_params_logK_name = ['logKd', 'logK_S_M', 'logK_S_D', 'logK_S_DS', 'logK_I_M', 'logK_I_D', 'logK_I_DI', 'logK_S_DI']
-    full_params_kcat_name = ['kcat_MS', 'kcat_DS', 'kcat_DSI', 'kcat_DSS']
-
-    nsamples = len(evaluated_params[params_dist[0]['name']])
-    log_likelihoods = jnp.zeros(nsamples)
-
-    for (n, experiment) in enumerate(experiments):
-        print("Experiment", experiment['type'], n)
-        name_tech = experiment['type']
-
-        logK_list = {}
-        kcat_list = {}
-        for name in full_params_logK_name: 
-            if name in params_logK_name: 
-                logK_list[name] = evaluated_params[name]
-            else:
-                logK_list[name] = jnp.zeros(nsamples)
-        for name in full_params_kcat_name:
-            if name in params_kcat_name:
-                kcat_list[name] = evaluated_params[name]
-            else:
-                kcat_list[name] = jnp.zeros(nsamples)
-
-        if name_tech == 'kinetics':
-            rate = experiment['v']
-            kinetics_logMtot = experiment['logMtot']
-            kinetics_logStot = experiment['logStot']
-            kinetics_logItot = experiment['logItot']
-            try:
-                log_sigma_trace = evaluated_params['log_sigma_rate'][: nsamples]
-            except:
-                log_sigma_trace = evaluated_params[experiment['log_sigma']][: nsamples]
-            f = vmap(lambda logKd, logK_S_M, logK_S_D, logK_S_DS, logK_I_M, logK_I_D, logK_I_DI, logK_S_DI, kcat_MS, kcat_DS, kcat_DSI, kcat_DSS, log_sigma: _log_likelihood_normal(rate, 
-                                                                                                                                                                                    ReactionRate(kinetics_logMtot, kinetics_logStot, kinetics_logItot, 
-                                                                                                                                                                                                 logKd, logK_S_M, logK_S_D, logK_S_DS, logK_I_M, logK_I_D, logK_I_DI, logK_S_DI, 
-                                                                                                                                                                                                 kcat_MS, kcat_DS, kcat_DSI, kcat_DSS), 
-                                                                                                                                                                                    jnp.exp(log_sigma)) )
-            log_likelihoods += f(logK_list['logKd'], logK_list['logK_S_M'], logK_list['logK_S_D'], 
-                                 logK_list['logK_S_DS'], logK_list['logK_I_M'], logK_list['logK_I_D'], 
-                                 logK_list['logK_I_DI'], logK_list['logK_S_DI'], kcat_list['kcat_MS'], 
-                                 kcat_list['kcat_DS'], kcat_list['kcat_DSI'], kcat_list['kcat_DSS'], 
-                                 log_sigma_trace)
-            
-        if name_tech == 'AUC':
-            auc = experiment['M']
-            AUC_logMtot = experiment['logMtot']
-            AUC_logStot = experiment['logStot']
-            AUC_logItot = experiment['logItot']
-            try:
-                log_sigma_trace = evaluated_params['log_sigma_auc']
-            except:
-                log_sigma_trace = evaluated_params[experiment['log_sigma']]
-            f = vmap(lambda logKd, logK_S_M, logK_S_D, logK_S_DS, logK_I_M, logK_I_D, logK_I_DI, logK_S_DI, log_sigma: _log_likelihood_normal(auc,
-                                                                                                                                              MonomerConcentration(AUC_logMtot, AUC_logStot, AUC_logItot,
-                                                                                                                                                                   logKd, logK_S_M, logK_S_D, logK_S_DS, logK_I_M, logK_I_D, logK_I_DI, logK_S_DI),
-                                                                                                                                              jnp.exp(log_sigma)) )
-            log_likelihoods += f(logK_list['logKd'], logK_list['logK_S_M'], logK_list['logK_S_D'], 
-                                 logK_list['logK_S_DS'], logK_list['logK_I_M'], logK_list['logK_I_D'], 
-                                 logK_list['logK_I_DI'], logK_list['logK_S_DI'],
-                                 log_sigma_trace)
-
-        if name_tech == 'catalytic_efficiency':
-            ice = experiment['Km_over_kcat']
-            ice_logMtot = experiment['logMtot']
-            ice_logStot = experiment['logStot']
-            ice_logItot = experiment['logItot']
-            try:
-                log_sigma_trace = evaluated_params['log_sigma_ice']
-            except:
-                log_sigma_trace = evaluated_params[experiment['log_sigma']]
-            f = vmap(lambda logKd, logK_S_M, logK_S_D, logK_S_DS, logK_I_M, logK_I_D, logK_I_DI, logK_S_DI, kcat_MS, kcat_DS, kcat_DSI, kcat_DSS, log_sigma: _log_likelihood_normal(ice, 
-                                                                                                                                                                                    1./CatalyticEfficiency(ice_logMtot, ice_logItot,
-                                                                                                                                                                                                           logKd, logK_S_M, logK_S_D, logK_S_DS, logK_I_M, logK_I_D, logK_I_DI, logK_S_DI, 
-                                                                                                                                                                                                           kcat_MS, kcat_DS, kcat_DSI, kcat_DSS), 
-                                                                                                                                                                                    jnp.exp(log_sigma)) )
-            log_likelihoods += f(logK_list['logKd'], logK_list['logK_S_M'], logK_list['logK_S_D'], 
-                                 logK_list['logK_S_DS'], logK_list['logK_I_M'], logK_list['logK_I_D'], 
-                                 logK_list['logK_I_DI'], logK_list['logK_S_DI'], kcat_list['kcat_MS'], 
-                                 kcat_list['kcat_DS'], kcat_list['kcat_DSI'], kcat_list['kcat_DSS'], 
-                                 log_sigma_trace)
-
-    return np.array(log_likelihoods)
-
-
-def _map_uniform(mcmc_trace, experiments, params_logK_name=None, params_kcat_name=None, nsamples=None):
-    """
-    Finding MAP (maximum a posterior) assuming prior of parameters follow uniform distribution
-
-    Parameters:
-    ----------
-    mcmc_trace      : list of dict, trace of Bayesian sampling
-    experiments     : list of dict
-        Each dataset contains response, logMtot, lotStot, logItot
-    params_logK_name: list of all dissociation constant names
-    params_kcat_name: list of all kcat names 
-    nsamples        : int, number of samples to find MAP
-    ----------
-    Return:
-        Values of parameters that maximize the posterior
-    """
-    if params_logK_name is None: 
-        params_logK_name = ['logKd', 'logK_S_M', 'logK_S_D', 'logK_S_DS', 'logK_I_M', 'logK_I_D', 'logK_I_DI', 'logK_S_DI']
-    if params_kcat_name is None: 
-        params_kcat_name = ['kcat_MS', 'kcat_DS', 'kcat_DSI', 'kcat_DSS']
-
-    if nsamples is None:
-        nsamples = len(mcmc_trace[params_logK_name[0]])
-    assert nsamples <= len(mcmc_trace[params_logK_name[0]]), "nsamples too big"
-
-    log_priors = _log_prior_uniform(mcmc_trace, experiments, params_logK_name, params_kcat_name, nsamples)
-    log_likelihoods = _log_likelihood(mcmc_trace, experiments, params_logK_name, params_kcat_name, nsamples)
-    log_probs = log_priors + log_likelihoods
-    map_idx = np.argmax(log_probs)
-    print("Map index: %d" % map_idx)
-
-    map_params = {}
-    for name in params_logK_name: 
-        map_params[name] = mcmc_trace[name][map_idx]
-    for name in params_kcat_name:
-        map_params[name] = mcmc_trace[name][map_idx]
-
-    return [map_params, map_idx]
-
-
-def _map_finding(mcmc_trace, experiments, params_to_evaluate=None, params_dist=None):
-    """
-    Evaluate probability of a parameter set using posterior distribution
-    Finding MAP (maximum a posterior) given prior distributions of parameters in params_dist
-
-    Parameters:
-    ----------
-    mcmc_trace      : list of dict, trace of Bayesian sampling
-    experiments     : list of dict
-        Each dataset contains response, logMtot, lotStot, logItot
-    evaluated_params: list of evaluated parameter set
-    params_dist     : list of dict
-        Each dataset contains type, name, distribution and its parameter. For example: 
-        
-        params_dist = []
-        params_dist.append({'type':'logK', 'name': 'logKd', 'dist': 'normal', 'loc': -5, 'scale': 2}
-        params_dist.append({'type':'kcat', 'name': 'kcat_MS', 'dist': 'uniform', 'lower': 0, 'upper': 1})
-    ----------
-    Return          : values of parameters that maximize the posterior
-    """
-    if params_dist is None:
-        params_dist = []
-        for name in ['logKd', 'logK_S_M', 'logK_S_D', 'logK_S_DS', 'logK_I_M', 'logK_I_D', 'logK_I_DI', 'logK_S_DI']:
-            params_dist.append({'type':'logK', 'name': name, 'dist': 'uniform', 'lower': -20, 'upper': 0})
-        for name in ['kcat_MS', 'kcat_DS', 'kcat_DSI', 'kcat_DSS']:
-            params_dist.append({'type':'kcat', 'name': name, 'dist': 'uniform', 'lower': 0, 'upper': 1})
-
-    if params_to_evaluate is None:
-        evaluated_params = mcmc_trace
-    else:
-        evaluated_params = params_to_evaluate        
-
-    nsamples = len(evaluated_params[params_dist[0]['name']])
-
-    log_priors = _log_prior(experiments, evaluated_params, params_dist)
-    log_likelihoods = _log_likelihood(experiments, evaluated_params, params_dist)
-    log_probs = log_priors + log_likelihoods
-    # map_idx = np.argmax(log_probs)
-    map_idx = np.nanargmax(log_probs)
-    print("Map index: %d" % map_idx)
-
-    map_params = {}
-    for name in evaluated_params.keys():
-        map_params[name] = evaluated_params[name][map_idx]
-
-    return [log_probs, map_params, map_idx]
