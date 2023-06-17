@@ -138,7 +138,9 @@ if shared_params is not None and len(shared_params)>0:
 
 with open("map.txt", "w") as f:
     print("MAP index:" + str(map_index), file=f)
-    print("Kinetics parameters: \n" + str(map_params), file=f)
+    print("\nKinetics parameters:", file=f)
+    for key in trace.keys():
+        print(key, ': %.3f' %trace[key][map_index], file=f)
 
 ## Fitting plot
 params_logK, params_kcat = extract_params_from_map_and_prior(trace, map_index, prior_infor_update)
