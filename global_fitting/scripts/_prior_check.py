@@ -260,6 +260,7 @@ def _prior_group_multi_enzyme(prior_information, n_enzymes, params_name):
     ----------
     prior_information : list of dict to assign prior distribution for kinetics parameters
     n_enzymes         : number of enzymes
+    params_name       : 'logK' or 'kcat'
     
     Examples: 
         prior_information = []
