@@ -132,3 +132,51 @@ def extract_kcat_n_idx(params_kcat, idx, shared_params=None):
     kcat_DSS = _extract_param_n_idx('kcat_DSS', params_kcat, idx, shared_params)
 
     return [kcat_MS, kcat_DS, kcat_DSI, kcat_DSS]
+
+
+def _prior_group_name(prior_information, n_enzymes, params_name=None):
+    """
+    Parameters:
+    ----------
+    prior_information : list of dict to assign prior distribution for kinetics parameters
+    n_enzymes         : number of enzymes
+    params_name       : 'logK' or 'kcat'
+
+    return a list of dictionary of information of prior distribution
+    """
+    params_dict = {}
+    if params_name is None: params_name = ['logKd', 'logK', 'kcat']
+
+    for prior in prior_information:
+        if prior['type'] in params_name:
+            assert prior['type'] in ['logKd', 'logK', 'kcat'], "Paramter type should be logKd, logK or kcat."
+            assert prior['fit'] in ['global', 'local'], "Please declare correctly if the parameter(s) would be fit local/global."
+
+            name = prior['name']
+            if prior['fit'] == 'local':
+                for n in range(n_enzymes):
+                    if type(prior['dist']) == str or prior['dist'] is None:
+                        dist = prior['dist']
+                    else:
+                        dist = prior['dist'][n]
+                    if dist == 'normal':
+                        params_dict[f'{name}:{n}'] = {'dist': 'normal', 'loc': prior['loc'][n], 'scale': prior['scale'][n]}
+                    elif dist == 'uniform':
+                        params_dict[f'{name}:{n}'] = {'dist': 'uniform', 'lower': prior['lower'][n], 'upper': prior['upper'][n]}
+                    elif dist is None:
+                        if prior['value'][n] is not None:
+                            params_dict[f'{name}:{n}'] = {'dist': None, 'value': prior['value'][n]}
+                        else:
+                            params_dict[f'{name}:{n}'] = None
+
+            elif prior['fit'] == 'global':
+                if prior['dist'] == 'normal':
+                    params_dict[name] = {'dist': 'normal', 'loc': prior['loc'], 'scale': prior['scale']}
+                elif prior['dist'] == 'uniform':
+                    params_dict[name] = {'dist': 'uniform', 'lower': prior['lower'], 'upper': prior['upper']}
+                elif prior['dist'] is None:
+                    if prior['value'] is not None:
+                        params_dict[name] = {'dist': None, 'value': prior['value']}
+                    else:
+                        params_dict[name] = None
+    return params_dict
