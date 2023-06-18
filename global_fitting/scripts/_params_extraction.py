@@ -187,20 +187,28 @@ def _prior_group_name(prior_information, n_enzymes, params_name=None):
                     if dist == 'normal':
                         if type(prior['loc']) == str:
                             loc = _convert_str_to_array_float(prior['loc'])[n]
+                        elif isinstance(prior['loc'], np.ndarray):
+                            loc = prior['loc'][n]
                         else:
                             loc = prior['loc']
                         if type(prior['scale']) == str:
                             scale = _convert_str_to_array_float(prior['scale'])[n]
+                        elif isinstance(prior['scale'], np.ndarray):
+                            scale = prior['scale'][n]
                         else:
                             scale = prior['scale']
                         params_dict[f'{name}:{n}'] = {'dist': 'normal', 'loc': float(loc), 'scale': float(scale)}
                     elif dist == 'uniform':
                         if type(prior['lower']) == str:
                             lower = _convert_str_to_array_float(prior['lower'])[n]
+                        elif isinstance(prior['lower'], np.ndarray):
+                            lower = prior['lower'][n]
                         else:
                             lower = prior['lower']
                         if type(prior['upper']) == str:
                             upper = _convert_str_to_array_float(prior['upper'])[n]
+                        elif isinstance(prior['upper'], np.ndarray):
+                            upper = prior['upper'][n]
                         else:
                             upper = prior['upper']
                         params_dict[f'{name}:{n}'] = {'dist': 'uniform', 'lower': float(lower), 'upper': float(upper)}
@@ -208,9 +216,11 @@ def _prior_group_name(prior_information, n_enzymes, params_name=None):
                         if prior['value'][n] is not None:
                             if type(prior['value']) == str:
                                 value = _convert_str_to_array_float(prior['value'])[n]
+                            elif isinstance(prior['value'], np.ndarray):
+                                value = prior['value'][n]
                             else:
                                 value = prior['value']
-                            params_dict[f'{name}:{n}'] = {'dist': None, 'value': value}
+                            params_dict[f'{name}:{n}'] = {'dist': None, 'value': float(value)}
                         else:
                             params_dict[f'{name}:{n}'] = None
 
