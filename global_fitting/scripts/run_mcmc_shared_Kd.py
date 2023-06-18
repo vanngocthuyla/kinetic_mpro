@@ -32,23 +32,28 @@ from _plotting import adjustable_plot_data
 
 parser = argparse.ArgumentParser()
 
-parser.add_argument( "--out_dir",               type=str, 				default="")
+parser.add_argument( "--out_dir",                       type=str, 				default="")
 
-parser.add_argument( "--fit_mutant_kinetics",   action="store_true",    default=False)
-parser.add_argument( "--fit_mutant_AUC",        action="store_true",    default=False)
-parser.add_argument( "--fit_mutant_ICE",        action="store_true",    default=False)
-parser.add_argument( "--fit_wildtype_Nashed",   action="store_true",    default=False)
-parser.add_argument( "--fit_wildtype_Vuong",    action="store_true",    default=False)
-parser.add_argument( "--fit_E_S",               action="store_true",    default=False)
-parser.add_argument( "--fit_E_I",               action="store_true",    default=False)
-parser.add_argument( "--multi_var_mut",         action="store_true",    default=False)
-parser.add_argument( "--multi_var_wt",          action="store_true",    default=False)
+parser.add_argument( "--fit_mutant_kinetics",           action="store_true",    default=True)
+parser.add_argument( "--fit_mutant_AUC",                action="store_true",    default=True)
+parser.add_argument( "--fit_mutant_ICE",                action="store_true",    default=True)
+parser.add_argument( "--fit_wildtype_Nashed",           action="store_true",    default=True)
+parser.add_argument( "--fit_wildtype_Vuong",            action="store_true",    default=True)
+parser.add_argument( "--fit_E_S",                       action="store_true",    default=True)
+parser.add_argument( "--fit_E_I",                       action="store_true",    default=True)
 
-parser.add_argument( "--niters",				type=int, 				default=10000)
-parser.add_argument( "--nburn",                 type=int, 				default=2000)
-parser.add_argument( "--nthin",                 type=int, 				default=1)
-parser.add_argument( "--nchain",                type=int, 				default=4)
-parser.add_argument( "--random_key",            type=int, 				default=0)
+parser.add_argument( "--multi_var_mut",                 action="store_true",    default=False)
+parser.add_argument( "--multi_var_wt",                  action="store_true",    default=False)
+
+parser.add_argument( "--set_K_I_M_equal_K_S_M",         action="store_true",    default=False)
+parser.add_argument( "--set_K_S_DI_equal_K_S_DS",       action="store_true",    default=False)
+parser.add_argument( "--set_kcat_DSS_equal_kcat_DSI",   action="store_true",    default=True)
+
+parser.add_argument( "--niters",				        type=int, 				default=10000)
+parser.add_argument( "--nburn",                         type=int, 				default=2000)
+parser.add_argument( "--nthin",                         type=int, 				default=1)
+parser.add_argument( "--nchain",                        type=int, 				default=4)
+parser.add_argument( "--random_key",                    type=int, 				default=0)
 
 args = parser.parse_args()
 
@@ -71,8 +76,7 @@ kcat_min = 0.
 kcat_max = 100.
 
 prior = {}
-prior = {}
-prior['logKd'] = {'type':'logKd', 'name': 'logKd', 'fit':'local','dist': ['normal', 'normal', None], 'loc': [-5, -14, -14], 'scale': 3, 'value': None}
+prior['logKd'] = {'type':'logKd', 'name': 'logKd', 'fit':'local','dist': ['normal', 'normal', 'normal'], 'loc': [-5, -14, -14], 'scale': 3}
 prior['logK_S_M'] = {'type':'logK', 'name': 'logK_S_M', 'fit':'global', 'dist': 'uniform', 'lower': logKd_min, 'upper': logKd_max}
 prior['logK_S_D'] = {'type':'logK', 'name': 'logK_S_D', 'fit':'global', 'dist': 'uniform', 'lower': logKd_min, 'upper': logKd_max}
 prior['logK_S_DS'] = {'type':'logK', 'name': 'logK_S_DS', 'fit':'global', 'dist': 'uniform', 'lower': logKd_min, 'upper': logKd_max}
@@ -82,7 +86,7 @@ prior['logK_I_DI'] = {'type':'logK', 'name': 'logK_I_DI', 'fit':'global', 'dist'
 prior['logK_S_DI'] = {'type':'logK', 'name': 'logK_S_DI', 'fit':'global', 'dist': 'uniform', 'lower': logKd_min, 'upper': logKd_max}
 
 prior['kcat_MS'] = {'type':'kcat', 'name': 'kcat_MS', 'fit':'global', 'dist': None, 'value': 0.}
-prior['kcat_DS'] = {'type':'kcat', 'name': 'kcat_DS', 'fit':'local', 'dist': [None, 'uniform', 'uniform'], 'lower': kcat_min, 'upper': [0., 100, 300], 'value': [0., 0., 0.]}
+prior['kcat_DS'] = {'type':'kcat', 'name': 'kcat_DS', 'fit':'local', 'dist': 'uniform', 'lower': kcat_min, 'upper': [1., 100, 300]}
 prior['kcat_DSS'] = {'type':'kcat', 'name': 'kcat_DSS', 'fit':'local', 'dist': 'uniform', 'lower': kcat_min, 'upper': [1., 100., 300.]}
 prior['kcat_DSI'] = {'type':'kcat', 'name': 'kcat_DSI', 'fit':'local', 'dist': 'uniform', 'lower': kcat_min, 'upper': [1., 100., 300.]}
 
@@ -104,7 +108,9 @@ os.chdir(args.out_dir)
 
 kernel = NUTS(adjustable_global_fitting)
 mcmc = MCMC(kernel, num_warmup=args.nburn, num_samples=args.niters, num_chains=args.nchain, progress_bar=True)
-mcmc.run(rng_key_, experiments=expts, prior_infor=prior_infor_update, shared_params=shared_params)
+mcmc.run(rng_key_, experiments=expts, prior_infor=prior_infor_update, shared_params=shared_params, 
+         set_K_I_M_equal_K_S_M=args.set_K_I_M_equal_K_S_M, set_K_S_DI_equal_K_S_DS=args.set_K_S_DI_equal_K_S_DS, 
+         set_kcat_DSS_equal_kcat_DSI=args.set_kcat_DSS_equal_kcat_DSI)
 mcmc.print_summary()
 
 trace = mcmc.get_samples(group_by_chain=False)

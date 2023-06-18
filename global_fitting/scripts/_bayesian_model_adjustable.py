@@ -13,7 +13,8 @@ from _prior_check import check_prior_group, prior_group_multi_enzyme, define_uni
 
 def adjustable_global_fitting(experiments, prior_infor=None,
                               logKd_min=-20, logKd_max=0, kcat_min=0, kcat_max=1,
-                              shared_params=None):
+                              shared_params=None, set_K_I_M_equal_K_S_M=False,
+                              set_K_S_DI_equal_K_S_DS=False, set_kcat_DSS_equal_kcat_DSI=False):
     """
     Parameters:
     ----------
@@ -36,51 +37,54 @@ def adjustable_global_fitting(experiments, prior_infor=None,
     if prior_infor is None:
         init_prior_infor = define_uniform_prior_group(logKd_min, logKd_max, kcat_min, kcat_max)
         prior_infor = check_prior_group(init_prior_infor, n_enzymes)
-    params_logK, params_kcat = prior_group_multi_enzyme(prior_infor, n_enzymes)
-
+    params_logK, params_kcat = prior_group_multi_enzyme(prior_infor, n_enzymes, shared_params, set_K_I_M_equal_K_S_M, 
+                                                        set_K_S_DI_equal_K_S_DS, set_kcat_DSS_equal_kcat_DSI)
     for idx, expt in enumerate(experiments):
         try:
             idx_expt = expt['index']
         except:
             idx_expt = idx
+        # print(idx_expt)
 
-        [logKd, logK_S_M, logK_S_D, logK_S_DS, logK_I_M, logK_I_D, logK_I_DI, logK_S_DI] = extract_logK_n_idx(params_logK, idx, shared_params)
-        [kcat_MS, kcat_DS, kcat_DSI, kcat_DSS] = extract_kcat_n_idx(params_kcat, idx, shared_params)
-    
-        if type(expt['kinetics']) is dict: 
+        [logKd, logK_S_M, logK_S_D, logK_S_DS, logK_I_M, logK_I_D, logK_I_DI, logK_S_DI] = extract_logK_n_idx(params_logK, idx, shared_params,
+                                                                                                              set_K_I_M_equal_K_S_M,
+                                                                                                              set_K_S_DI_equal_K_S_DS)
+        [kcat_MS, kcat_DS, kcat_DSI, kcat_DSS] = extract_kcat_n_idx(params_kcat, idx, shared_params, set_kcat_DSS_equal_kcat_DSI)
+
+        if type(expt['kinetics']) is dict:
             for n in range(len(expt['kinetics'])):
                 data_rate = expt['kinetics'][n]
                 if data_rate is not None:
-                    adjustable_fitting_each_dataset('kinetics', data_rate, [logKd, logK_S_M, logK_S_D, logK_S_DS, logK_I_M, logK_I_D, logK_I_DI, logK_S_DI, kcat_MS, kcat_DS, kcat_DSI, kcat_DSS], 
+                    adjustable_fitting_each_dataset('kinetics', data_rate, [logKd, logK_S_M, logK_S_D, logK_S_DS, logK_I_M, logK_I_D, logK_I_DI, logK_S_DI, kcat_MS, kcat_DS, kcat_DSI, kcat_DSS],
                                                     f'rate:{idx_expt}:{n}', f'log_sigma_rate:{idx_expt}:{n}')
         else:
             data_rate = expt['kinetics']
             if data_rate is not None:
-                adjustable_fitting_each_dataset('kinetics', data_rate, [logKd, logK_S_M, logK_S_D, logK_S_DS, logK_I_M, logK_I_D, logK_I_DI, logK_S_DI, kcat_MS, kcat_DS, kcat_DSI, kcat_DSS], 
+                adjustable_fitting_each_dataset('kinetics', data_rate, [logKd, logK_S_M, logK_S_D, logK_S_DS, logK_I_M, logK_I_D, logK_I_DI, logK_S_DI, kcat_MS, kcat_DS, kcat_DSI, kcat_DSS],
                                                 f'rate:{idx_expt}', f'log_sigma_rate:{idx_expt}')
-        
-        if type(expt['AUC']) is dict: 
+
+        if type(expt['AUC']) is dict:
             for n in range(len(expt['AUC'])):
                 data_AUC = expt['AUC'][n]
-                if data_AUC is not None: 
-                    adjustable_fitting_each_dataset('AUC', data_AUC, [logKd, logK_S_M, logK_S_D, logK_S_DS, logK_I_M, logK_I_D, logK_I_DI, logK_S_DI], 
+                if data_AUC is not None:
+                    adjustable_fitting_each_dataset('AUC', data_AUC, [logKd, logK_S_M, logK_S_D, logK_S_DS, logK_I_M, logK_I_D, logK_I_DI, logK_S_DI],
                                                     f'auc:{idx_expt}:{n}', f'log_sigma_auc:{idx_expt}:{n}')
-        else:            
+        else:
             data_AUC = expt['AUC']
-            if data_AUC is not None: 
-                adjustable_fitting_each_dataset('AUC', data_AUC, [logKd, logK_S_M, logK_S_D, logK_S_DS, logK_I_M, logK_I_D, logK_I_DI, logK_S_DI], 
+            if data_AUC is not None:
+                adjustable_fitting_each_dataset('AUC', data_AUC, [logKd, logK_S_M, logK_S_D, logK_S_DS, logK_I_M, logK_I_D, logK_I_DI, logK_S_DI],
                                                 f'auc:{idx_expt}', f'log_sigma_auc:{idx_expt}')
 
         if type(expt['ICE']) is dict:
             for n in range(len(expt['ICE'])):
                 data_ice = expt['ICE'][n]
-                if data_ice is not None: 
-                    adjustable_fitting_each_dataset('ICE', data_ice, [logKd, logK_S_M, logK_S_D, logK_S_DS, logK_I_M, logK_I_D, logK_I_DI, logK_S_DI, kcat_MS, kcat_DS, kcat_DSI, kcat_DSS], 
+                if data_ice is not None:
+                    adjustable_fitting_each_dataset('ICE', data_ice, [logKd, logK_S_M, logK_S_D, logK_S_DS, logK_I_M, logK_I_D, logK_I_DI, logK_S_DI, kcat_MS, kcat_DS, kcat_DSI, kcat_DSS],
                                                     f'ice:{idx_expt}:{n}', f'log_sigma_ice:{idx_expt}:{n}')
         else:
             data_ice = expt['ICE']
-            if data_ice is not None: 
-                adjustable_fitting_each_dataset('ICE', data_ice, [logKd, logK_S_M, logK_S_D, logK_S_DS, logK_I_M, logK_I_D, logK_I_DI, logK_S_DI, kcat_MS, kcat_DS, kcat_DSI, kcat_DSS], 
+            if data_ice is not None:
+                adjustable_fitting_each_dataset('ICE', data_ice, [logKd, logK_S_M, logK_S_D, logK_S_DS, logK_I_M, logK_I_D, logK_I_DI, logK_S_DI, kcat_MS, kcat_DS, kcat_DSI, kcat_DSS],
                                                 f'ice:{idx_expt}', f'log_sigma_ice:{idx_expt}')
 
 
