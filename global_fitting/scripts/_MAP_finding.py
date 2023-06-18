@@ -6,7 +6,7 @@ import numpyro.distributions as dist
 
 from _prior_distribution import logsigma_guesses
 from _kinetics_adjustable import Adjustable_ReactionRate, Adjustable_MonomerConcentration, Adjustable_CatalyticEfficiency
-from _params_extraction import _prior_group_name
+from _load_prior_csv import _prior_group_name
 
 
 def _log_prior_sigma(mcmc_trace, data, sigma_name, nsamples):
