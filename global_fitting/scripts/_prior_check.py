@@ -254,17 +254,14 @@ def check_prior_group(prior_information, n_enzymes):
     return prior_update
 
 
-def _prior_group_multi_enzyme(prior_information, n_enzymes, params_name, shared_params=None, 
-                              set_K_I_M_equal_K_S_M=False, set_K_S_DI_equal_K_S_DS=False, 
-                              set_kcat_DSS_equal_kcat_DSI=False):
+def _prior_group_multi_enzyme(prior_information, n_enzymes, params_name):
     """
     Parameters:
     ----------
     prior_information : list of dict to assign prior distribution for kinetics parameters
     n_enzymes         : number of enzymes
-    params_name       : 'logK' or 'kcat'
-
-    Examples:
+    
+    Examples: 
         prior_information = []
         prior_information.append({'type':'logKd', 'name': 'logKd', 'fit': 'local', 'dist': 'normal', 'loc': np.array([0, 2]), 'scale': np.array([1, 3])})
         prior_information.append({'type':'logK', 'name': 'logK_S_D', 'fit': 'global', 'dist': 'uniform', 'lower': -20, 'upper': 0})
@@ -276,30 +273,20 @@ def _prior_group_multi_enzyme(prior_information, n_enzymes, params_name, shared_
             logK_S_D ~ U(-20, 0)
             kcat_MS:0 = 1.
             kcat_MS:1 = 0.
+        These variables will be saved into two lists, which is params_logK or params_kcat
     ----------
-    return a list of prior distribution given a type of kinetics parameters (logK or kcat)
+    return two lists of prior distribution for kinetics parameters
     """
     params = {}
     for prior in prior_information:
         if prior['type'] in params_name:
             assert prior['type'] in ['logKd', 'logK', 'kcat'], "Paramter type should be logKd, logK or kcat."
             assert prior['fit'] in ['global', 'local'], "Please declare correctly if the parameter(s) would be fit local/global."
-
+        
             name = prior['name']
-
-            if set_K_I_M_equal_K_S_M and name=='logK_I_M':
-                continue
-            if set_K_S_DI_equal_K_S_DS and name=='logK_S_DI':
-                continue
-            if set_kcat_DSS_equal_kcat_DSI and name=='kcat_DSS':
-                continue
             
             if prior['fit'] == 'local':
                 for n in range(n_enzymes):
-                    if shared_params is not None:
-                        if name in shared_params.keys() and n == shared_params[name]['assigned_idx']:
-                            continue
-                            
                     if type(prior['dist']) == str or prior['dist'] is None:
                         dist = prior['dist']
                     else:
@@ -312,9 +299,9 @@ def _prior_group_multi_enzyme(prior_information, n_enzymes, params_name, shared_
                         if prior['value'][n] is not None:
                             params[f'{name}:{n}'] = prior['value'][n]
                         else:
-                            params[f'{name}:{n}'] = None
+                            params[f'{name}:{n}'] = None        
 
-            elif prior['fit'] == 'global':
+            elif prior['fit'] == 'global': 
                 if prior['dist'] == 'normal':
                     params[name] = normal_prior(name, prior['loc'], prior['scale'])
                 elif prior['dist'] == 'uniform':
@@ -327,8 +314,7 @@ def _prior_group_multi_enzyme(prior_information, n_enzymes, params_name, shared_
     return params
 
 
-def prior_group_multi_enzyme(prior_information, n_enzymes, shared_params=None, set_K_I_M_equal_K_S_M=False, 
-                             set_K_S_DI_equal_K_S_DS=False, set_kcat_DSS_equal_kcat_DSI=False):
+def prior_group_multi_enzyme(prior_information, n_enzymes):
     """
     Parameters:
     ----------
@@ -337,10 +323,8 @@ def prior_group_multi_enzyme(prior_information, n_enzymes, shared_params=None, s
     ----------
     return two lists of prior distribution for kinetics parameters
     """
-    params_logK = _prior_group_multi_enzyme(prior_information, n_enzymes, ['logKd', 'logK'], shared_params, 
-                                            set_K_I_M_equal_K_S_M, set_K_S_DI_equal_K_S_DS, False)
-    params_kcat = _prior_group_multi_enzyme(prior_information, n_enzymes, ['kcat'], shared_params, 
-                                            False, False, set_kcat_DSS_equal_kcat_DSI)
+    params_logK = _prior_group_multi_enzyme(prior_information, n_enzymes, ['logKd', 'logK'])
+    params_kcat = _prior_group_multi_enzyme(prior_information, n_enzymes, ['kcat'])
 
     return params_logK, params_kcat
 

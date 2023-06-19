@@ -68,13 +68,12 @@ def _extract_param_n_idx(name, params_dict, idx, shared_params=None):
 
     """
     if f'{name}:{idx}' in params_dict.keys():
-        if shared_params is not None:
-            if name in shared_params.keys() and idx == shared_params[name]['assigned_idx']:
-                idx_update = shared_params[name]['shared_idx']
-                param = params_dict[f'{name}:{idx_update}']
-                print(f'{name}:{idx}', "will not be used. Shared params:", f'{name}:{idx_update}')
-            else:
-                param = params_dict[f'{name}:{idx}']
+        if shared_params is not None and name in shared_params.keys() and idx == shared_params[name]['assigned_idx']:
+            idx_update = shared_params[name]['shared_idx']
+            param = params_dict[f'{name}:{idx_update}']
+            print(f'{name}:{idx}', "will not be used. Shared params:", f'{name}:{idx_update}')
+        else:
+            param = params_dict[f'{name}:{idx}']
     elif name in params_dict.keys(): param = params_dict[name]
     else: param = None
     return param
