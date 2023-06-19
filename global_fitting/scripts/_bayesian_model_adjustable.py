@@ -37,8 +37,8 @@ def adjustable_global_fitting(experiments, prior_infor=None,
     if prior_infor is None:
         init_prior_infor = define_uniform_prior_group(logKd_min, logKd_max, kcat_min, kcat_max)
         prior_infor = check_prior_group(init_prior_infor, n_enzymes)
-    params_logK, params_kcat = prior_group_multi_enzyme(prior_infor, n_enzymes, shared_params, set_K_I_M_equal_K_S_M, 
-                                                        set_K_S_DI_equal_K_S_DS, set_kcat_DSS_equal_kcat_DSI)
+    params_logK, params_kcat = prior_group_multi_enzyme(prior_infor, n_enzymes)
+    
     for idx, expt in enumerate(experiments):
         try:
             idx_expt = expt['index']
