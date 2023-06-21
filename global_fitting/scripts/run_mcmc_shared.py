@@ -73,17 +73,16 @@ expts, expts_mut, expts_wt, expts_wt_2 = load_data_mut_wt(args.fit_mutant_kineti
 logKd_min = -20.
 logKd_max = 0.
 kcat_min = 0. 
-kcat_max = 100.
 
 prior = {}
-prior['logKd'] = {'type':'logKd', 'name': 'logKd', 'fit':'local','dist': ['normal', 'normal', None], 'loc': [-5, -14, None], 'scale': [3, 3, None], 'value': None}
-prior['logK_S_M'] = {'type':'logK', 'name': 'logK_S_M', 'fit':'global', 'dist': 'uniform', 'lower': logKd_min, 'upper': logKd_max}
-prior['logK_S_D'] = {'type':'logK', 'name': 'logK_S_D', 'fit':'global', 'dist': 'uniform', 'lower': logKd_min, 'upper': logKd_max}
-prior['logK_S_DS'] = {'type':'logK', 'name': 'logK_S_DS', 'fit':'global', 'dist': 'uniform', 'lower': logKd_min, 'upper': logKd_max}
-prior['logK_I_M'] = {'type':'logK', 'name': 'logK_I_M', 'fit':'local', 'fit':'global', 'dist': 'uniform', 'lower': logKd_min, 'upper': logKd_max}
+prior['logKd'] = {'type':'logKd', 'name': 'logKd', 'fit':'local','dist': ['normal', 'normal', None], 'loc': [-5, -14, None], 'scale': [1, 3, None], 'value': None}
+prior['logK_S_M'] = {'type':'logK', 'name': 'logK_S_M', 'fit':'local', 'dist': ['uniform', None, 'uniform'], 'lower': [logKd_min, None, logKd_min], 'upper': [logKd_max, None, logKd_max], 'value': None}
+prior['logK_S_D'] = {'type':'logK', 'name': 'logK_S_D', 'fit':'local', 'dist': ['uniform', None, 'uniform'], 'lower': [logKd_min, None, logKd_min], 'upper': [logKd_max, None, logKd_max], 'value': None}
+prior['logK_S_DS'] = {'type':'logK', 'name': 'logK_S_DS', 'fit':'local', 'dist': ['uniform', None, 'uniform'], 'lower': [logKd_min, None, logKd_min], 'upper': [logKd_max, None, logKd_max], 'value': None}
+prior['logK_I_M'] = {'type':'logK', 'name': 'logK_I_M', 'fit':'global', 'dist': 'uniform', 'lower': logKd_min, 'upper': logKd_max}
 prior['logK_I_D'] = {'type':'logK', 'name': 'logK_I_D', 'fit':'global', 'dist': 'normal', 'loc': -13, 'scale': 3}
 prior['logK_I_DI'] = {'type':'logK', 'name': 'logK_I_DI', 'fit':'global', 'dist': 'normal', 'loc': -15, 'scale': 3}
-prior['logK_S_DI'] = {'type':'logK', 'name': 'logK_S_DI', 'fit':'global', 'dist': 'uniform', 'lower': logKd_min, 'upper': logKd_max}
+prior['logK_S_DI'] = {'type':'logK', 'name': 'logK_S_DI', 'fit':'local', 'dist': ['uniform', None, 'uniform'], 'lower': [logKd_min, None, logKd_min], 'upper': [logKd_max, None, logKd_max], 'value': None}
 
 prior['kcat_MS'] = {'type':'kcat', 'name': 'kcat_MS', 'fit':'global', 'dist': None, 'value': 0.}
 prior['kcat_DS'] = {'type':'kcat', 'name': 'kcat_DS', 'fit':'local', 'dist': 'uniform', 'lower': kcat_min, 'upper': [1., 200, 300]}
@@ -91,14 +90,18 @@ prior['kcat_DSS'] = {'type':'kcat', 'name': 'kcat_DSS', 'fit':'local', 'dist': '
 prior['kcat_DSI'] = {'type':'kcat', 'name': 'kcat_DSI', 'fit':'local', 'dist': 'uniform', 'lower': kcat_min, 'upper': [1., 200., 300.]}
 
 if args.set_K_I_M_equal_K_S_M: 
-    del prior['log_K_I_M']
+    del prior['logK_I_M']
 if args.set_K_S_DI_equal_K_S_DS: 
-    del prior['log_K_S_DI']
+    del prior['logK_S_DI']
 if args.set_kcat_DSS_equal_kcat_DSI:
     del prior['kcat_DSS']
 
 shared_params = {}
 shared_params['logKd'] = {'assigned_idx': 2, 'shared_idx': 1}
+shared_params['logK_S_M'] = {'assigned_idx': 1, 'shared_idx': 0}
+shared_params['logK_S_D'] = {'assigned_idx': 1, 'shared_idx': 0}
+shared_params['logK_S_DS'] = {'assigned_idx': 1, 'shared_idx': 0}
+shared_params['logK_S_DI'] = {'assigned_idx': 1, 'shared_idx': 0}
 
 prior_infor = convert_prior_from_dict_to_list(prior, args.fit_E_S, args.fit_E_I)
 prior_infor_update = check_prior_group(prior_infor, len(expts))
@@ -123,6 +126,11 @@ mcmc.print_summary()
 trace = mcmc.get_samples(group_by_chain=False)
 pickle.dump(trace, open(os.path.join(traces_name+'.pickle'), "wb"))
 
+## Autocorrelation plot
+az.plot_autocorr(trace);
+plt.savefig(os.path.join(args.out_dir, 'Plot_autocorr'))
+plt.ioff()
+
 trace = mcmc.get_samples(group_by_chain=True)
 az.summary(trace).to_csv(traces_name+"_summary.csv")
 
@@ -131,11 +139,6 @@ data = az.convert_to_inference_data(trace)
 az.plot_trace(data, compact=False)
 plt.tight_layout();
 plt.savefig(os.path.join(args.out_dir, 'Plot_trace'))
-plt.ioff()
-
-## Autocorrelation plot
-az.plot_autocorr(trace);
-plt.savefig(os.path.join(args.out_dir, 'Plot_autocorr'))
 plt.ioff()
 
 # Finding MAP
@@ -148,14 +151,14 @@ if shared_params is not None and len(shared_params)>0:
         trace[f'{name}:{assigned_idx}'] = trace[f'{name}:{shared_idx}']
 
 prior = {}
-prior['logKd'] = {'type':'logKd', 'name': 'logKd', 'fit':'local','dist': ['normal', 'normal', 'normal'], 'loc': [-5, -14, -14], 'scale': 3}
-prior['logK_S_M'] = {'type':'logK', 'name': 'logK_S_M', 'fit':'global', 'dist': 'uniform', 'lower': logKd_min, 'upper': logKd_max}
-prior['logK_S_D'] = {'type':'logK', 'name': 'logK_S_D', 'fit':'global', 'dist': 'uniform', 'lower': logKd_min, 'upper': logKd_max}
-prior['logK_S_DS'] = {'type':'logK', 'name': 'logK_S_DS', 'fit':'global', 'dist': 'uniform', 'lower': logKd_min, 'upper': logKd_max}
-prior['logK_I_M'] = {'type':'logK', 'name': 'logK_I_M', 'fit':'local', 'fit':'global', 'dist': 'uniform', 'lower': logKd_min, 'upper': logKd_max}
+prior['logKd'] = {'type':'logKd', 'name': 'logKd', 'fit':'local','dist': ['normal', 'normal', 'normal'], 'loc': [-5, -14, -14], 'scale': [1, 3, 3]}
+prior['logK_S_M'] = {'type':'logK', 'name': 'logK_S_M', 'fit':'local', 'dist': 'uniform', 'lower': logKd_min, 'upper': logKd_max}
+prior['logK_S_D'] = {'type':'logK', 'name': 'logK_S_D', 'fit':'local', 'dist': 'uniform', 'lower': logKd_min, 'upper': logKd_max}
+prior['logK_S_DS'] = {'type':'logK', 'name': 'logK_S_DS', 'fit':'local', 'dist': 'uniform', 'lower': logKd_min, 'upper': logKd_max}
+prior['logK_I_M'] = {'type':'logK', 'name': 'logK_I_M', 'fit':'global', 'dist': 'uniform', 'lower': logKd_min, 'upper': logKd_max}
 prior['logK_I_D'] = {'type':'logK', 'name': 'logK_I_D', 'fit':'global', 'dist': 'normal', 'loc': -13, 'scale': 3}
 prior['logK_I_DI'] = {'type':'logK', 'name': 'logK_I_DI', 'fit':'global', 'dist': 'normal', 'loc': -15, 'scale': 3}
-prior['logK_S_DI'] = {'type':'logK', 'name': 'logK_S_DI', 'fit':'global', 'dist': 'uniform', 'lower': logKd_min, 'upper': logKd_max}
+prior['logK_S_DI'] = {'type':'logK', 'name': 'logK_S_DI', 'fit':'local', 'dist': 'uniform', 'lower': logKd_min, 'upper': logKd_max}
 
 prior['kcat_MS'] = {'type':'kcat', 'name': 'kcat_MS', 'fit':'global', 'dist': None, 'value': 0.}
 prior['kcat_DS'] = {'type':'kcat', 'name': 'kcat_DS', 'fit':'local', 'dist': 'uniform', 'lower': kcat_min, 'upper': [1., 200, 300]}

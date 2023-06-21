@@ -107,6 +107,11 @@ mcmc.print_summary()
 trace = mcmc.get_samples(group_by_chain=False)
 pickle.dump(trace, open(os.path.join(traces_name+'.pickle'), "wb"))
 
+## Autocorrelation plot
+az.plot_autocorr(trace);
+plt.savefig(os.path.join(args.out_dir, 'Plot_autocorr'))
+plt.ioff()
+
 trace = mcmc.get_samples(group_by_chain=True)
 az.summary(trace).to_csv(traces_name+"_summary.csv")
 
@@ -115,11 +120,6 @@ data = az.convert_to_inference_data(trace)
 az.plot_trace(data, compact=False)
 plt.tight_layout();
 plt.savefig(os.path.join(args.out_dir, 'Plot_trace'))
-plt.ioff()
-
-## Autocorrelation plot
-az.plot_autocorr(trace);
-plt.savefig(os.path.join(args.out_dir, 'Plot_autocorr'))
 plt.ioff()
 
 # Finding MAP
