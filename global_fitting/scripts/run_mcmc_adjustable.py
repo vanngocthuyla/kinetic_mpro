@@ -70,19 +70,19 @@ logKd_max = 0.
 kcat_min = 0.
 
 prior = {}
-prior['logKd'] = {'type':'logKd', 'name': 'logKd', 'fit':'global', 'dist': 'normal', 'loc': -14, 'scale': 4}
-prior['logK_S_M'] = {'type':'logK', 'name': 'logK_S_M', 'fit':'global', 'dist': 'normal', 'loc': -4.5, 'scale': 4}
-prior['logK_S_D'] = {'type':'logK', 'name': 'logK_S_D', 'fit':'global', 'dist': 'normal', 'loc': -4, 'scale': 4}
-prior['logK_S_DS'] = {'type':'logK', 'name': 'logK_S_DS', 'fit':'global', 'dist': 'normal', 'loc': -14.5, 'scale': 4}
-prior['logK_I_M'] = {'type':'logK', 'name': 'logK_I_M', 'fit':'global', 'dist': 'normal', 'loc': -4.5, 'scale': 4}
-prior['logK_I_D'] = {'type':'logK', 'name': 'logK_I_D', 'fit':'global', 'dist': 'normal', 'loc': -13, 'scale': 4}
-prior['logK_I_DI'] = {'type':'logK', 'name': 'logK_I_DI', 'fit':'global', 'dist': 'normal', 'loc': -15, 'scale': 4}
-prior['logK_S_DI'] = {'type':'logK', 'name': 'logK_S_DI', 'fit':'global', 'dist': 'normal', 'loc': -13.5, 'scale': 4}
+prior['logKd'] = {'type':'logKd', 'name': 'logKd', 'fit':'local', 'dist': 'normal', 'loc': [-5, -14], 'scale': 3}
+prior['logK_S_M'] = {'type':'logK', 'name': 'logK_S_M', 'fit':'global', 'dist': 'uniform', 'lower': logKd_min, 'upper': logKd_max}
+prior['logK_S_D'] = {'type':'logK', 'name': 'logK_S_D', 'fit':'global', 'dist': 'uniform', 'lower': logKd_min, 'upper': logKd_max}
+prior['logK_S_DS'] = {'type':'logK', 'name': 'logK_S_DS', 'fit':'global', 'dist': 'uniform', 'lower': logKd_min, 'upper': logKd_max}
+prior['logK_I_M'] = {'type':'logK', 'name': 'logK_I_M', 'fit':'global', 'dist': 'uniform', 'lower': logKd_min, 'upper': logKd_max}
+prior['logK_I_D'] = {'type':'logK', 'name': 'logK_I_D', 'fit':'global', 'dist': 'normal', 'loc': -15, 'scale': 3}
+prior['logK_I_DI'] = {'type':'logK', 'name': 'logK_I_DI', 'fit':'global', 'dist': 'normal', 'loc': -15, 'scale': 3}
+prior['logK_S_DI'] = {'type':'logK', 'name': 'logK_S_DI', 'fit':'global', 'dist': 'uniform', 'lower': logKd_min, 'upper': logKd_max}
 
-# prior['kcat_MS'] = {'type':'kcat', 'name': 'kcat_MS', 'fit':'local', 'dist': 'uniform', 'lower': kcat_min, 'upper': [200, 300]}
-prior['kcat_DS'] = {'type':'kcat', 'name': 'kcat_DS', 'fit':'local', 'dist': 'uniform', 'lower': kcat_min, 'upper': [500, 500]}
-prior['kcat_DSS'] = {'type':'kcat', 'name': 'kcat_DSS', 'fit':'local', 'dist': 'uniform', 'lower': kcat_min, 'upper': [500, 500]}
-prior['kcat_DSI'] = {'type':'kcat', 'name': 'kcat_DSI', 'fit':'local', 'dist': 'uniform', 'lower': kcat_min, 'upper': [500, 500]}
+# prior['kcat_MS'] = {'type':'kcat', 'name': 'kcat_MS', 'fit':'local', 'dist': 'uniform', 'lower': kcat_min, 'upper': [1, 200]}
+prior['kcat_DS'] = {'type':'kcat', 'name': 'kcat_DS', 'fit':'local', 'dist': 'uniform', 'lower': kcat_min, 'upper': [1, 200]}
+prior['kcat_DSS'] = {'type':'kcat', 'name': 'kcat_DSS', 'fit':'local', 'dist': 'uniform', 'lower': kcat_min, 'upper': [1, 200]}
+prior['kcat_DSI'] = {'type':'kcat', 'name': 'kcat_DSI', 'fit':'local', 'dist': 'uniform', 'lower': kcat_min, 'upper': [1, 200]}
 
 prior_infor = convert_prior_from_dict_to_list(prior, args.fit_E_S, args.fit_E_I)
 prior_infor_update = check_prior_group(prior_infor, len(expts))
