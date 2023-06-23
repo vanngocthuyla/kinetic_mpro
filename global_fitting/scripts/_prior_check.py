@@ -284,7 +284,6 @@ def _prior_group_multi_enzyme(prior_information, n_enzymes, params_name):
             assert prior['fit'] in ['global', 'local'], "Please declare correctly if the parameter(s) would be fit local/global."
         
             name = prior['name']
-            
             if prior['fit'] == 'local':
                 for n in range(n_enzymes):
                     if type(prior['dist']) == str or prior['dist'] is None:
