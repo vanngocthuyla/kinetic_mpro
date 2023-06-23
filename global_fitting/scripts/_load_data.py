@@ -210,7 +210,26 @@ def load_data_wt(fit_wildtype_Nashed=False, fit_wildtype_Vuong=False,
             data_rate_wt = [v_wt, kinetics_logMtot_wt, kinetics_logStot_wt, kinetics_logItot_wt] 
         else:
             data_rate_wt = {}
-            for n, expt in enumerate(experiments_wt): 
+            temp = []
+            temp.append({'type':'kinetics',
+                         'enzyme': 'wild-type',
+                         'figure':'WT-2a-2c',
+                         'logMtot': np.log(np.array([2, 1, 0.75, 0.5, 0.5, 0.375, 0.25, 0.25, 0.1875, 0.125, 0.125, 0.0938, 0.0625, 0.0625, 0.0469, 0.0313])*1E-6), # M
+                         'logStot': np.array([np.log(200E-6)]*16), # 5 uL of 5mM substrate diluted with 95 uL reaction mixture,
+                         'logItot': np.array([np.log(1E-20)]*16), #None
+                         'v': np.array([30, 11.4931, 6.71, 4.8215, 3.17, 1.99, 1.436625, 0.89, 0.58, 0.4679875, 0.41, 0.195, 0.10725, 0.147, 0.072, 0.0219726])*1E-6, # M min^{-1}
+                         'x':'logMtot'})
+            
+            temp.append({'type':'kinetics',
+                         'enzyme': 'wild-type',
+                         'figure':'WT-2b',
+                         'logMtot': np.array([np.log(200E-9)]*7), # M
+                         'logStot': np.log(np.array([16, 32, 64, 77, 102.4, 128, 154])*1E-6), #M
+                         'logItot': np.array([np.log(1E-20)]*7), # None
+                         'v': np.array([0.285, 0.54, 0.942, 0.972, 1.098, 1.248, 1.338])*1E-6, # M min^{-1}
+                         'x':'logStot'})
+            
+            for n, expt in enumerate(temp):
                 if expt['type'] == 'kinetics':
                     data_rate_wt[n] = [expt['v'], expt['logMtot'], expt['logStot'], expt['logItot']]
     else:
@@ -238,7 +257,7 @@ def load_data_wt(fit_wildtype_Nashed=False, fit_wildtype_Vuong=False,
 
     experiments_multi_enzyme = []
     if fit_wildtype_Nashed and fit_E_S:
-        experiments_multi_enzyme.append({'enzyme': 'wild_type', 'index': 'wt',
+        experiments_multi_enzyme.append({'enzyme': 'wild_type', 'index': 'wt_1',
                                           'kinetics': data_rate_wt, 'AUC': None, 'ICE': None
                                         })
     if fit_wildtype_Vuong and fit_E_S and fit_E_I:
