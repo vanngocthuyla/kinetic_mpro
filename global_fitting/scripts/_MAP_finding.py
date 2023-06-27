@@ -316,7 +316,8 @@ def _log_likelihoods(mcmc_trace, experiments, nsamples=None):
     return np.array(log_likelihoods)
 
 
-def map_finding(mcmc_trace, experiments, prior_infor, nsamples=None):
+def map_finding(mcmc_trace, experiments, prior_infor, set_K_I_M_equal_K_S_M=False,
+                set_K_S_DI_equal_K_S_DS=False, set_kcat_DSI_equal_kcat_DSS=False, nsamples=None):
     """
     Evaluate probability of a parameter set using posterior distribution
     Finding MAP (maximum a posterior) given prior distributions of parameters information
@@ -344,8 +345,16 @@ def map_finding(mcmc_trace, experiments, prior_infor, nsamples=None):
 
     print("Calculing log of priors.")
     log_priors = _log_priors(mcmc_trace, experiments, prior_infor, nsamples)
+
     print("Calculing log likelihoods:")
-    log_likelihoods = _log_likelihoods(mcmc_trace, experiments, nsamples)
+    if set_K_I_M_equal_K_S_M or set_K_S_DI_equal_K_S_DS or set_kcat_DSI_equal_kcat_DSS: 
+        mcmc_trace_update = _map_adjust_trace(mcmc_trace, experiments, prior_infor, 
+                                              set_K_I_M_equal_K_S_M, set_K_S_DI_equal_K_S_DS, 
+                                              set_kcat_DSI_equal_kcat_DSS)
+        log_likelihoods = _log_likelihoods(mcmc_trace_update, experiments, nsamples)
+    else:
+        log_likelihoods = _log_likelihoods(mcmc_trace, experiments, nsamples)
+
     log_probs = log_priors + log_likelihoods
     # map_idx = np.argmax(log_probs)
     map_idx = np.nanargmax(log_probs)
@@ -356,6 +365,37 @@ def map_finding(mcmc_trace, experiments, prior_infor, nsamples=None):
         map_params[name] = mcmc_trace[name][map_idx]
 
     return [map_idx, map_params, log_probs]
+
+
+def _map_adjust_trace(mcmc_trace, experiments, prior_infor, set_K_I_M_equal_K_S_M=False,
+                      set_K_S_DI_equal_K_S_DS=False, set_kcat_DSI_equal_kcat_DSS=False):
+    
+    mcmc_trace_update = mcmc_trace
+    n_enzymes = len(experiments)
+    
+    prior_infor_pd = pd.DataFrame(prior_infor)
+    if set_K_I_M_equal_K_S_M:
+        idx = np.where(prior_infor_pd.name=='logK_S_M')[0][0]
+        if prior_infor[idx]['fit'] == 'global':
+            mcmc_trace_update['logK_I_M'] = mcmc_trace_update['logK_S_M']
+        elif prior_infor[idx]['fit'] == 'local':
+            for n in range(n_enzymes):
+                mcmc_trace_update[f'logK_I_M:{n}'] = mcmc_trace_update[f'logK_S_M:{n}']
+    if set_K_S_DI_equal_K_S_DS:
+        idx = np.where(prior_infor_pd.name=='logK_S_DS')[0][0]
+        if prior_infor[idx]['fit'] == 'global':
+            mcmc_trace_update['logK_S_DI'] = mcmc_trace_update['logK_S_DS']
+        elif prior_infor[idx]['fit'] == 'local':
+            for n in range(n_enzymes):
+                mcmc_trace_update[f'logK_S_DI:{n}'] = mcmc_trace_update[f'logK_S_DS:{n}']
+    if set_kcat_DSI_equal_kcat_DSS:
+        idx = np.where(prior_infor_pd.name=='kcat_DSS')[0][0]
+        if prior_infor[idx]['fit'] == 'global':
+            mcmc_trace_update['kcat_DSI'] = mcmc_trace_update['kcat_DSS']
+        elif prior_infor[idx]['fit'] == 'local':
+            for n in range(n_enzymes):
+                mcmc_trace_update[f'kcat_DSI:{n}'] = mcmc_trace_update[f'kcat_DSS:{n}']
+    return mcmc_trace_update
 
 
 def _uniform_pdf(x, lower, upper):

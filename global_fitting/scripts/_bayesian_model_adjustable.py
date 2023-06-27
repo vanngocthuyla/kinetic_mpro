@@ -14,7 +14,7 @@ from _prior_check import check_prior_group, prior_group_multi_enzyme, define_uni
 def adjustable_global_fitting(experiments, prior_infor=None,
                               logKd_min=-20, logKd_max=0, kcat_min=0, kcat_max=1,
                               shared_params=None, set_K_I_M_equal_K_S_M=False,
-                              set_K_S_DI_equal_K_S_DS=False, set_kcat_DSS_equal_kcat_DSI=False):
+                              set_K_S_DI_equal_K_S_DS=False, set_kcat_DSI_equal_kcat_DSS=False):
     """
     Parameters:
     ----------
@@ -49,7 +49,7 @@ def adjustable_global_fitting(experiments, prior_infor=None,
         [logKd, logK_S_M, logK_S_D, logK_S_DS, logK_I_M, logK_I_D, logK_I_DI, logK_S_DI] = extract_logK_n_idx(params_logK, idx, shared_params,
                                                                                                               set_K_I_M_equal_K_S_M,
                                                                                                               set_K_S_DI_equal_K_S_DS)
-        [kcat_MS, kcat_DS, kcat_DSI, kcat_DSS] = extract_kcat_n_idx(params_kcat, idx, shared_params, set_kcat_DSS_equal_kcat_DSI)
+        [kcat_MS, kcat_DS, kcat_DSI, kcat_DSS] = extract_kcat_n_idx(params_kcat, idx, shared_params, set_kcat_DSI_equal_kcat_DSS)
 
         if type(expt['kinetics']) is dict:
             for n in range(len(expt['kinetics'])):
