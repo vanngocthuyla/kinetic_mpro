@@ -2,6 +2,7 @@ import numpy as np
 import jax.numpy as jnp
 from jax import vmap
 from scipy import stats
+import pandas as pd
 import numpyro.distributions as dist
 
 from _prior_distribution import logsigma_guesses
