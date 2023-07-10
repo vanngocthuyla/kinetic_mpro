@@ -85,7 +85,7 @@ if args.set_K_I_M_equal_K_S_M:
 if args.set_K_S_DI_equal_K_S_DS:
     params_logK['logK_S_DI'] = params_logK['logK_S_DS'] 
 if args.set_kcat_DSI_equal_kcat_DSS:
-    params_kcat['kcat_DSI'] = params_kcat['kcat_DSS']
+    params_kcat['kcat_DSS'] = params_kcat['kcat_DSI']
 
 n = 0
 for expt_plot in [expts_mut, expts_wt, expts_wt_2]:
@@ -99,3 +99,10 @@ with open("map.txt", "w") as f:
     print("\nKinetics parameters:", file=f)
     for key in trace.keys():
         print(key, ': %.3f' %trace[key][map_index], file=f)
+
+pickle.dump(log_probs, open('log_probs.pickle', "wb"))
+
+map_values = {}
+for key in trace.keys():
+    map_values[key] = trace[key][map_index]ß
+pickle.dump(map_values, open('map.pickle', "wb"))
