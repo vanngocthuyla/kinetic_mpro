@@ -47,6 +47,8 @@ parser.add_argument( "--multi_var_wt",                  action="store_true",    
 
 parser.add_argument( "--set_K_I_M_equal_K_S_M",         action="store_true",    default=False)
 parser.add_argument( "--set_K_S_DI_equal_K_S_DS",       action="store_true",    default=False)
+parser.add_argument( "--set_kcat_DSS_equal_kcat_DS",    action="store_true",    default=False)
+parser.add_argument( "--set_kcat_DSI_equal_kcat_DS",    action="store_true",    default=False)
 parser.add_argument( "--set_kcat_DSI_equal_kcat_DSS",   action="store_true",    default=False)
 
 parser.add_argument( "--niters",				        type=int, 				default=10000)
@@ -75,7 +77,7 @@ logKd_max = 0.
 kcat_min = 0. 
 
 prior = {}
-prior['logKd'] = {'type':'logKd', 'name': 'logKd', 'fit':'local','dist': ['uniform', 'normal', None], 'loc': [None, -14, None], 'scale': [None, 2, None], 'value': None, 'lower': [logKd_min, None, None], 'upper': [logKd_max, None, None]}
+prior['logKd'] = {'type':'logKd', 'name': 'logKd', 'fit':'local','dist': ['uniform', 'normal', None], 'loc': [None, -14, None], 'scale': [None, 2, None], 'value': None, 'lower': [-7, None, None], 'upper': [0, None, None]}
 prior['logK_S_M'] = {'type':'logK', 'name': 'logK_S_M', 'fit':'global', 'dist': 'uniform', 'lower': logKd_min, 'upper': logKd_max}
 prior['logK_S_D'] = {'type':'logK', 'name': 'logK_S_D', 'fit':'global', 'dist': 'uniform', 'lower': logKd_min, 'upper': logKd_max}
 prior['logK_S_DS'] = {'type':'logK', 'name': 'logK_S_DS', 'fit':'global', 'dist': 'uniform', 'lower': logKd_min, 'upper': logKd_max}
@@ -93,7 +95,9 @@ if args.set_K_I_M_equal_K_S_M:
     del prior['logK_I_M']
 if args.set_K_S_DI_equal_K_S_DS: 
     del prior['logK_S_DI']
-if args.set_kcat_DSI_equal_kcat_DSS:
+if args.set_kcat_DSS_equal_kcat_DS:
+    del prior['kcat_DSS']
+if args.set_kcat_DSI_equal_kcat_DS or args.set_kcat_DSI_equal_kcat_DSS:
     del prior['kcat_DSI']
 
 shared_params = {}
@@ -120,6 +124,7 @@ kernel = NUTS(adjustable_global_fitting)
 mcmc = MCMC(kernel, num_warmup=args.nburn, num_samples=args.niters, num_chains=args.nchain, progress_bar=True)
 mcmc.run(rng_key_, experiments=expts, prior_infor=prior_infor_update, shared_params=shared_params, 
          set_K_I_M_equal_K_S_M=args.set_K_I_M_equal_K_S_M, set_K_S_DI_equal_K_S_DS=args.set_K_S_DI_equal_K_S_DS, 
+         set_kcat_DSS_equal_kcat_DS=args.set_kcat_DSS_equal_kcat_DS, set_kcat_DSI_equal_kcat_DS=args.set_kcat_DSI_equal_kcat_DS,
          set_kcat_DSI_equal_kcat_DSS=args.set_kcat_DSI_equal_kcat_DSS)
 mcmc.print_summary()
 
@@ -164,7 +169,7 @@ if shared_params is not None and len(shared_params)>0:
         trace[f'{name}:{assigned_idx}'] = trace[f'{name}:{shared_idx}']
 
 prior = {}
-prior['logKd'] = {'type':'logKd', 'name': 'logKd', 'fit':'local','dist': ['uniform', 'normal', 'normal'], 'loc': [None, -14, -14], 'scale': [None, 2, 2], 'lower': [logKd_min, None, None], 'upper': [logKd_max, None, None]}
+prior['logKd'] = {'type':'logKd', 'name': 'logKd', 'fit':'local','dist': ['uniform', 'normal', 'normal'], 'loc': [None, -14, -14], 'scale': [None, 2, 2], 'lower': [-7, None, None], 'upper': [0, None, None]}
 prior['logK_S_M'] = {'type':'logK', 'name': 'logK_S_M', 'fit':'global', 'dist': 'uniform', 'lower': logKd_min, 'upper': logKd_max}
 prior['logK_S_D'] = {'type':'logK', 'name': 'logK_S_D', 'fit':'global', 'dist': 'uniform', 'lower': logKd_min, 'upper': logKd_max}
 prior['logK_S_DS'] = {'type':'logK', 'name': 'logK_S_DS', 'fit':'global', 'dist': 'uniform', 'lower': logKd_min, 'upper': logKd_max}
@@ -182,7 +187,9 @@ if args.set_K_I_M_equal_K_S_M:
     del prior['logK_I_M']
 if args.set_K_S_DI_equal_K_S_DS: 
     del prior['logK_S_DI']
-if args.set_kcat_DSI_equal_kcat_DSS:
+if args.set_kcat_DSS_equal_kcat_DS:
+    del prior['kcat_DSS']
+if args.set_kcat_DSI_equal_kcat_DS or args.set_kcat_DSI_equal_kcat_DSS:
     del prior['kcat_DSI']
 
 prior_infor = convert_prior_from_dict_to_list(prior, args.fit_E_S, args.fit_E_I)
@@ -196,6 +203,7 @@ for index, row in df.iterrows():
 
 [map_index, map_params, log_probs] = map_finding(trace, expts, prior_infor_update, 
                                                  args.set_K_I_M_equal_K_S_M, args.set_K_S_DI_equal_K_S_DS, 
+                                                 args.set_kcat_DSS_equal_kcat_DS, args.set_kcat_DSI_equal_kcat_DS,
                                                  args.set_kcat_DSI_equal_kcat_DSS)
 
 with open("map.txt", "w") as f:
@@ -204,14 +212,20 @@ with open("map.txt", "w") as f:
     for key in trace.keys():
         print(key, ': %.3f' %trace[key][map_index], file=f)
 
+pickle.dump(log_probs, open('log_probs.pickle', "wb"))
+
 ## Fitting plot
 params_logK, params_kcat = extract_params_from_map_and_prior(trace, map_index, prior_infor_update)
 
 if args.set_K_I_M_equal_K_S_M:
     params_logK['logK_I_M'] = params_logK['logK_S_M']
 if args.set_K_S_DI_equal_K_S_DS:
-    params_logK['logK_S_DI'] = params_logK['logK_S_DS'] 
-if args.set_kcat_DSI_equal_kcat_DSS:
+    params_logK['logK_S_DI'] = params_logK['logK_S_DS']
+if args.set_kcat_DSS_equal_kcat_DS: 
+    params_kcat['kcat_DSS'] = params_kcat['kcat_DS']
+if args.set_kcat_DSI_equal_kcat_DS: 
+    params_kcat['kcat_DSI'] = params_kcat['kcat_DS']
+elif args.set_kcat_DSI_equal_kcat_DSS:
     params_kcat['kcat_DSI'] = params_kcat['kcat_DSS']
 
 n = 0

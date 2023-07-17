@@ -7,25 +7,28 @@ parser = argparse.ArgumentParser()
 
 parser.add_argument( "--out_dir",               type=str, 				default="")
 
-parser.add_argument( "--fit_mutant_kinetics",   action="store_true",    default=False)
-parser.add_argument( "--fit_mutant_AUC",        action="store_true",    default=False)
-parser.add_argument( "--fit_mutant_ICE",        action="store_true",    default=False)
-parser.add_argument( "--fit_wildtype_Nashed",   action="store_true",    default=False)
-parser.add_argument( "--fit_wildtype_Vuong",    action="store_true",    default=False)
-parser.add_argument( "--fit_E_S",               action="store_true",    default=False)
-parser.add_argument( "--fit_E_I",               action="store_true",    default=False)
-parser.add_argument( "--multi_var_mut",         action="store_true",    default=False)
-parser.add_argument( "--multi_var_wt",          action="store_true",    default=False)
+parser.add_argument( "--fit_mutant_kinetics",           action="store_true",    default=False)
+parser.add_argument( "--fit_mutant_AUC",                action="store_true",    default=False)
+parser.add_argument( "--fit_mutant_ICE",                action="store_true",    default=False)
+parser.add_argument( "--fit_wildtype_Nashed",           action="store_true",    default=False)
+parser.add_argument( "--fit_wildtype_Vuong",            action="store_true",    default=False)
+parser.add_argument( "--fit_E_S",                       action="store_true",    default=False)
+parser.add_argument( "--fit_E_I",                       action="store_true",    default=False)
+
+parser.add_argument( "--multi_var_mut",                 action="store_true",    default=False)
+parser.add_argument( "--multi_var_wt",                  action="store_true",    default=False)
 
 parser.add_argument( "--set_K_I_M_equal_K_S_M",         action="store_true",    default=False)
 parser.add_argument( "--set_K_S_DI_equal_K_S_DS",       action="store_true",    default=False)
+parser.add_argument( "--set_kcat_DSS_equal_kcat_DS",    action="store_true",    default=False)
+parser.add_argument( "--set_kcat_DSI_equal_kcat_DS",    action="store_true",    default=False)
 parser.add_argument( "--set_kcat_DSI_equal_kcat_DSS",   action="store_true",    default=False)
 
-parser.add_argument( "--niters",                type=int,               default=10000)
-parser.add_argument( "--nburn",                 type=int,               default=2000)
-parser.add_argument( "--nthin",                 type=int, 				default=1)
-parser.add_argument( "--nchain",                type=int, 				default=4)
-parser.add_argument( "--random_key",            type=int, 				default=0)
+parser.add_argument( "--niters",                        type=int,               default=10000)
+parser.add_argument( "--nburn",                         type=int,               default=2000)
+parser.add_argument( "--nthin",                         type=int,               default=1)
+parser.add_argument( "--nchain",                        type=int,               default=4)
+parser.add_argument( "--random_key",                    type=int,               default=0)
 
 args = parser.parse_args()
 
@@ -93,6 +96,16 @@ if args.set_K_S_DI_equal_K_S_DS:
 else:
     set_K_S_DI_equal_K_S_DS = " "
 
+if args.set_kcat_DSS_equal_kcat_DS:
+    set_kcat_DSS_equal_kcat_DS = " --set_kcat_DSS_equal_kcat_DS "
+else:
+    set_kcat_DSS_equal_kcat_DS = " "
+
+if args.set_kcat_DSI_equal_kcat_DS:
+    set_kcat_DSI_equal_kcat_DS = " --set_kcat_DSI_equal_kcat_DS "
+else:
+    set_kcat_DSI_equal_kcat_DS = " "
+
 if args.set_kcat_DSI_equal_kcat_DSS:
     set_kcat_DSI_equal_kcat_DSS = " --set_kcat_DSI_equal_kcat_DSS "
 else:
@@ -117,7 +130,8 @@ cd ''' + args.out_dir + '''\n''' + \
     fit_mutant_kinetics + fit_mutant_AUC + fit_mutant_ICE + \
     fit_wildtype_Nashed + fit_wildtype_Vuong + fit_E_S + fit_E_I + \
     multi_var_mut + multi_var_wt + \
-    set_K_I_M_equal_K_S_M + set_K_S_DI_equal_K_S_DS + set_kcat_DSI_equal_kcat_DSS + \
+    set_K_I_M_equal_K_S_M + set_K_S_DI_equal_K_S_DS + \
+    set_kcat_DSS_equal_kcat_DS+ set_kcat_DSI_equal_kcat_DS + set_kcat_DSI_equal_kcat_DSS + \
     ''' --niters %d '''%args.niters + \
     ''' --nburn %d '''%args.nburn + \
     ''' --nthin %d '''%args.nthin + \

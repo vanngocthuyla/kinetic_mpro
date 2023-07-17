@@ -122,7 +122,8 @@ def extract_logK_n_idx(params_logK, idx, shared_params=None,
     return [logKd, logK_S_M, logK_S_D, logK_S_DS, logK_I_M, logK_I_D, logK_I_DI, logK_S_DI]
 
 
-def extract_kcat_n_idx(params_kcat, idx, shared_params=None, set_kcat_DSI_equal_kcat_DSS=False):
+def extract_kcat_n_idx(params_kcat, idx, shared_params=None, set_kcat_DSS_equal_kcat_DS=False, 
+                       set_kcat_DSI_equal_kcat_DS=False, set_kcat_DSI_equal_kcat_DSS=False):
     """
     Parameters:
     ----------
@@ -134,8 +135,13 @@ def extract_kcat_n_idx(params_kcat, idx, shared_params=None, set_kcat_DSI_equal_
     """
     kcat_MS = _extract_param_n_idx('kcat_MS', params_kcat, idx, shared_params)
     kcat_DS = _extract_param_n_idx('kcat_DS', params_kcat, idx, shared_params)
-    kcat_DSS = _extract_param_n_idx('kcat_DSS', params_kcat, idx, shared_params)
-    if set_kcat_DSI_equal_kcat_DSS and kcat_DSS is not None:
+    if set_kcat_DSS_equal_kcat_DS and kcat_DS is not None:
+        kcat_DSS = kcat_DS
+    else:
+        kcat_DSS = _extract_param_n_idx('kcat_DSS', params_kcat, idx, shared_params)
+    if set_kcat_DSI_equal_kcat_DS and kcat_DS is not None:
+        kcat_DSI = kcat_DS
+    elif set_kcat_DSI_equal_kcat_DSS and kcat_DSS is not None:
         kcat_DSI = kcat_DSS
     else:
         kcat_DSI = _extract_param_n_idx('kcat_DSI', params_kcat, idx, shared_params)

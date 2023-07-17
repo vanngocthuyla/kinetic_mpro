@@ -67,22 +67,25 @@ expts, expts_mut, expts_wt, expts_wt_2 = load_data_mut_wt(args.fit_mutant_kineti
 
 logKd_min = -20.
 logKd_max = 0.
-kcat_min = 0.
+kcat_min = 0. 
 
 prior = {}
-prior['logKd'] = {'type':'logKd', 'name': 'logKd', 'fit':'local', 'dist': 'normal', 'loc': [-5, -14], 'scale': 3}
+prior['logKd'] = {'type':'logKd', 'name': 'logKd', 'fit':'local', 'dist': ['uniform', 'normal'], 'loc': [None, -14], 'scale': [None, 2], 'lower': [-20, None], 'upper': [0, None]}
 prior['logK_S_M'] = {'type':'logK', 'name': 'logK_S_M', 'fit':'global', 'dist': 'uniform', 'lower': logKd_min, 'upper': logKd_max}
 prior['logK_S_D'] = {'type':'logK', 'name': 'logK_S_D', 'fit':'global', 'dist': 'uniform', 'lower': logKd_min, 'upper': logKd_max}
 prior['logK_S_DS'] = {'type':'logK', 'name': 'logK_S_DS', 'fit':'global', 'dist': 'uniform', 'lower': logKd_min, 'upper': logKd_max}
 prior['logK_I_M'] = {'type':'logK', 'name': 'logK_I_M', 'fit':'global', 'dist': 'uniform', 'lower': logKd_min, 'upper': logKd_max}
-prior['logK_I_D'] = {'type':'logK', 'name': 'logK_I_D', 'fit':'global', 'dist': 'normal', 'loc': -15, 'scale': 3}
-prior['logK_I_DI'] = {'type':'logK', 'name': 'logK_I_DI', 'fit':'global', 'dist': 'normal', 'loc': -15, 'scale': 3}
+prior['logK_I_D'] = {'type':'logK', 'name': 'logK_I_D', 'fit':'global', 'dist': 'normal', 'loc': -15, 'scale': 2}
+prior['logK_I_DI'] = {'type':'logK', 'name': 'logK_I_DI', 'fit':'global', 'dist': 'normal', 'loc': -15, 'scale': 2}
 prior['logK_S_DI'] = {'type':'logK', 'name': 'logK_S_DI', 'fit':'global', 'dist': 'uniform', 'lower': logKd_min, 'upper': logKd_max}
 
-# prior['kcat_MS'] = {'type':'kcat', 'name': 'kcat_MS', 'fit':'local', 'dist': 'uniform', 'lower': kcat_min, 'upper': [1, 200]}
+# prior['kcat_MS'] = {'type':'kcat', 'name': 'kcat_MS', 'fit':'global', 'dist': None, 'value': 0.}
 prior['kcat_DS'] = {'type':'kcat', 'name': 'kcat_DS', 'fit':'local', 'dist': 'uniform', 'lower': kcat_min, 'upper': [1, 200]}
 prior['kcat_DSS'] = {'type':'kcat', 'name': 'kcat_DSS', 'fit':'local', 'dist': 'uniform', 'lower': kcat_min, 'upper': [1, 200]}
 prior['kcat_DSI'] = {'type':'kcat', 'name': 'kcat_DSI', 'fit':'local', 'dist': 'uniform', 'lower': kcat_min, 'upper': [1, 200]}
+
+shared_params = None #{}
+# shared_params['logKd'] = {'assigned_idx': 2, 'shared_idx': 1}
 
 prior_infor = convert_prior_from_dict_to_list(prior, args.fit_E_S, args.fit_E_I)
 prior_infor_update = check_prior_group(prior_infor, len(expts))
@@ -99,7 +102,7 @@ os.chdir(args.out_dir)
 
 kernel = NUTS(adjustable_global_fitting)
 mcmc = MCMC(kernel, num_warmup=args.nburn, num_samples=args.niters, num_chains=args.nchain, progress_bar=True)
-mcmc.run(rng_key_, expts, prior_infor_update)
+mcmc.run(rng_key_, experiments=expts, prior_infor=prior_infor_update, shared_params=shared_params)
 mcmc.print_summary()
 
 trace = mcmc.get_samples(group_by_chain=False)
@@ -114,14 +117,39 @@ trace = mcmc.get_samples(group_by_chain=True)
 az.summary(trace).to_csv(traces_name+"_summary.csv")
 
 ## Trace plot
-data = az.convert_to_inference_data(trace)
-az.plot_trace(data, compact=False)
-plt.tight_layout();
-plt.savefig(os.path.join(args.out_dir, 'Plot_trace'))
-plt.ioff()
+if len(trace.keys())>=15:
+    for param_name in ['logK', 'kcat', 'log_sigma']:
+        trace_2 = {}
+        for key in trace.keys():
+            if key.startswith(param_name):
+                trace_2[key] = trace[key]
+        ## Trace plot
+        data = az.convert_to_inference_data(trace_2)
+        az.plot_trace(data, compact=False)
+        plt.tight_layout();
+        plt.savefig(os.path.join(args.out_dir, 'Plot_trace_'+param_name))
+        plt.ioff()
+else:
+    data = az.convert_to_inference_data(trace)
+    az.plot_trace(data, compact=False)
+    plt.tight_layout();
+    plt.savefig(os.path.join(args.out_dir, 'Plot_trace'))
+    plt.ioff()
 
 # Finding MAP
 trace = mcmc.get_samples(group_by_chain=False)
+if shared_params is not None and len(shared_params)>0:
+    for name in shared_params.keys():
+        param = shared_params[name]
+        assigned_idx = param['assigned_idx']
+        shared_idx = param['shared_idx']
+        trace[f'{name}:{assigned_idx}'] = trace[f'{name}:{shared_idx}']
+
+# df = pd.read_csv('Prior_infor.csv')
+# prior_infor_update = []
+# for index, row in df.iterrows():
+#     prior_infor_update.append(row.to_dict())
+
 [map_index, map_params, log_probs] = map_finding(trace, expts, prior_infor_update)
 
 with open("map.txt", "w") as f:

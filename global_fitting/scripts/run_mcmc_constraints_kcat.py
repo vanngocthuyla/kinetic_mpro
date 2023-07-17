@@ -32,7 +32,7 @@ from _plotting import adjustable_plot_data
 
 parser = argparse.ArgumentParser()
 
-parser.add_argument( "--out_dir",               type=str, 				default="")
+parser.add_argument( "--out_dir",                       type=str, 				default="")
 
 parser.add_argument( "--fit_mutant_kinetics",           action="store_true",    default=False)
 parser.add_argument( "--fit_mutant_AUC",                action="store_true",    default=False)
@@ -51,11 +51,11 @@ parser.add_argument( "--set_kcat_DSS_equal_kcat_DS",    action="store_true",    
 parser.add_argument( "--set_kcat_DSI_equal_kcat_DS",    action="store_true",    default=False)
 parser.add_argument( "--set_kcat_DSI_equal_kcat_DSS",   action="store_true",    default=False)
 
-parser.add_argument( "--niters",                        type=int,               default=10000)
-parser.add_argument( "--nburn",                         type=int,               default=2000)
-parser.add_argument( "--nthin",                         type=int,               default=1)
-parser.add_argument( "--nchain",                        type=int,               default=4)
-parser.add_argument( "--random_key",                    type=int,               default=0)
+parser.add_argument( "--niters",				        type=int, 				default=10000)
+parser.add_argument( "--nburn",                         type=int, 				default=2000)
+parser.add_argument( "--nthin",                         type=int, 				default=1)
+parser.add_argument( "--nchain",                        type=int, 				default=4)
+parser.add_argument( "--random_key",                    type=int, 				default=0)
 
 args = parser.parse_args()
 
@@ -77,19 +77,18 @@ logKd_max = 0.
 kcat_min = 0. 
 
 prior = {}
-prior['logKd'] = {'type':'logKd', 'name': 'logKd', 'fit':'global','dist': 'normal', 'loc': -14, 'scale': 2}
+prior['logKd'] = {'type':'logKd', 'name': 'logKd', 'fit':'local','dist': ['normal', 'normal'], 'loc': [-5, -14], 'scale': [2, 2]}
 prior['logK_S_M'] = {'type':'logK', 'name': 'logK_S_M', 'fit':'global', 'dist': 'uniform', 'lower': logKd_min, 'upper': logKd_max}
 prior['logK_S_D'] = {'type':'logK', 'name': 'logK_S_D', 'fit':'global', 'dist': 'uniform', 'lower': logKd_min, 'upper': logKd_max}
-prior['logK_S_DS'] = {'type':'logK', 'name': 'logK_S_DS', 'fit':'global', 'dist': 'uniform', 'lower': logKd_min, 'upper': logKd_max}
-prior['logK_I_M'] = {'type':'logK', 'name': 'logK_I_M', 'fit':'global', 'dist': 'uniform', 'lower': logKd_min, 'upper': logKd_max}
-prior['logK_I_D'] = {'type':'logK', 'name': 'logK_I_D', 'fit':'global', 'dist': 'normal', 'loc': -15, 'scale': 2}
+prior['logK_S_DS'] = {'type':'logK', 'name': 'logK_S_DS', 'fit':'global', 'dist': None, 'value': 0.}
+prior['logK_I_M'] = {'type':'logK', 'name': 'logK_I_M', 'fit':'global', 'dist': None, 'value': 0.}
+prior['logK_I_D'] = {'type':'logK', 'name': 'logK_I_D', 'fit':'global', 'dist': 'normal', 'loc': -13, 'scale': 2}
 prior['logK_I_DI'] = {'type':'logK', 'name': 'logK_I_DI', 'fit':'global', 'dist': 'normal', 'loc': -15, 'scale': 2}
 prior['logK_S_DI'] = {'type':'logK', 'name': 'logK_S_DI', 'fit':'global', 'dist': 'uniform', 'lower': logKd_min, 'upper': logKd_max}
 
-prior['kcat_MS'] = {'type':'kcat', 'name': 'kcat_MS', 'fit':'global', 'dist': None, 'value': 0.}
-prior['kcat_DS'] = {'type':'kcat', 'name': 'kcat_DS', 'fit':'local', 'dist': 'uniform', 'lower': kcat_min, 'upper': [200, 300]}
-prior['kcat_DSS'] = {'type':'kcat', 'name': 'kcat_DSS', 'fit':'local', 'dist': 'uniform', 'lower': kcat_min, 'upper': [200., 300.]}
-prior['kcat_DSI'] = {'type':'kcat', 'name': 'kcat_DSI', 'fit':'local', 'dist': 'uniform', 'lower': kcat_min, 'upper': [200., 300.]}
+prior['kcat_DS'] = {'type':'kcat', 'name': 'kcat_DS', 'fit':'local', 'dist': 'uniform', 'lower': kcat_min, 'upper': [1., 200]}
+prior['kcat_DSS'] = {'type':'kcat', 'name': 'kcat_DSS', 'fit':'local', 'dist': 'uniform', 'lower': kcat_min, 'upper': [1., 200.]}
+prior['kcat_DSI'] = {'type':'kcat', 'name': 'kcat_DSI', 'fit':'local', 'dist': 'uniform', 'lower': kcat_min, 'upper': [1., 200.]}
 
 if args.set_K_I_M_equal_K_S_M: 
     del prior['logK_I_M']
@@ -100,7 +99,8 @@ if args.set_kcat_DSS_equal_kcat_DS:
 if args.set_kcat_DSI_equal_kcat_DS or args.set_kcat_DSI_equal_kcat_DSS:
     del prior['kcat_DSI']
 
-shared_params = None
+shared_params = None#{}
+# shared_params['logKd'] = {'assigned_idx': 2, 'shared_idx': 1}
 
 prior_infor = convert_prior_from_dict_to_list(prior, args.fit_E_S, args.fit_E_I)
 prior_infor_update = check_prior_group(prior_infor, len(expts))
@@ -135,14 +135,39 @@ trace = mcmc.get_samples(group_by_chain=True)
 az.summary(trace).to_csv(traces_name+"_summary.csv")
 
 ## Trace plot
-data = az.convert_to_inference_data(trace)
-az.plot_trace(data, compact=False)
-plt.tight_layout();
-plt.savefig(os.path.join(args.out_dir, 'Plot_trace'))
-plt.ioff()
+if len(trace.keys())>=15:
+    for param_name in ['logK', 'kcat', 'log_sigma']:
+        trace_2 = {}
+        for key in trace.keys():
+            if key.startswith(param_name):
+                trace_2[key] = trace[key]
+        ## Trace plot
+        data = az.convert_to_inference_data(trace_2)
+        az.plot_trace(data, compact=False)
+        plt.tight_layout();
+        plt.savefig(os.path.join(args.out_dir, 'Plot_trace_'+param_name))
+        plt.ioff()
+else:
+    data = az.convert_to_inference_data(trace)
+    az.plot_trace(data, compact=False)
+    plt.tight_layout();
+    plt.savefig(os.path.join(args.out_dir, 'Plot_trace'))
+    plt.ioff()
 
 # Finding MAP
 trace = mcmc.get_samples(group_by_chain=False)
+if shared_params is not None and len(shared_params)>0:
+    for name in shared_params.keys():
+        param = shared_params[name]
+        assigned_idx = param['assigned_idx']
+        shared_idx = param['shared_idx']
+        trace[f'{name}:{assigned_idx}'] = trace[f'{name}:{shared_idx}']
+
+df = pd.read_csv("Prior_infor.csv")
+prior_infor_update = []
+for index, row in df.iterrows():
+    prior_infor_update.append(row.to_dict())
+
 [map_index, map_params, log_probs] = map_finding(trace, expts, prior_infor_update, 
                                                  args.set_K_I_M_equal_K_S_M, args.set_K_S_DI_equal_K_S_DS, 
                                                  args.set_kcat_DSS_equal_kcat_DS, args.set_kcat_DSI_equal_kcat_DS,
@@ -153,6 +178,13 @@ with open("map.txt", "w") as f:
     print("\nKinetics parameters:", file=f)
     for key in trace.keys():
         print(key, ': %.3f' %trace[key][map_index], file=f)
+
+pickle.dump(log_probs, open('log_probs.pickle', "wb"))
+
+map_values = {}
+for key in trace.keys():
+    map_values[key] = trace[key][map_index]
+pickle.dump(map_values, open('map.pickle', "wb"))
 
 ## Fitting plot
 params_logK, params_kcat = extract_params_from_map_and_prior(trace, map_index, prior_infor_update)
