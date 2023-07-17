@@ -318,7 +318,9 @@ def _log_likelihoods(mcmc_trace, experiments, nsamples=None):
 
 
 def map_finding(mcmc_trace, experiments, prior_infor, set_K_I_M_equal_K_S_M=False,
-                set_K_S_DI_equal_K_S_DS=False, set_kcat_DSI_equal_kcat_DSS=False, nsamples=None):
+                set_K_S_DI_equal_K_S_DS=False, set_kcat_DSS_equal_kcat_DS=False,
+                set_kcat_DSI_equal_kcat_DS=False, set_kcat_DSI_equal_kcat_DSS=False, 
+                nsamples=None):
     """
     Evaluate probability of a parameter set using posterior distribution
     Finding MAP (maximum a posterior) given prior distributions of parameters information
@@ -351,6 +353,7 @@ def map_finding(mcmc_trace, experiments, prior_infor, set_K_I_M_equal_K_S_M=Fals
     if set_K_I_M_equal_K_S_M or set_K_S_DI_equal_K_S_DS or set_kcat_DSI_equal_kcat_DSS: 
         mcmc_trace_update = _map_adjust_trace(mcmc_trace, experiments, prior_infor, 
                                               set_K_I_M_equal_K_S_M, set_K_S_DI_equal_K_S_DS, 
+                                              set_kcat_DSS_equal_kcat_DS, set_kcat_DSI_equal_kcat_DS,
                                               set_kcat_DSI_equal_kcat_DSS)
         log_likelihoods = _log_likelihoods(mcmc_trace_update, experiments, nsamples)
     else:
@@ -369,7 +372,8 @@ def map_finding(mcmc_trace, experiments, prior_infor, set_K_I_M_equal_K_S_M=Fals
 
 
 def _map_adjust_trace(mcmc_trace, experiments, prior_infor, set_K_I_M_equal_K_S_M=False,
-                      set_K_S_DI_equal_K_S_DS=False, set_kcat_DSI_equal_kcat_DSS=False):
+                      set_K_S_DI_equal_K_S_DS=False, set_kcat_DSS_equal_kcat_DS=False,
+                      set_kcat_DSI_equal_kcat_DS=False, set_kcat_DSI_equal_kcat_DSS=False):
     
     mcmc_trace_update = mcmc_trace
     n_enzymes = len(experiments)
@@ -389,7 +393,21 @@ def _map_adjust_trace(mcmc_trace, experiments, prior_infor, set_K_I_M_equal_K_S_
         elif prior_infor[idx]['fit'] == 'local':
             for n in range(n_enzymes):
                 mcmc_trace_update[f'logK_S_DI:{n}'] = mcmc_trace_update[f'logK_S_DS:{n}']
-    if set_kcat_DSI_equal_kcat_DSS:
+    if set_kcat_DSS_equal_kcat_DS:
+        idx = np.where(prior_infor_pd.name=='kcat_DS')[0][0]
+        if prior_infor[idx]['fit'] == 'global':
+            mcmc_trace_update['kcat_DSS'] = mcmc_trace_update['kcat_DS']
+        elif prior_infor[idx]['fit'] == 'local':
+            for n in range(n_enzymes):
+                mcmc_trace_update[f'kcat_DSS:{n}'] = mcmc_trace_update[f'kcat_DS:{n}']
+    if set_kcat_DSI_equal_kcat_DS:
+        idx = np.where(prior_infor_pd.name=='kcat_DS')[0][0]
+        if prior_infor[idx]['fit'] == 'global':
+            mcmc_trace_update['kcat_DSI'] = mcmc_trace_update['kcat_DS']
+        elif prior_infor[idx]['fit'] == 'local':
+            for n in range(n_enzymes):
+                mcmc_trace_update[f'kcat_DSI:{n}'] = mcmc_trace_update[f'kcat_DS:{n}']
+    elif set_kcat_DSI_equal_kcat_DSS:
         idx = np.where(prior_infor_pd.name=='kcat_DSS')[0][0]
         if prior_infor[idx]['fit'] == 'global':
             mcmc_trace_update['kcat_DSI'] = mcmc_trace_update['kcat_DSS']
