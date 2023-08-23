@@ -1,0 +1,13 @@
+#!/bin/bash
+#SBATCH --partition=RM-shared
+#SBATCH --nodes=1
+#SBATCH --time=48:00:00
+#SBATCH --ntasks-per-node=4
+#SBATCH -o /ocean/projects/mcb160011p/sophie92/python/mpro/1.adjustable/adjust.log 
+
+module load anaconda3/2022.10
+conda activate mpro
+cd /ocean/projects/mcb160011p/sophie92/python/mpro/1.adjustable
+date
+python /ocean/projects/mcb160011p/sophie92/python/mpro/scripts/run_mcmc_adjustable.py --out_dir /ocean/projects/mcb160011p/sophie92/python/mpro/1.adjustable --fit_mutant_kinetics  --fit_mutant_AUC  --fit_mutant_ICE  --fit_wildtype_Nashed   --fit_E_S  --fit_E_I   --multi_var_wt  --niters 10000  --nburn 2000  --nthin 1  --nchain 4  --random_key 0 
+date 
