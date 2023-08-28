@@ -72,6 +72,9 @@ def _log_priors(mcmc_trace, experiments, prior_infor, nsamples=None):
             if data_rate is not None and f'log_sigma_rate:{idx_expt}' in mcmc_trace.keys():
                 log_priors += _log_prior_sigma(mcmc_trace, data_rate, f'log_sigma_rate:{idx_expt}', nsamples)
 
+        if f'alpha:{idx_expt}' in mcmc_trace.keys():
+            log_priors += jnp.log(_uniform_pdf(mcmc_trace[f'alpha:{idx_expt}'], 0, 1))
+
     if 'alpha' in mcmc_trace.keys():
         log_priors += jnp.log(_uniform_pdf(mcmc_trace['alpha'], 0, 1))
     
@@ -109,7 +112,7 @@ def _log_likelihood_each_enzyme(type_expt, data, trace_logK, trace_kcat, trace_a
                              trace_logK['logK_S_DS'], trace_logK['logK_I_M'], trace_logK['logK_I_D'],
                              trace_logK['logK_I_DI'], trace_logK['logK_S_DI'], trace_kcat['kcat_MS'],
                              trace_kcat['kcat_DS'], trace_kcat['kcat_DSI'], trace_kcat['kcat_DSS'],
-                             trace_alpha['alpha'], trace_log_sigma)
+                             trace_alpha, trace_log_sigma)
     return log_likelihoods
 
 
@@ -147,6 +150,11 @@ def _log_likelihoods(mcmc_trace, experiments, nsamples=None):
 
         trace_nth, in_axis_nth = _mcmc_trace_each_enzyme(mcmc_trace, idx, nsamples)
 
+        if f'alpha:{idx_expt}' in mcmc_trace.keys():
+            trace_alpha = mcmc_trace[f'alpha:{idx_expt}']
+        else:
+            trace_alpha = mcmc_trace['alpha']
+
         in_axis_nth.append(0) #for sigma
         in_axis_nth.append(0) #for alpha
         if type(expt['kinetics']) is dict:
@@ -158,7 +166,7 @@ def _log_likelihoods(mcmc_trace, experiments, nsamples=None):
                         trace_log_sigma = mcmc_trace[f'log_sigma_rate:{idx_expt}:{n}'][: nsamples]
                     else:
                         trace_log_sigma = jnp.ones(nsamples)
-                    log_likelihoods += _log_likelihood_each_enzyme('kinetics', data_rate, trace_nth, trace_nth, mcmc_trace, trace_log_sigma, in_axis_nth, nsamples)
+                    log_likelihoods += _log_likelihood_each_enzyme('kinetics', data_rate, trace_nth, trace_nth, trace_alpha, trace_log_sigma, in_axis_nth, nsamples)
         else:
             data_rate = expt['kinetics']
             if data_rate is not None:
@@ -167,7 +175,7 @@ def _log_likelihoods(mcmc_trace, experiments, nsamples=None):
                     trace_log_sigma = mcmc_trace[f'log_sigma_rate:{idx_expt}'][: nsamples]
                 else:
                     trace_log_sigma = jnp.ones(nsamples)
-                log_likelihoods += _log_likelihood_each_enzyme('kinetics', data_rate, trace_nth, trace_nth, mcmc_trace, trace_log_sigma, in_axis_nth, nsamples)
+                log_likelihoods += _log_likelihood_each_enzyme('kinetics', data_rate, trace_nth, trace_nth, trace_alpha, trace_log_sigma, in_axis_nth, nsamples)
 
     return np.array(log_likelihoods)
 

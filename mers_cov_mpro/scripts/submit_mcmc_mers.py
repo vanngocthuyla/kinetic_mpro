@@ -7,6 +7,7 @@ parser = argparse.ArgumentParser()
 
 parser.add_argument( "--input_file",                    type=str,               default="")
 parser.add_argument( "--out_dir",                       type=str, 				default="")
+parser.add_argument( "--map_file",                      type=str,               default="")
 
 parser.add_argument( "--fit_E_S",                       action="store_true",    default=False)
 parser.add_argument( "--fit_E_I",                       action="store_true",    default=False)
@@ -27,7 +28,7 @@ parser.add_argument( "--random_key",                    type=int,               
 
 args = parser.parse_args()
 
-running_script = "/ocean/projects/mcb160011p/sophie92/python/mers_mpro/scripts/run_mcmc_ES.py"
+running_script = "/ocean/projects/mcb160011p/sophie92/python/mers_mpro/scripts/run_mcmc_one_inhibitor.py"
 
 if args.fit_E_S and args.fit_E_I:
     file_name = "mers"
@@ -93,6 +94,7 @@ cd ''' + args.out_dir + '''\n''' + \
     '''python ''' + running_script + \
     ''' --input_file ''' + args.input_file + \
     ''' --out_dir ''' + args.out_dir + \
+    ''' --map_file ''' + args.map_file + \
     multi_var + fit_E_S + fit_E_I + \
     set_K_I_M_equal_K_S_M + set_K_S_DI_equal_K_S_DS + \
     set_kcat_DSS_equal_kcat_DS+ set_kcat_DSI_equal_kcat_DS + set_kcat_DSI_equal_kcat_DSS + \

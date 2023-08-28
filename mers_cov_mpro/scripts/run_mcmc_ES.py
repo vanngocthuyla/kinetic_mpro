@@ -14,7 +14,7 @@ from jax import random
 import jax.random as random
 
 import numpyro
-from numpyro.infer import MCMC, NUTS
+from numpyro.infer import MCMC, NUTS, init_to_value
 
 import matplotlib.pyplot as plt
 
@@ -24,17 +24,19 @@ warnings.simplefilter("ignore", RuntimeWarning)
 
 from _bayesian_model_mers import adjustable_global_fitting
 from _load_data_mers import load_data_no_inhibitor
+from _plotting import adjustable_plot_data_mers
+from _MAP_finding_mers import map_finding
+
 from _prior_check import convert_prior_from_dict_to_list, check_prior_group
 from _params_extraction import extract_logK_n_idx, extract_kcat_n_idx
-from _MAP_finding_mers import map_finding
 from _trace_analysis import extract_params_from_map_and_prior
 from _trace_analysis import extract_params_from_trace_and_prior
-from _plotting import adjustable_plot_data
 
 parser = argparse.ArgumentParser()
 
 parser.add_argument( "--input_file",                    type=str,               default="")
 parser.add_argument( "--out_dir",                       type=str, 				default="")
+parser.add_argument( "--map_file",                      type=str,               default="")
 
 parser.add_argument( "--fit_E_S",                       action="store_true",    default=False)
 parser.add_argument( "--fit_E_I",                       action="store_true",    default=False)
@@ -117,7 +119,12 @@ if os.path.isfile(traces_name+'.pickle'):
     for key in samples.keys():
         trace[key] = np.reshape(samples[key], (args.nchain, args.niters))
 else:
-    kernel = NUTS(adjustable_global_fitting)
+    if len(args.map_file)>0:
+        init_values = pickle.load(open(args.map_file, "rb"))
+        print("Initial values:", init_values)
+        kernel = NUTS(model=adjustable_global_fitting, init_strategy=init_to_value(values=init_values))
+    else:
+        kernel = NUTS(adjustable_global_fitting)
     mcmc = MCMC(kernel, num_warmup=args.nburn, num_samples=args.niters, num_chains=args.nchain, progress_bar=True)
     mcmc.run(rng_key_, experiments=expts, prior_infor=prior_infor_update, shared_params=shared_params)
     mcmc.print_summary()
@@ -134,18 +141,19 @@ else:
     az.summary(trace).to_csv(traces_name+"_summary.csv")
 
 ## Trace plot
-if len(trace.keys())>=15:
-    for param_name in ['logK', 'kcat', 'log_sigma']:
+if len(trace.keys())>=10:
+    for param_name in ['logK', 'kcat', 'log_sigma', 'alpha']:
         trace_2 = {}
         for key in trace.keys():
             if key.startswith(param_name):
                 trace_2[key] = trace[key]
-        ## Trace plot
-        data = az.convert_to_inference_data(trace_2)
-        az.plot_trace(data, compact=False)
-        plt.tight_layout();
-        plt.savefig(os.path.join(args.out_dir, 'Plot_trace_'+param_name))
-        plt.ioff()
+        if len(trace_2)>0:
+            ## Trace plot
+            data = az.convert_to_inference_data(trace_2)
+            az.plot_trace(data, compact=False)
+            plt.tight_layout();
+            plt.savefig(os.path.join(args.out_dir, 'Plot_trace_'+param_name))
+            plt.ioff()
 else:
     data = az.convert_to_inference_data(trace)
     az.plot_trace(data, compact=False)
@@ -208,6 +216,6 @@ for n in range(len(expts)):
         except: params_kcat['kcat_DSI'] = params_kcat['kcat_DSS']
 
 n = 0
-adjustable_plot_data(expts_plot, extract_logK_n_idx(params_logK, n, shared_params),
-                     extract_kcat_n_idx(params_kcat, n, shared_params),
-                     OUTDIR=args.out_dir)
+adjustable_plot_data_mers(expts_plot, extract_logK_n_idx(params_logK, n, shared_params),
+                          extract_kcat_n_idx(params_kcat, n, shared_params),
+                          OUTDIR=args.out_dir)

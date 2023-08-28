@@ -6,85 +6,6 @@ from _kinetics import ReactionRate, MonomerConcentration, CatalyticEfficiency
 from _kinetics_adjustable import Adjustable_ReactionRate, Adjustable_MonomerConcentration, Adjustable_CatalyticEfficiency
 
 
-def adjustable_plot_data_mers(experiments, params_logK, params_kcat,
-                              fig_size=(5, 3.5), dpi=80, OUTDIR=None):
-    """
-    Parameters:
-    ----------
-    experiments : list of dict
-        Each dataset contains response, logMtot, lotStot, logItot
-    params_logK : dict of all dissociation constants
-        logK_S_D    : float, Log of the dissociation constant between the substrate and free dimer
-        logK_S_DS   : float, Log of the dissociation constant between the substrate and ligand-dimer complex
-        logK_I_D    : float, Log of the dissociation constant between the inhibitor and free dimer
-        logK_I_DI   : float, Log of the dissociation constant between the inhibitor and inhibitor-dimer complex
-        logK_I_DS   : float, Log of the dissociation constant between the inhibitor and substrate-dimer complex
-        logK_S_DI   : float, Log of the dissociation constant between the substrate and inhibitor-dimer complex
-        All dissociation constants are in units of log molar
-    params_kcat : dict of all kcat
-        kcat_DS : float, Rate constant of dimer-substrate complex
-        kcat_DSI: float, Rate constant of dimer-substrate-inhibitor complex
-        kcat_DSS: float, Rate constant of dimer-substrate-substrate complex
-    figure_size     : (width, height) size of plot
-    dpi             : quality of plot
-    OUTDIR          : optional, string, directory for saving plot
-    ----------
-    return plots of each experiments
-    """
-    for i, experiment in enumerate(experiments):
-        plt.figure(figsize=fig_size)
-        try:
-           plt.title('Plate: '+experiment['figure']+'\n'+str(experiment['sub_figure']))
-        except:
-            pass
-        x = experiment[experiment['x']]
-
-        # Plot data
-        if experiment['type']=='kinetics':
-            plt.plot(x, experiment['v']*1E9, '.')
-            plt.xlabel(experiment['x'])
-            plt.ylabel('Rate (nM min$^{-1}$)')
-        # elif experiment['type']=='AUC':
-        #     plt.plot(x, experiment['M'], '.')
-        #     plt.xlabel(experiment['x'])
-        #     plt.ylabel('Monomer concentration (M)')
-        # elif experiment['type']=='catalytic_efficiency':
-        #     plt.plot(x, experiment['Km_over_kcat'], '.')
-        #     plt.xlabel(experiment['x'])
-        #     plt.ylabel('K$_m$/k$_{cat}$')
-
-        # Plot fit
-        if experiment['x']=='logMtot':
-            logMtot = np.linspace(experiment['logMtot'][0], experiment['logMtot'][-1], 50)
-            logStot = experiment['logStot'][0]*np.ones(50)
-            logItot = experiment['logItot'][0]*np.ones(50)
-            x = logMtot
-        elif experiment['x']=='logStot':
-            logMtot = experiment['logMtot'][0]*np.ones(50)
-            logStot = np.linspace(experiment['logStot'][0], experiment['logStot'][-1], 50)
-            logItot = experiment['logItot'][0]*np.ones(50)
-            x = logStot
-        elif experiment['x']=='logItot':
-            logMtot = experiment['logMtot'][0]*np.ones(50)
-            logStot = experiment['logStot'][0]*np.ones(50)
-            logItot = np.linspace(experiment['logItot'][0], experiment['logItot'][-1], 50)
-            x = logItot
-
-        if experiment['type']=='kinetics':
-            y_model = Adjustable_ReactionRate(logMtot, logStot, logItot, *params_logK, *params_kcat)
-        # elif experiment['type']=='AUC':
-        #     y_model = Adjustable_MonomerConcentration(logMtot, logStot, logItot, *params_logK)
-        # elif experiment['type']=='catalytic_efficiency':
-        #     y_model = 1./Adjustable_CatalyticEfficiency(logMtot, logItot, *params_logK, *params_kcat)
-
-        plt.plot(x, y_model*1E9)
-        plt.tight_layout()
-
-        if OUTDIR is not None:
-            plt.savefig(os.path.join(OUTDIR,f"{experiment['figure']}_{i}"))
-            plt.ioff()
-
-
 def plot_kinetics_data(experiments, params_logK, params_kcat, 
 					   figure_size=(6.4, 4.8), dpi=80, OUTDIR=None): 
     """
@@ -246,4 +167,71 @@ def adjustable_plot_data(experiments, params_logK, params_kcat,
         
         if OUTDIR is not None: 
             plt.savefig(os.path.join(OUTDIR,f"{experiment['figure']}"))
+            plt.ioff()
+
+
+def adjustable_plot_data_mers(experiments, params_logK, params_kcat,
+                              fig_size=(5, 3.5), dpi=80, OUTDIR=None):
+    """
+    Parameters:
+    ----------
+    experiments : list of dict
+        Each dataset contains response, logMtot, lotStot, logItot
+    params_logK : dict of all dissociation constants
+        logK_S_D    : float, Log of the dissociation constant between the substrate and free dimer
+        logK_S_DS   : float, Log of the dissociation constant between the substrate and ligand-dimer complex
+        logK_I_D    : float, Log of the dissociation constant between the inhibitor and free dimer
+        logK_I_DI   : float, Log of the dissociation constant between the inhibitor and inhibitor-dimer complex
+        logK_I_DS   : float, Log of the dissociation constant between the inhibitor and substrate-dimer complex
+        logK_S_DI   : float, Log of the dissociation constant between the substrate and inhibitor-dimer complex
+        All dissociation constants are in units of log molar
+    params_kcat : dict of all kcat
+        kcat_DS : float, Rate constant of dimer-substrate complex
+        kcat_DSI: float, Rate constant of dimer-substrate-inhibitor complex
+        kcat_DSS: float, Rate constant of dimer-substrate-substrate complex
+    figure_size     : (width, height) size of plot
+    dpi             : quality of plot
+    OUTDIR          : optional, string, directory for saving plot
+    ----------
+    return plots of each experiments
+    """
+    for i, experiment in enumerate(experiments):
+        plt.figure(figsize=fig_size)
+        try:
+           plt.title('Plate: '+experiment['figure']+'\n'+str(experiment['sub_figure']))
+        except:
+            pass
+        x = experiment[experiment['x']]
+
+        # Plot data
+        if experiment['type']=='kinetics':
+            plt.plot(x, experiment['v']*1E9, '.')
+            plt.xlabel(experiment['x'])
+            plt.ylabel('Rate (nM min$^{-1}$)')
+
+        # Plot fit
+        if experiment['x']=='logMtot':
+            logMtot = np.linspace(experiment['logMtot'][0], experiment['logMtot'][-1], 50)
+            logStot = experiment['logStot'][0]*np.ones(50)
+            logItot = experiment['logItot'][0]*np.ones(50)
+            x = logMtot
+        elif experiment['x']=='logStot':
+            logMtot = experiment['logMtot'][0]*np.ones(50)
+            logStot = np.linspace(experiment['logStot'][0], experiment['logStot'][-1], 50)
+            logItot = experiment['logItot'][0]*np.ones(50)
+            x = logStot
+        elif experiment['x']=='logItot':
+            logMtot = experiment['logMtot'][0]*np.ones(50)
+            logStot = experiment['logStot'][0]*np.ones(50)
+            logItot = np.linspace(experiment['logItot'][0], experiment['logItot'][-1], 50)
+            x = logItot
+
+        if experiment['type']=='kinetics':
+            y_model = Adjustable_ReactionRate(logMtot, logStot, logItot, *params_logK, *params_kcat)
+        
+        plt.plot(x, y_model*1E9)
+        plt.tight_layout()
+
+        if OUTDIR is not None:
+            plt.savefig(os.path.join(OUTDIR,f"{experiment['figure']}_{i}"))
             plt.ioff()

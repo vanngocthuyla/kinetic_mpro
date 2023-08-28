@@ -69,7 +69,7 @@ print("nthin:", args.nthin)
 df_mers = pd.read_csv(args.input_file)
 expts, expts_plot = load_data_one_inhibitor(df_mers, multi_var=args.multi_var)
 
-logKd_min = -20.
+logKd_min = -27.
 logKd_max = 0.
 kcat_min = 0.
 kcat_max = 10
@@ -142,17 +142,18 @@ else:
 
 ## Trace plot
 if len(trace.keys())>=10:
-    for param_name in ['logK', 'kcat', 'log_sigma']:
+    for param_name in ['logK', 'kcat', 'log_sigma', 'alpha']:
         trace_2 = {}
         for key in trace.keys():
             if key.startswith(param_name):
                 trace_2[key] = trace[key]
-        ## Trace plot
-        data = az.convert_to_inference_data(trace_2)
-        az.plot_trace(data, compact=False)
-        plt.tight_layout();
-        plt.savefig(os.path.join(args.out_dir, 'Plot_trace_'+param_name))
-        plt.ioff()
+        if len(trace_2)>0:
+            ## Trace plot
+            data = az.convert_to_inference_data(trace_2)
+            az.plot_trace(data, compact=False)
+            plt.tight_layout();
+            plt.savefig(os.path.join(args.out_dir, 'Plot_trace_'+param_name))
+            plt.ioff()
 else:
     data = az.convert_to_inference_data(trace)
     az.plot_trace(data, compact=False)

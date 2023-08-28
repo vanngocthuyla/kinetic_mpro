@@ -1,3 +1,5 @@
+## Fitting Bayesian model for Mpro given some constraints on parameters
+
 import numpyro
 import numpyro.distributions as dist
 from numpyro.distributions import LogNormal, Normal, Uniform
@@ -12,7 +14,18 @@ from _prior_check import check_prior_group, prior_group_multi_enzyme, define_uni
 
 
 def _sigma(response_model, alpha, sigma_model=0.):
-    # return sigma_model+alpha*response_model
+    """
+    Parameters:
+    ----------
+    response_model  : jax numpy array, data from the model
+    alpha           : ratio for multiplicative noise of data given response
+    sigma_model     : additive noise of data
+    ----------
+    Assuming that y_obs ~ N(y_model, sigma^2), this return function of sigma
+    
+    If multiplicative noise : sigma^2 = alpha*response_model
+       or mixed noise       : sigma^2 = alpha*response_model+sigma_model**2
+    """
     return jnp.sqrt(alpha)*response_model
     # return jnp.sqrt(alpha*(response_model**2)+sigma_model**2)
 
