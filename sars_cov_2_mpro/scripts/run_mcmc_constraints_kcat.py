@@ -51,7 +51,7 @@ parser.add_argument( "--set_kcat_DSS_equal_kcat_DS",    action="store_true",    
 parser.add_argument( "--set_kcat_DSI_equal_kcat_DS",    action="store_true",    default=False)
 parser.add_argument( "--set_kcat_DSI_equal_kcat_DSS",   action="store_true",    default=False)
 
-parser.add_argument( "--niters",				        type=int, 				default=10000)
+parser.add_argument( "--niters",                        type=int, 				default=10000)
 parser.add_argument( "--nburn",                         type=int, 				default=2000)
 parser.add_argument( "--nthin",                         type=int, 				default=1)
 parser.add_argument( "--nchain",                        type=int, 				default=4)
@@ -77,12 +77,12 @@ logKd_max = 0.
 kcat_min = 0. 
 
 prior = {}
-prior['logKd'] = {'type':'logKd', 'name': 'logKd', 'fit':'local','dist': ['normal', 'normal'], 'loc': [-5, -14], 'scale': [2, 2]}
+prior['logKd'] = {'type':'logKd', 'name': 'logKd', 'fit':'local','dist': ['uniform', 'normal'], 'loc': [None, -14], 'scale': [None, 2], 'lower': [logKd_min, None], 'upper': [logKd_max, None]}
 prior['logK_S_M'] = {'type':'logK', 'name': 'logK_S_M', 'fit':'global', 'dist': 'uniform', 'lower': logKd_min, 'upper': logKd_max}
 prior['logK_S_D'] = {'type':'logK', 'name': 'logK_S_D', 'fit':'global', 'dist': 'uniform', 'lower': logKd_min, 'upper': logKd_max}
-prior['logK_S_DS'] = {'type':'logK', 'name': 'logK_S_DS', 'fit':'global', 'dist': None, 'value': 0.}
-prior['logK_I_M'] = {'type':'logK', 'name': 'logK_I_M', 'fit':'global', 'dist': None, 'value': 0.}
-prior['logK_I_D'] = {'type':'logK', 'name': 'logK_I_D', 'fit':'global', 'dist': 'normal', 'loc': -13, 'scale': 2}
+prior['logK_S_DS'] = {'type':'logK', 'name': 'logK_S_DS', 'fit':'global', 'dist': 'uniform', 'lower': logKd_min, 'upper': logKd_max}
+prior['logK_I_M'] = {'type':'logK', 'name': 'logK_I_M', 'fit':'global', 'dist': 'uniform', 'lower': logKd_min, 'upper': logKd_max}
+prior['logK_I_D'] = {'type':'logK', 'name': 'logK_I_D', 'fit':'global', 'dist': 'normal', 'loc': -15, 'scale': 2}
 prior['logK_I_DI'] = {'type':'logK', 'name': 'logK_I_DI', 'fit':'global', 'dist': 'normal', 'loc': -15, 'scale': 2}
 prior['logK_S_DI'] = {'type':'logK', 'name': 'logK_S_DI', 'fit':'global', 'dist': 'uniform', 'lower': logKd_min, 'upper': logKd_max}
 
@@ -154,6 +154,8 @@ else:
     plt.savefig(os.path.join(args.out_dir, 'Plot_trace'))
     plt.ioff()
 
+del prior_infor_update
+
 # Finding MAP
 trace = mcmc.get_samples(group_by_chain=False)
 if shared_params is not None and len(shared_params)>0:
@@ -189,16 +191,22 @@ pickle.dump(map_values, open('map.pickle', "wb"))
 ## Fitting plot
 params_logK, params_kcat = extract_params_from_map_and_prior(trace, map_index, prior_infor_update)
 
-if args.set_K_I_M_equal_K_S_M:
-    params_logK['logK_I_M'] = params_logK['logK_S_M']
-if args.set_K_S_DI_equal_K_S_DS:
-    params_logK['logK_S_DI'] = params_logK['logK_S_DS']
-if args.set_kcat_DSS_equal_kcat_DS: 
-    params_kcat['kcat_DSS'] = params_kcat['kcat_DS']
-if args.set_kcat_DSI_equal_kcat_DS: 
-    params_kcat['kcat_DSI'] = params_kcat['kcat_DS']
-elif args.set_kcat_DSI_equal_kcat_DSS:
-    params_kcat['kcat_DSI'] = params_kcat['kcat_DSS']
+for n in range(len(expts)):
+    if args.set_K_I_M_equal_K_S_M:
+        try: params_logK[f'logK_I_M:{n}'] = params_logK[f'logK_S_M:{n}']
+        except: params_logK['logK_I_M'] = params_logK['logK_S_M']
+    if args.set_K_S_DI_equal_K_S_DS:
+        try: params_logK[f'logK_S_DI:{n}'] = params_logK[f'logK_S_DS:{n}']
+        except: params_logK['logK_S_DI'] = params_logK['logK_S_DS']
+    if args.set_kcat_DSS_equal_kcat_DS: 
+        try: params_kcat[f'kcat_DSS:{n}'] = params_kcat[f'kcat_DS:{n}']
+        except: params_kcat['kcat_DSS'] = params_kcat['kcat_DS']
+    if args.set_kcat_DSI_equal_kcat_DS: 
+        try: params_kcat[f'kcat_DSI:{n}'] = params_kcat[f'kcat_DS:{n}']
+        except: params_kcat['kcat_DSI'] = params_kcat['kcat_DS']
+    elif args.set_kcat_DSI_equal_kcat_DSS:
+        try: params_kcat[f'kcat_DSI:{n}'] = params_kcat[f'kcat_DSS:{n}']
+        except: params_kcat['kcat_DSI'] = params_kcat['kcat_DSS']
 
 n = 0
 for expt_plot in [expts_mut, expts_wt, expts_wt_2]:

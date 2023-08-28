@@ -1,3 +1,5 @@
+## Fitting Bayesian model for Mpro ##
+
 import numpyro
 import numpyro.distributions as dist
 from numpyro.distributions import LogNormal, Normal, Uniform
