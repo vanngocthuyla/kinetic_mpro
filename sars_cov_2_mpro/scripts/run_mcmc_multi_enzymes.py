@@ -189,16 +189,22 @@ pickle.dump(log_probs, open('log_probs.pickle', "wb"))
 ## Fitting plot
 params_logK, params_kcat = extract_params_from_map_and_prior(trace, map_index, prior_infor_update)
 
-if args.set_K_I_M_equal_K_S_M:
-    params_logK['logK_I_M'] = params_logK['logK_S_M']
-if args.set_K_S_DI_equal_K_S_DS:
-    params_logK['logK_S_DI'] = params_logK['logK_S_DS']
-if args.set_kcat_DSS_equal_kcat_DS: 
-    params_kcat['kcat_DSS'] = params_kcat['kcat_DS']
-if args.set_kcat_DSI_equal_kcat_DS: 
-    params_kcat['kcat_DSI'] = params_kcat['kcat_DS']
-elif args.set_kcat_DSI_equal_kcat_DSS:
-    params_kcat['kcat_DSI'] = params_kcat['kcat_DSS']
+for n in range(len(expts)):
+    if args.set_K_I_M_equal_K_S_M:
+        try: params_logK[f'logK_I_M:{n}'] = params_logK[f'logK_S_M:{n}']
+        except: params_logK['logK_I_M'] = params_logK['logK_S_M']
+    if args.set_K_S_DI_equal_K_S_DS:
+        try: params_logK[f'logK_S_DI:{n}'] = params_logK[f'logK_S_DS:{n}']
+        except: params_logK['logK_S_DI'] = params_logK['logK_S_DS']
+    if args.set_kcat_DSS_equal_kcat_DS: 
+        try: params_kcat[f'kcat_DSS:{n}'] = params_kcat[f'kcat_DS:{n}']
+        except: params_kcat['kcat_DSS'] = params_kcat['kcat_DS']
+    if args.set_kcat_DSI_equal_kcat_DS: 
+        try: params_kcat[f'kcat_DSI:{n}'] = params_kcat[f'kcat_DS:{n}']
+        except: params_kcat['kcat_DSI'] = params_kcat['kcat_DS']
+    elif args.set_kcat_DSI_equal_kcat_DSS:
+        try: params_kcat[f'kcat_DSI:{n}'] = params_kcat[f'kcat_DSS:{n}']
+        except: params_kcat['kcat_DSI'] = params_kcat['kcat_DSS']
 
 n = 0
 for expt_plot in [expts_mut, expts_wt, expts_wt_2]:
