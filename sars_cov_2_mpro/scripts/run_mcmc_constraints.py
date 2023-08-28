@@ -1,3 +1,8 @@
+## Fitting Bayesian model for Mpro given some constraints on parameters
+
+## Considering the symmetry of model, we can have logK_S_DI - logK_I_DI = logK_I_DS - log_K_S_DS
+## or logK_I_D - logK_I_M = log_S_D - logK_S_M
+
 import warnings
 import numpy as np
 import sys
@@ -51,6 +56,9 @@ parser.add_argument( "--set_kcat_DSS_equal_kcat_DS",    action="store_true",    
 parser.add_argument( "--set_kcat_DSI_equal_kcat_DS",    action="store_true",    default=False)
 parser.add_argument( "--set_kcat_DSI_equal_kcat_DSS",   action="store_true",    default=False)
 
+parser.add_argument( "--constraint_logK_S_DS",          action="store_true",    default=False)
+parser.add_argument( "--constraint_logK_I_M",           action="store_true",    default=False)
+
 parser.add_argument( "--niters",				        type=int, 				default=10000)
 parser.add_argument( "--nburn",                         type=int, 				default=2000)
 parser.add_argument( "--nthin",                         type=int, 				default=1)
@@ -81,7 +89,7 @@ prior['logKd'] = {'type':'logKd', 'name': 'logKd', 'fit':'local','dist': ['norma
 prior['logK_S_M'] = {'type':'logK', 'name': 'logK_S_M', 'fit':'global', 'dist': 'uniform', 'lower': logKd_min, 'upper': logKd_max}
 prior['logK_S_D'] = {'type':'logK', 'name': 'logK_S_D', 'fit':'global', 'dist': 'uniform', 'lower': logKd_min, 'upper': logKd_max}
 prior['logK_S_DS'] = {'type':'logK', 'name': 'logK_S_DS', 'fit':'global', 'dist': None, 'value': 0.}
-prior['logK_I_M'] = {'type':'logK', 'name': 'logK_I_M', 'fit':'global', 'dist': 'uniform', 'lower': logKd_min, 'upper': logKd_max}
+prior['logK_I_M'] = {'type':'logK', 'name': 'logK_I_M', 'fit':'global', 'dist': None, 'value': 0.}
 prior['logK_I_D'] = {'type':'logK', 'name': 'logK_I_D', 'fit':'global', 'dist': 'normal', 'loc': -13, 'scale': 2}
 prior['logK_I_DI'] = {'type':'logK', 'name': 'logK_I_DI', 'fit':'global', 'dist': 'normal', 'loc': -15, 'scale': 2}
 prior['logK_S_DI'] = {'type':'logK', 'name': 'logK_S_DI', 'fit':'global', 'dist': 'uniform', 'lower': logKd_min, 'upper': logKd_max}
@@ -121,7 +129,8 @@ mcmc = MCMC(kernel, num_warmup=args.nburn, num_samples=args.niters, num_chains=a
 mcmc.run(rng_key_, experiments=expts, prior_infor=prior_infor_update, shared_params=shared_params, 
          set_K_I_M_equal_K_S_M=args.set_K_I_M_equal_K_S_M, set_K_S_DI_equal_K_S_DS=args.set_K_S_DI_equal_K_S_DS, 
          set_kcat_DSS_equal_kcat_DS=args.set_kcat_DSS_equal_kcat_DS, set_kcat_DSI_equal_kcat_DS=args.set_kcat_DSI_equal_kcat_DS,
-         set_kcat_DSI_equal_kcat_DSS=args.set_kcat_DSI_equal_kcat_DSS)
+         set_kcat_DSI_equal_kcat_DSS=args.set_kcat_DSI_equal_kcat_DSS,
+         constraint_logK_S_DS=args.constraint_logK_S_DS, constraint_logK_I_M=args.constraint_logK_I_M)
 mcmc.print_summary()
 
 trace = mcmc.get_samples(group_by_chain=False)
@@ -164,6 +173,11 @@ if shared_params is not None and len(shared_params)>0:
         shared_idx = param['shared_idx']
         trace[f'{name}:{assigned_idx}'] = trace[f'{name}:{shared_idx}']
 
+if args.constraint_logK_S_DS:
+    trace['logK_S_DS'] = trace['logK_I_DS'] + trace['logK_I_D'] - trace['logK_S_DI']
+if args.constraint_logK_I_M:
+    trace['logK_I_M'] = trace['logK_I_D'] + trace['logK_S_M'] - trace['logK_S_D']
+
 [map_index, map_params, log_probs] = map_finding(trace, expts, prior_infor_update, 
                                                  args.set_K_I_M_equal_K_S_M, args.set_K_S_DI_equal_K_S_DS, 
                                                  args.set_kcat_DSS_equal_kcat_DS, args.set_kcat_DSI_equal_kcat_DS,
@@ -185,16 +199,22 @@ pickle.dump(map_values, open('map.pickle', "wb"))
 ## Fitting plot
 params_logK, params_kcat = extract_params_from_map_and_prior(trace, map_index, prior_infor_update)
 
-if args.set_K_I_M_equal_K_S_M:
-    params_logK['logK_I_M'] = params_logK['logK_S_M']
-if args.set_K_S_DI_equal_K_S_DS:
-    params_logK['logK_S_DI'] = params_logK['logK_S_DS']
-if args.set_kcat_DSS_equal_kcat_DS: 
-    params_kcat['kcat_DSS'] = params_kcat['kcat_DS']
-if args.set_kcat_DSI_equal_kcat_DS: 
-    params_kcat['kcat_DSI'] = params_kcat['kcat_DS']
-elif args.set_kcat_DSI_equal_kcat_DSS:
-    params_kcat['kcat_DSI'] = params_kcat['kcat_DSS']
+for n in range(len(expts)):
+    if args.set_K_I_M_equal_K_S_M:
+        try: params_logK[f'logK_I_M:{n}'] = params_logK[f'logK_S_M:{n}']
+        except: params_logK['logK_I_M'] = params_logK['logK_S_M']
+    if args.set_K_S_DI_equal_K_S_DS:
+        try: params_logK[f'logK_S_DI:{n}'] = params_logK[f'logK_S_DS:{n}']
+        except: params_logK['logK_S_DI'] = params_logK['logK_S_DS']
+    if args.set_kcat_DSS_equal_kcat_DS: 
+        try: params_kcat[f'kcat_DSS:{n}'] = params_kcat[f'kcat_DS:{n}']
+        except: params_kcat['kcat_DSS'] = params_kcat['kcat_DS']
+    if args.set_kcat_DSI_equal_kcat_DS: 
+        try: params_kcat[f'kcat_DSI:{n}'] = params_kcat[f'kcat_DS:{n}']
+        except: params_kcat['kcat_DSI'] = params_kcat['kcat_DS']
+    elif args.set_kcat_DSI_equal_kcat_DSS:
+        try: params_kcat[f'kcat_DSI:{n}'] = params_kcat[f'kcat_DSS:{n}']
+        except: params_kcat['kcat_DSI'] = params_kcat['kcat_DSS']
 
 n = 0
 for expt_plot in [expts_mut, expts_wt, expts_wt_2]:

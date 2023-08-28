@@ -1,3 +1,8 @@
+## Fitting Bayesian model for Mpro given some constraints on parameters
+
+## Considering the symmetry of model, we can have logK_S_DI - logK_I_DI = logK_I_DS - log_K_S_DS
+## or logK_I_D - logK_I_M = log_S_D - logK_S_M
+
 import numpyro
 import numpyro.distributions as dist
 from numpyro.distributions import LogNormal, Normal, Uniform
@@ -15,7 +20,8 @@ def adjustable_global_fitting(experiments, prior_infor=None,
                               logKd_min=-20, logKd_max=0, kcat_min=0, kcat_max=1,
                               shared_params=None, set_K_I_M_equal_K_S_M=False,
                               set_K_S_DI_equal_K_S_DS=False, set_kcat_DSS_equal_kcat_DS=False, 
-                              set_kcat_DSI_equal_kcat_DS=False, set_kcat_DSI_equal_kcat_DSS=False):
+                              set_kcat_DSI_equal_kcat_DS=False, set_kcat_DSI_equal_kcat_DSS=False,
+                              constraint_logK_S_DS=False, constraint_logK_I_M=False):
     """
     Parameters:
     ----------

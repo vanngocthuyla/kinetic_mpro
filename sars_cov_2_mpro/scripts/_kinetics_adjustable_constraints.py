@@ -6,106 +6,11 @@ from jax import vmap
 from _chemical_reactions import ChemicalReactions
 
 
-def define_species_reactions(logKd=None, logK_S_M=None, logK_S_D=None, logK_S_DS=None,
-                             logK_I_M=None, logK_I_D=None, logK_I_DI=None, logK_S_DI=None,
-                             constraint_logK_S_DS=True, constraints_logK_I_M=True):
-    """
-    Define the species and reactions of dimer binding model in which a ligand and substrate
-    competitively binds to a monomer, dimer, or dimer complexed with a ligand.
-
-    Parameters
-    ----------
-    logKd : float
-        Log of the dissociation constant of dimerization
-    logKd_MS_M: float
-        Log of the dissociation constant between the monomer and substrate-monomer complex
-    logK_S_M : float
-        Log of the dissociation constant between the substrate and free monomer
-    logK_S_D : float
-        Log of the dissociation constant between the substrate and free dimer
-    logK_S_DS : float
-        Log of the dissociation constant between the substrate and ligand-dimer complex
-    logKd_MI_M: float
-        Log of the dissociation constant between the monomer and ligand-monomer complex
-    logK_I_M : float
-        Log of the dissociation constant between the inhibitor and free monomer
-    logK_I_D : float
-        Log of the dissociation constant between the inhibitor and free dimer
-    logK_I_DI : float
-        Log of the dissociation constant between the inhibitor and inhibitor-dimer complex
-    logK_I_DS: float
-        Log of the dissociation constant between the inhibitor and substrate-dimer complex
-    logK_S_DI: float
-        Log of the dissociation constant between the substrate and inhibitor-dimer complex
-
-    All dissociation constants are in units of log molar
-    """
-    params = []
-    species = []
-    reactions = []
-
-    if logKd is not None:
-        params.append(logKd)
-        species.append(['M', 'D'])
-        reactions.append({'M':2, 'D':-1})
-    if logK_S_M is not None:
-        params.append(logK_S_M)
-        species.append(['S', 'M', 'MS'])
-        reactions.append({'M': 1, 'S':1, 'MS': -1})
-    if logKd is not None and logK_S_M is not None and logK_S_D is not None:
-        logKd_MS_M = logKd + logK_S_D - logK_S_M
-        params.append(logKd_MS_M)
-        reactions.append({'MS':1, 'M':1, 'DS': -1})
-    if logK_S_D is not None:
-        params.append(logK_S_D)
-        species.append(['S', 'D', 'DS'])
-        reactions.append({'D':1, 'S':1, 'DS': -1})
-
-    if logK_I_M is not None:
-        if constraints_logK_I_M and logK_I_D is not None and logK_S_M is not None and logK_S_D is not None:
-            logK_I_M = logK_I_D + logK_S_M - logK_S_D
-            print("Constraint on logK_I_M")
-        params.append(logK_I_M)
-        species.append(['I', 'M', 'MI'])
-        reactions.append({'M':1, 'I':1, 'MI': -1})
-    if logKd is not None and logK_I_M is not None and logK_I_D is not None:
-        logKd_MI_M = logKd + logK_I_D - logK_I_M
-        params.append(logKd_MI_M)
-        reactions.append({'MI':1, 'M':1, 'DI': -1})
-    if logK_I_D is not None:
-        params.append(logK_I_D)
-        species.append(['I', 'D', 'DI'])
-        reactions.append({'D':1, 'I':1, 'DI':-1})
-    if logK_I_DI is not None:
-        params.append(logK_I_DI)
-        species.append(['I', 'DI', 'DII'])
-        reactions.append({'DI':1, 'I':1, 'DII':-1})
-
-    if logK_S_DI is not None:
-        params.append(logK_S_DI)
-        species.append(['S', 'DI', 'DSI'])
-        reactions.append({'DI':1, 'S':1, 'DSI':-1})
-    if logK_I_D is not None and logK_S_DI is not None and logK_S_D is not None:
-        logK_I_DS = logK_I_D + logK_S_DI - logK_S_D
-        params.append(logK_I_DS)
-        reactions.append({'DS':1, 'I':1, 'DSI':-1})
-
-    if logK_S_DS is not None:
-        if constraint_logK_S_DS:# and logK_I_DS is not None and logK_I_D is not None and logK_S_DI is not None:
-            logK_S_DS = logK_I_DS + logK_I_D - logK_S_DI
-            print("Constraint on logK_S_DS")
-        params.append(logK_S_DS)
-        species.append(['S', 'DS', 'DSS'])
-        reactions.append({'DS':1, 'S':1, 'DSS':-1})
-
-    species = np.unique(np.concatenate(species))
-    return species, reactions, params
-
-
 @jax.jit
 def Adjustable_DimerBindingModel(logMtot, logStot, logItot,
                                  logKd, logK_S_M, logK_S_D, logK_S_DS, 
-                                 logK_I_M, logK_I_D, logK_I_DI, logK_S_DI):
+                                 logK_I_M, logK_I_D, logK_I_DI, logK_S_DI,
+                                 constraint_logK_S_DS=False, constraint_logK_I_M=False):
     """
     Compute equilibrium concentrations for a binding model in which a ligand and substrate 
     competitively binds to a monomer, dimer, or dimer complexed with a ligand.
@@ -149,7 +54,8 @@ def Adjustable_DimerBindingModel(logMtot, logStot, logItot,
     logItot = logItot.astype(dtype)  # promote to dtype
 
     species, reactions, params = define_species_reactions(logKd, logK_S_M, logK_S_D, logK_S_DS, 
-                                                          logK_I_M, logK_I_D, logK_I_DI, logK_S_DI)
+                                                          logK_I_M, logK_I_D, logK_I_DI, logK_S_DI,
+                                                          constraint_logK_S_DS, constraint_logK_I_M)
     conservation_equations = define_conserved_equations(species)
     
     n_species = []
@@ -331,6 +237,102 @@ def Adjustable_CatalyticEfficiency(logMtot, logItot,
                                  kcat_MS, kcat_DS, kcat_DSI, kcat_DSS)
     catalytic_efficiency = (v2-v1)/DeltaS
     return catalytic_efficiency
+
+
+def define_species_reactions(logKd=None, logK_S_M=None, logK_S_D=None, logK_S_DS=None,
+                             logK_I_M=None, logK_I_D=None, logK_I_DI=None, logK_S_DI=None,
+                             constraint_logK_S_DS=False, constraint_logK_I_M=False):
+    """
+    Define the species and reactions of dimer binding model in which a ligand and substrate
+    competitively binds to a monomer, dimer, or dimer complexed with a ligand.
+
+    Parameters
+    ----------
+    logKd : float
+        Log of the dissociation constant of dimerization
+    logKd_MS_M: float
+        Log of the dissociation constant between the monomer and substrate-monomer complex
+    logK_S_M : float
+        Log of the dissociation constant between the substrate and free monomer
+    logK_S_D : float
+        Log of the dissociation constant between the substrate and free dimer
+    logK_S_DS : float
+        Log of the dissociation constant between the substrate and ligand-dimer complex
+    logKd_MI_M: float
+        Log of the dissociation constant between the monomer and ligand-monomer complex
+    logK_I_M : float
+        Log of the dissociation constant between the inhibitor and free monomer
+    logK_I_D : float
+        Log of the dissociation constant between the inhibitor and free dimer
+    logK_I_DI : float
+        Log of the dissociation constant between the inhibitor and inhibitor-dimer complex
+    logK_I_DS: float
+        Log of the dissociation constant between the inhibitor and substrate-dimer complex
+    logK_S_DI: float
+        Log of the dissociation constant between the substrate and inhibitor-dimer complex
+
+    All dissociation constants are in units of log molar
+    """
+    params = []
+    species = []
+    reactions = []
+
+    if logKd is not None:
+        params.append(logKd)
+        species.append(['M', 'D'])
+        reactions.append({'M':2, 'D':-1})
+    if logK_S_M is not None:
+        params.append(logK_S_M)
+        species.append(['S', 'M', 'MS'])
+        reactions.append({'M': 1, 'S':1, 'MS': -1})
+    if logKd is not None and logK_S_M is not None and logK_S_D is not None:
+        logKd_MS_M = logKd + logK_S_D - logK_S_M
+        params.append(logKd_MS_M)
+        reactions.append({'MS':1, 'M':1, 'DS': -1})
+    if logK_S_D is not None:
+        params.append(logK_S_D)
+        species.append(['S', 'D', 'DS'])
+        reactions.append({'D':1, 'S':1, 'DS': -1})
+
+    if logK_I_M is not None:
+        if constraint_logK_I_M and logK_I_D is not None and logK_S_M is not None and logK_S_D is not None:
+            logK_I_M = logK_I_D + logK_S_M - logK_S_D
+            print("Constraint on logK_I_M")
+        params.append(logK_I_M)
+        species.append(['I', 'M', 'MI'])
+        reactions.append({'M':1, 'I':1, 'MI': -1})
+    if logKd is not None and logK_I_M is not None and logK_I_D is not None:
+        logKd_MI_M = logKd + logK_I_D - logK_I_M
+        params.append(logKd_MI_M)
+        reactions.append({'MI':1, 'M':1, 'DI': -1})
+    if logK_I_D is not None:
+        params.append(logK_I_D)
+        species.append(['I', 'D', 'DI'])
+        reactions.append({'D':1, 'I':1, 'DI':-1})
+    if logK_I_DI is not None:
+        params.append(logK_I_DI)
+        species.append(['I', 'DI', 'DII'])
+        reactions.append({'DI':1, 'I':1, 'DII':-1})
+
+    if logK_S_DI is not None:
+        params.append(logK_S_DI)
+        species.append(['S', 'DI', 'DSI'])
+        reactions.append({'DI':1, 'S':1, 'DSI':-1})
+    if logK_I_D is not None and logK_S_DI is not None and logK_S_D is not None:
+        logK_I_DS = logK_I_D + logK_S_DI - logK_S_D
+        params.append(logK_I_DS)
+        reactions.append({'DS':1, 'I':1, 'DSI':-1})
+
+    if logK_S_DS is not None:
+        if constraint_logK_S_DS and logK_I_DS is not None and logK_I_D is not None and logK_S_DI is not None:
+            logK_S_DS = logK_I_DS + logK_I_D - logK_S_DI
+            print("Constraint on logK_S_DS")
+        params.append(logK_S_DS)
+        species.append(['S', 'DS', 'DSS'])
+        reactions.append({'DS':1, 'S':1, 'DSS':-1})
+
+    species = np.unique(np.concatenate(species))
+    return species, reactions, params
 
 
 def define_conserved_equations(species):
