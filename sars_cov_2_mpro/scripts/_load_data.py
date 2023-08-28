@@ -229,7 +229,7 @@ def load_data_wt(fit_wildtype_Nashed=False, fit_wildtype_Vuong=False,
                          'v': np.array([0.285, 0.54, 0.942, 0.972, 1.098, 1.248, 1.338])*1E-6, # M min^{-1}
                          'x':'logStot'})
             
-            for n, expt in enumerate(temp):
+            for n, expt in enumerate(temp): #enumerate(experiments_wt)
                 if expt['type'] == 'kinetics':
                     data_rate_wt[n] = [expt['v'], expt['logMtot'], expt['logStot'], expt['logItot']]
     else:
