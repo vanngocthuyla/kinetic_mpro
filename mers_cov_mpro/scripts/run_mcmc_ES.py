@@ -31,6 +31,7 @@ from _prior_check import convert_prior_from_dict_to_list, check_prior_group
 from _params_extraction import extract_logK_n_idx, extract_kcat_n_idx
 from _trace_analysis import extract_params_from_map_and_prior
 from _trace_analysis import extract_params_from_trace_and_prior
+from _trace_analysis import _trace_ln_to_log
 
 parser = argparse.ArgumentParser()
 
@@ -129,16 +130,17 @@ else:
     mcmc.run(rng_key_, experiments=expts, prior_infor=prior_infor_update, shared_params=shared_params)
     mcmc.print_summary()
 
-    trace = mcmc.get_samples(group_by_chain=False)
+    trace_ln = mcmc.get_samples(group_by_chain=False)
+    trace = _trace_ln_to_log(trace_ln)
     pickle.dump(trace, open(os.path.join(traces_name+'.pickle'), "wb"))
 
     ## Autocorrelation plot
     az.plot_autocorr(trace);
-    plt.savefig(os.path.join(args.out_dir, 'Plot_autocorr'))
+    plt.savefig(os.path.join(args.out_dir, 'Plot_autocorr_log10'))
     plt.ioff()
 
-    trace = mcmc.get_samples(group_by_chain=True)
-    az.summary(trace).to_csv(traces_name+"_summary.csv")
+    trace = _trace_ln_to_log(trace_ln, group_by_chain=True, nchain=args.nchain)
+    az.summary(trace).to_csv(traces_name+"_log10_summary.csv")
 
 ## Trace plot
 if len(trace.keys())>=10:
@@ -152,13 +154,13 @@ if len(trace.keys())>=10:
             data = az.convert_to_inference_data(trace_2)
             az.plot_trace(data, compact=False)
             plt.tight_layout();
-            plt.savefig(os.path.join(args.out_dir, 'Plot_trace_'+param_name))
+            plt.savefig(os.path.join(args.out_dir, 'Plot_trace_log10_'+param_name))
             plt.ioff()
 else:
     data = az.convert_to_inference_data(trace)
     az.plot_trace(data, compact=False)
     plt.tight_layout();
-    plt.savefig(os.path.join(args.out_dir, 'Plot_trace'))
+    plt.savefig(os.path.join(args.out_dir, 'Plot_trace_log10'))
     plt.ioff()
 
 # Finding MAP

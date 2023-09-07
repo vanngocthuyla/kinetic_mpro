@@ -23,7 +23,7 @@ warnings.simplefilter("ignore", UserWarning)
 warnings.simplefilter("ignore", RuntimeWarning)
 
 from _bayesian_model_mers import adjustable_global_fitting
-from _load_data_mers import load_data_one_inhibitor
+from _load_data_mers import load_data_no_inhibitor, load_data_one_inhibitor
 from _plotting import adjustable_plot_data_mers
 from _MAP_finding_mers import map_finding
 
@@ -68,7 +68,11 @@ print("nchain:", args.nchain)
 print("nthin:", args.nthin)
 
 df_mers = pd.read_csv(args.input_file)
-expts, expts_plot = load_data_one_inhibitor(df_mers, multi_var=args.multi_var, name='ASAP_0000214')
+expts_no_I, expts_plot_no_I = load_data_no_inhibitor(df_mers[df_mers['Inhibitor (nM)']==0.0], multi_var=args.multi_var)
+expts_I, expts_plot_I = load_data_one_inhibitor(df_mers[df_mers['Inhibitor (nM)']>0.0],
+                                                multi_var=False, name='ASAP-0000214-001')
+expts = expts_no_I+expts_I
+expts_plot = expts_plot_no_I+expts_plot_I
 
 logKd_min = -27.
 logKd_max = 0.

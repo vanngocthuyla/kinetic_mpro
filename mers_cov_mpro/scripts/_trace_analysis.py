@@ -1,9 +1,39 @@
 import numpy as np
 import arviz as az
 
+
+def _trace_ln_to_log(trace, group_by_chain=False, nchain=4):
+    """
+    Parameters:
+    ----------
+    trace        : mcmc.get_samples(group_by_chain=True)
+    
+    return kinetic parameters in the log10 scale
+    """
+    trace_log = {}
+    for key in trace.keys():
+        if key.startswith('log') or key.startswith('ln'):
+            if group_by_chain: trace_log[key] = np.reshape(np.log10(np.exp(trace[key])), (nchain, int(len(trace[key])/nchain)))
+            else: trace_log[key] = np.log10(np.exp(trace[key]))
+        else:
+            if group_by_chain: trace_log[key] = np.reshape(trace[key], (nchain, int(len(trace[key])/nchain)))
+            else: trace_log[key] = trace[key]
+    return trace_log
+
+
 def extract_samples_from_trace(trace, params, burn=0, thin=0):
+    """
+    Parameters:
+    ----------
+    trace        : mcmc.get_samples(group_by_chain=True)
+    params       : list of parameter that would be extracted
+    burn         : int, the number of initial samples that would be removed
+    thin         : int, picking separated points from the sample, at each k-th step
+
+    return two lists of kinetics parameters from trace and prior information
+    """
     extract_samples = {}
-    for var in params: 
+    for var in params:
       try:
           samples = np.concatenate(np.array(trace.posterior[var]))
           if burn!=0: 
