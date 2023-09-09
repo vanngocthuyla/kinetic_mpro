@@ -155,7 +155,7 @@ def _log_likelihoods(mcmc_trace, experiments, nsamples=None):
         else:
             trace_alpha = mcmc_trace['alpha']
 
-        in_axis_nth.append(0) #for sigma
+        # in_axis_nth.append(0) #for sigma
         in_axis_nth.append(0) #for alpha
         if type(expt['kinetics']) is dict:
             for n in range(len(expt['kinetics'])):
@@ -213,14 +213,11 @@ def map_finding(mcmc_trace, experiments, prior_infor, set_K_I_M_equal_K_S_M=Fals
     log_priors = _log_priors(mcmc_trace, experiments, prior_infor, nsamples)
 
     print("Calculing log likelihoods:")
-    if set_K_I_M_equal_K_S_M or set_K_S_DI_equal_K_S_DS or set_kcat_DSI_equal_kcat_DSS: 
-        mcmc_trace_update = _map_adjust_trace(mcmc_trace, experiments, prior_infor, 
-                                              set_K_I_M_equal_K_S_M, set_K_S_DI_equal_K_S_DS, 
-                                              set_kcat_DSS_equal_kcat_DS, set_kcat_DSI_equal_kcat_DS,
-                                              set_kcat_DSI_equal_kcat_DSS)
-        log_likelihoods = _log_likelihoods(mcmc_trace_update, experiments, nsamples)
-    else:
-        log_likelihoods = _log_likelihoods(mcmc_trace, experiments, nsamples)
+    mcmc_trace_update = _map_adjust_trace(mcmc_trace, experiments, prior_infor, 
+                                          set_K_I_M_equal_K_S_M, set_K_S_DI_equal_K_S_DS, 
+                                          set_kcat_DSS_equal_kcat_DS, set_kcat_DSI_equal_kcat_DS,
+                                          set_kcat_DSI_equal_kcat_DSS)
+    log_likelihoods = _log_likelihoods(mcmc_trace_update, experiments, nsamples)
 
     log_probs = log_priors + log_likelihoods
     # map_idx = np.argmax(log_probs)

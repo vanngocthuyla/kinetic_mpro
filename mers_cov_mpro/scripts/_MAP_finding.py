@@ -350,15 +350,12 @@ def map_finding(mcmc_trace, experiments, prior_infor, set_K_I_M_equal_K_S_M=Fals
     log_priors = _log_priors(mcmc_trace, experiments, prior_infor, nsamples)
 
     print("Calculing log likelihoods:")
-    if set_K_I_M_equal_K_S_M or set_K_S_DI_equal_K_S_DS or set_kcat_DSI_equal_kcat_DSS: 
-        mcmc_trace_update = _map_adjust_trace(mcmc_trace, experiments, prior_infor, 
-                                              set_K_I_M_equal_K_S_M, set_K_S_DI_equal_K_S_DS, 
-                                              set_kcat_DSS_equal_kcat_DS, set_kcat_DSI_equal_kcat_DS,
-                                              set_kcat_DSI_equal_kcat_DSS)
-        log_likelihoods = _log_likelihoods(mcmc_trace_update, experiments, nsamples)
-    else:
-        log_likelihoods = _log_likelihoods(mcmc_trace, experiments, nsamples)
-
+    mcmc_trace_update = _map_adjust_trace(mcmc_trace, experiments, prior_infor, 
+                                          set_K_I_M_equal_K_S_M, set_K_S_DI_equal_K_S_DS, 
+                                          set_kcat_DSS_equal_kcat_DS, set_kcat_DSI_equal_kcat_DS,
+                                          set_kcat_DSI_equal_kcat_DSS)
+    log_likelihoods = _log_likelihoods(mcmc_trace_update, experiments, nsamples)
+    
     log_probs = log_priors + log_likelihoods
     # map_idx = np.argmax(log_probs)
     map_idx = np.nanargmax(log_probs)
@@ -374,9 +371,27 @@ def map_finding(mcmc_trace, experiments, prior_infor, set_K_I_M_equal_K_S_M=Fals
 def _map_adjust_trace(mcmc_trace, experiments, prior_infor, set_K_I_M_equal_K_S_M=False,
                       set_K_S_DI_equal_K_S_DS=False, set_kcat_DSS_equal_kcat_DS=False,
                       set_kcat_DSI_equal_kcat_DS=False, set_kcat_DSI_equal_kcat_DSS=False):
-    
+
+    """
+    Adjusting mcmc_trace based on constrains and prior information
+
+    Parameters:
+    ----------
+    mcmc_trace      : list of dict, trace of Bayesian sampling trace (group_by_chain=False)
+    experiments     : list of dict
+        Each dataset contains response, logMtot, lotStot, logItot
+    prior_infor     : list of dict to assign prior distribution for kinetics parameters
+    ----------
+    Return          : adjusted mccm_trace
+    """
+
     mcmc_trace_update = mcmc_trace
     n_enzymes = len(experiments)
+
+    keys = list(mcmc_trace_update.keys())
+    for prior in prior_infor:
+        if not prior['name'] in keys:
+            mcmc_trace_update[prior['name']] = np.repeat(prior['value'], len(mcmc_trace_update[keys[0]]))
     
     prior_infor_pd = pd.DataFrame(prior_infor)
     if set_K_I_M_equal_K_S_M:
@@ -414,6 +429,10 @@ def _map_adjust_trace(mcmc_trace, experiments, prior_infor, set_K_I_M_equal_K_S_
         elif prior_infor[idx]['fit'] == 'local':
             for n in range(n_enzymes):
                 mcmc_trace_update[f'kcat_DSI:{n}'] = mcmc_trace_update[f'kcat_DSS:{n}']
+    
+    if len(mcmc_trace_update.keys())>len(keys):
+      print("Adjusted trace with keys: ", mcmc_trace_update.keys())
+
     return mcmc_trace_update
 
 
