@@ -32,6 +32,10 @@ def extract_logK(params_logK):
     # Binding both substrate and inhititor
     if 'logK_S_DI' in params_logK.keys(): logK_S_DI = params_logK['logK_S_DI']
     else: logK_S_DI = None
+
+    # # Solubility of inhibitor
+    # if 'logKsp' in params_logK.keys(): logKsp = params_logK['logKsp']
+    # else: logKsp = None
     
     return [logKd, logK_S_M, logK_S_D, logK_S_DS, logK_I_M, logK_I_D, logK_I_DI, logK_S_DI]
 
@@ -118,6 +122,9 @@ def extract_logK_n_idx(params_logK, idx, shared_params=None,
         logK_S_DI = logK_S_DS
     else: 
         logK_S_DI = _extract_param_n_idx('logK_S_DI', params_logK, idx, shared_params)
+
+    # # Solubility of inhibitor
+    # logKsp = _extract_param_n_idx('logKsp', params_logK, idx, shared_params)
 
     return [logKd, logK_S_M, logK_S_D, logK_S_DS, logK_I_M, logK_I_D, logK_I_DI, logK_S_DI]
 

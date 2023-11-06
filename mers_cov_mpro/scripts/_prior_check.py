@@ -32,7 +32,7 @@ def convert_prior_from_dict_to_list(prior, fit_E_S, fit_E_I):
             else: 
                 prior_infor.append({'type':'logK', 'name': name, 'fit': prior[name]['fit'], 'dist': None, 'value': 0})
 
-    for name in ['logK_I_M', 'logK_I_D', 'logK_I_DI']:
+    for name in ['logK_I_M', 'logK_I_D', 'logK_I_DI', 'logKsp']:
         if name in prior.keys():
             if fit_E_I:
                 prior_infor.append(dict([(key, prior[name][key]) for key in prior[name].keys()]))

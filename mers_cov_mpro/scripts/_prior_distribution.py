@@ -34,6 +34,22 @@ def normal_prior(name, mu, sigma):
     return name
 
 
+def lognormal_prior(name, stated_value, uncertainty):
+    """
+    Define a numpyro prior for a deimensionless quantity
+    :param name: str
+    :param stated_value: float
+    :uncertainty: float
+    :rerurn: numpyro.Lognormal
+    """
+    m = stated_value
+    v = uncertainty ** 2
+    name = numpyro.sample(name, dist.LogNormal(loc=jnp.log(m / jnp.sqrt(1 + (v / (m ** 2)))), 
+                                               scale=jnp.sqrt(jnp.log(1 + v / (m**2) )) ))
+
+    return name
+
+
 def logsigma_guesses(response):
     """
     Parameters:

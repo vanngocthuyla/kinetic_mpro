@@ -101,16 +101,36 @@ def Adjustable_ReactionRate(logMtot, logStot, logItot,
     
     Parameters
     ----------
-    logMtot  : numpy array
+        logMtot : numpy array
         Log of the total protein concentation summed over bound and unbound species
-    logStot  : numpy array
+    logStot : numpy array
         Log of the total substrate concentation summed over bound and unbound species
+    logItot : numpy array
+        Log of the total ligand concentation summed over bound and unbound species
+    logKd : float
+        Log of the dissociation constant of dimerization
+    logKd_MS_M: float
+        Log of the dissociation constant between the monomer and substrate-monomer complex
+    logK_S_M : float
+        Log of the dissociation constant between the substrate and free monomer
     logK_S_D : float
         Log of the dissociation constant between the substrate and free dimer
-    logK_S_DS: float
+    logK_S_DS : float
         Log of the dissociation constant between the substrate and ligand-dimer complex
+    logKd_MI_M: float
+        Log of the dissociation constant between the monomer and ligand-monomer complex
+    logK_I_M : float 
+        Log of the dissociation constant between the inhibitor and free monomer
+    logK_I_D : float
+        Log of the dissociation constant between the inhibitor and free dimer
+    logK_I_DI : float
+        Log of the dissociation constant between the inhibitor and inhibitor-dimer complex
+    logK_I_DS: float
+        Log of the dissociation constant between the inhibitor and substrate-dimer complex
     logK_S_DI: float
         Log of the dissociation constant between the substrate and inhibitor-dimer complex
+    kcat_MS: float
+        Rate constant of monomer-substrate complex
     kcat_DS  : float
         Rate constant of dimer-substrate complex
     kcat_DSS : float

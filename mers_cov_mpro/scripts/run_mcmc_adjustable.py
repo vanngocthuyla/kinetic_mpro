@@ -22,7 +22,7 @@ warnings.simplefilter(action='ignore', category=FutureWarning)
 warnings.simplefilter("ignore", UserWarning)
 warnings.simplefilter("ignore", RuntimeWarning)
 
-from _bayesian_model_adjustable import adjustable_global_fitting
+from _model_adjustable import adjustable_global_fitting
 from _load_data import load_data_mut_wt
 from _prior_check import convert_prior_from_dict_to_list, check_prior_group
 from _params_extraction import extract_logK_n_idx, extract_kcat_n_idx
