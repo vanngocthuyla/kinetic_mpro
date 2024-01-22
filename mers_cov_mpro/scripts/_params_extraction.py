@@ -56,7 +56,7 @@ def extract_kcat(params_kcat):
     else: kcat_DSI = 0.
     if 'kcat_DSS' in params_kcat.keys(): kcat_DSS = params_kcat['kcat_DSS']
     else: kcat_DSS = 0.
-    return [kcat_DS, kcat_DSI, kcat_DSS]
+    return [kcat_MS, kcat_DS, kcat_DSI, kcat_DSS]
 
 
 def _extract_param_n_idx(name, params_dict, idx, shared_params=None):
@@ -84,7 +84,8 @@ def _extract_param_n_idx(name, params_dict, idx, shared_params=None):
 
 
 def extract_logK_n_idx(params_logK, idx, shared_params=None, 
-                       set_K_I_M_equal_K_S_M=False, set_K_S_DI_equal_K_S_DS=False):
+                       set_K_I_M_equal_K_S_M=False, set_K_S_DS_equal_K_S_D=False,
+                       set_K_S_DI_equal_K_S_DS=False):
     """
     Parameters:
     ----------
@@ -107,10 +108,15 @@ def extract_logK_n_idx(params_logK, idx, shared_params=None,
     # Binding Substrate
     logK_S_M = _extract_param_n_idx('logK_S_M', params_logK, idx, shared_params)
     logK_S_D = _extract_param_n_idx('logK_S_D', params_logK, idx, shared_params)
-    logK_S_DS = _extract_param_n_idx('logK_S_DS', params_logK, idx, shared_params)
+    if set_K_S_DS_equal_K_S_D:
+        print("Setting K_S_DS equal to K_S_D")
+        logK_S_DS = logK_S_D
+    else:
+        logK_S_DS = _extract_param_n_idx('logK_S_DS', params_logK, idx, shared_params)
 
     # Binding Inhibitor
     if set_K_I_M_equal_K_S_M and logK_S_M is not None: 
+        print("Setting logK_I_M equal to logK_S_M")
         logK_I_M = logK_S_M
     else: 
         logK_I_M = _extract_param_n_idx('logK_I_M', params_logK, idx, shared_params)
@@ -119,6 +125,7 @@ def extract_logK_n_idx(params_logK, idx, shared_params=None,
 
     # Binding both substrate and inhititor
     if set_K_S_DI_equal_K_S_DS and logK_S_DS is not None: 
+        print("Setting logK_S_DI equal to logK_S_DS")
         logK_S_DI = logK_S_DS
     else: 
         logK_S_DI = _extract_param_n_idx('logK_S_DI', params_logK, idx, shared_params)

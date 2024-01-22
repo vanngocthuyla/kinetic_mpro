@@ -11,13 +11,13 @@ from _kinetics import ReactionRate
 from _prior_distribution import uniform_prior, normal_prior, logsigma_guesses, lognormal_prior
 from _params_extraction import extract_logK_n_idx, extract_kcat_n_idx
 from _prior_check import check_prior_group, prior_group_multi_enzyme, define_uniform_prior_group
-from _model_mers import _dE_priors, _dE_find_prior, _extract_conc_percent_error
+from _model_mers import _dE_priors, _dE_find_prior
 
 
 def global_fitting(experiments, prior_infor=None,
                    logKd_min=-20, logKd_max=0, kcat_min=0, kcat_max=1,
-                   shared_params=None, multi_alpha=False, set_error_E=False, dE=1,
-                   multi_var=False):
+                   shared_params=None, multi_alpha=False, set_lognormal_dE=False, dE=0.1,
+                   multi_var=False, set_K_S_DS_equal_K_S_D=False, set_K_S_DI_equal_K_S_DS=False):
     """
     Parameters:
     ----------
@@ -42,18 +42,16 @@ def global_fitting(experiments, prior_infor=None,
         prior_infor = check_prior_group(init_prior_infor, n_enzymes)
     params_logK, params_kcat = prior_group_multi_enzyme(prior_infor, n_enzymes)
 
-    if set_error_E and dE>0:
-        error_E_list = {}
-        error_E_list['dE:100'] = uniform_prior('dE:100', 0.567, 0.882)
-        error_E_list['dE:50'] = uniform_prior('dE:50', 0.251, 0.792)
-        error_E_list['dE:25'] = uniform_prior('dE:25', 0, 0.701)
-        # error_E_list = _dE_priors(experiments, dE)
+    if set_lognormal_dE and dE>0:
+        E_list = {}
+        E_list = _dE_priors(experiments, dE, 'lognormal')
 
     for idx, expt in enumerate(experiments):
         try: idx_expt = expt['index']
         except: idx_expt = idx
 
-        _params_logK = extract_logK_n_idx(params_logK, idx, shared_params)
+        _params_logK = extract_logK_n_idx(params_logK, idx, shared_params, set_K_S_DS_equal_K_S_D=set_K_S_DS_equal_K_S_D, 
+                                          set_K_S_DI_equal_K_S_DS=set_K_S_DI_equal_K_S_DS)
         _params_kcat = extract_kcat_n_idx(params_kcat, idx, shared_params)
 
         if type(expt['kinetics']) is dict:
@@ -65,14 +63,14 @@ def global_fitting(experiments, prior_infor=None,
                     if multi_alpha: alpha = uniform_prior(f'alpha:ESI:{n}', lower=0, upper=2)
                     elif idx == 1: alpha = uniform_prior(f'alpha:ESI', lower=0, upper=2)
 
-                if set_error_E and dE>0:
-                    percent_error_E = _dE_find_prior(data_rate, error_E_list)
+                if set_lognormal_dE and dE>0:
+                    Etot = _dE_find_prior(data_rate, E_list)
                 else:
-                    percent_error_E = None
+                    Etot = None
 
                 if data_rate is not None:
                     fitting_each_dataset('kinetics', data_rate, [*_params_logK, *_params_kcat],
-                                         alpha, percent_error_E, f'{idx_expt}:{n}')
+                                         alpha, Etot, f'{idx_expt}:{n}')
         else:
             data_rate = expt['kinetics']
 
@@ -81,17 +79,17 @@ def global_fitting(experiments, prior_infor=None,
                 if multi_alpha: alpha = uniform_prior(f'alpha:{idx}', lower=0, upper=2)
                 elif idx == 1: alpha = uniform_prior(f'alpha', lower=0, upper=2)
 
-            if set_error_E and dE>0:
-                percent_error_E = _dE_find_prior(data_rate, error_E_list)
+            if set_lognormal_dE and dE>0:
+                Etot = _dE_find_prior(data_rate, E_list)
             else:
-                percent_error_E = None
+                Etot = None
 
             if data_rate is not None:
                 fitting_each_dataset('kinetics', data_rate, [*_params_logK, *_params_kcat],
-                                     alpha, percent_error_E, f'{idx_expt}')
+                                     alpha, Etot, f'{idx_expt}')
 
 
-def fitting_each_dataset(type_expt, data, params, alpha, percent_error_E=None, index=''):
+def fitting_each_dataset(type_expt, data, params, alpha, Etot=None, index=''):
     """
     Parameters:
     ----------
@@ -108,8 +106,8 @@ def fitting_each_dataset(type_expt, data, params, alpha, percent_error_E=None, i
     if type_expt == 'kinetics':
         [rate, logMtot, logStot, logItot] = data
 
-        if percent_error_E is None: logE = logMtot
-        else: logE = _extract_conc_percent_error(logMtot, percent_error_E)
+        if Etot is None: logE = logMtot
+        else: logE = jnp.log(Etot*1E-9)
 
         rate_model = ReactionRate(logE, logStot, logItot, *params)
 

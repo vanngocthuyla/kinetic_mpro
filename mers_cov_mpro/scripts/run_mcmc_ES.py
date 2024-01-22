@@ -24,7 +24,7 @@ warnings.simplefilter("ignore", RuntimeWarning)
 
 from _model_mers_ESI import global_fitting
 from _load_data_mers import load_data_no_inhibitor
-from _plotting import plot_data_conc_log
+from _plotting import plot_data_conc_log, plotting_trace
 from _MAP_finding_mers_concs import map_finding
 
 from _prior_check import convert_prior_from_dict_to_list, check_prior_group
@@ -35,6 +35,7 @@ parser = argparse.ArgumentParser()
 
 parser.add_argument( "--input_file",                    type=str,               default="")
 parser.add_argument( "--out_dir",                       type=str, 				default="")
+parser.add_argument( "--last_run_dir",                  type=str,               default="")
 parser.add_argument( "--map_file",                      type=str,               default="")
 
 parser.add_argument( "--fit_E_S",                       action="store_true",    default=False)
@@ -42,8 +43,11 @@ parser.add_argument( "--fit_E_I",                       action="store_true",    
 
 parser.add_argument( "--multi_var",                     action="store_true",    default=False)
 parser.add_argument( "--multi_alpha",                   action="store_true",    default=False)
-parser.add_argument( "--set_error_E",                   action="store_true",    default=False)
-parser.add_argument( "--dE",                            type=float,             default=1)
+parser.add_argument( "--set_lognormal_dE",              action="store_true",    default=False)
+parser.add_argument( "--dE",                            type=float,             default=0.1)
+
+parser.add_argument( "--set_K_S_DS_equal_K_S_D",        action="store_true",    default=False)
+parser.add_argument( "--set_K_S_DI_equal_K_S_DS",       action="store_true",    default=False)
 
 parser.add_argument( "--niters",				        type=int, 				default=10000)
 parser.add_argument( "--nburn",                         type=int, 				default=2000)
@@ -70,10 +74,10 @@ expts = expts_no_I
 logKd_min = -20.72
 logKd_max = 0.
 kcat_min = 0.
-kcat_max = 5
+kcat_max = 5.
 
 prior = {}
-prior['logKd'] = {'type':'logKd', 'name': 'logKd', 'fit':'global', 'dist': 'normal', 'loc': -11.51, 'scale': 0.76}
+prior['logKd'] = {'type':'logKd', 'name': 'logKd', 'fit':'global', 'dist': 'normal', 'loc': -9.9, 'scale': 0.5} 
 prior['logK_S_M'] = {'type':'logK', 'name': 'logK_S_M', 'fit':'global', 'dist': 'uniform', 'lower': logKd_min, 'upper': logKd_max}
 prior['logK_S_D'] = {'type':'logK', 'name': 'logK_S_D', 'fit':'global', 'dist': 'uniform', 'lower': logKd_min, 'upper': logKd_max}
 prior['logK_S_DS'] = {'type':'logK', 'name': 'logK_S_DS', 'fit':'global', 'dist': 'uniform', 'lower': logKd_min, 'upper': logKd_max}
@@ -84,6 +88,10 @@ prior['kcat_DSS'] = {'type':'kcat', 'name': 'kcat_DSS', 'fit':'global', 'dist': 
 
 shared_params = None
 
+if args.set_K_S_DS_equal_K_S_D: 
+    del prior['logK_S_DS']
+
+pickle.dump(prior, open(os.path.join('Prior.pickle'), "wb"))
 prior_infor = convert_prior_from_dict_to_list(prior, args.fit_E_S, args.fit_E_I)
 prior_infor_update = check_prior_group(prior_infor, len(expts))
 pd.DataFrame(prior_infor_update).to_csv("Prior_infor.csv", index=False)
@@ -97,12 +105,7 @@ elif args.fit_E_I: traces_name = "traces_E_I"
 rng_key, rng_key_ = random.split(random.PRNGKey(args.random_key))
 os.chdir(args.out_dir)
 
-if os.path.isfile(traces_name+'.pickle'):
-    samples = pickle.load(open(traces_name+'.pickle', "rb"))
-    trace = {}
-    for key in samples.keys():
-        trace[key] = np.reshape(samples[key], (args.nchain, args.niters))
-else:
+if not os.path.isfile(traces_name+'.pickle'):
     if len(args.map_file)>0 and os.path.isfile(args.map_file):
         init_values = pickle.load(open(args.map_file, "rb"))
         print("Initial values:", init_values)
@@ -110,43 +113,32 @@ else:
     else:
         kernel = NUTS(global_fitting)
 
-    mcmc = MCMC(kernel, num_warmup=args.nburn, num_samples=args.niters, num_chains=args.nchain, progress_bar=True)
-    mcmc.run(rng_key_, experiments=expts, prior_infor=prior_infor_update, shared_params=shared_params,
-             multi_alpha=args.multi_alpha, set_error_E=args.set_error_E, dE=args.dE, 
-             multi_var=args.multi_var)
+    if os.path.isfile(os.path.join(args.last_run_dir, "Last_state.pickle")):
+        last_state = pickle.load(open(os.path.join(args.last_run_dir, "Last_state.pickle"), "rb"))
+        print("\nKeep running from last state.")
+        mcmc = MCMC(kernel, num_warmup=args.nburn, num_samples=args.niters, num_chains=args.nchain, progress_bar=True)
+        mcmc.post_warmup_state = last_state
+        mcmc.run(mcmc.post_warmup_state.rng_key, experiments=expts, prior_infor=prior_infor_update, shared_params=shared_params,
+                 multi_alpha=args.multi_alpha, set_lognormal_dE=args.set_lognormal_dE, dE=args.dE, 
+                 multi_var=args.multi_var, set_K_S_DS_equal_K_S_D=args.set_K_S_DS_equal_K_S_D, set_K_S_DI_equal_K_S_DS=False)
+    else:
+        mcmc = MCMC(kernel, num_warmup=args.nburn, num_samples=args.niters, num_chains=args.nchain, progress_bar=True)
+        mcmc.run(rng_key_, experiments=expts, prior_infor=prior_infor_update, shared_params=shared_params,
+                 multi_alpha=args.multi_alpha, set_lognormal_dE=args.set_lognormal_dE, dE=args.dE, 
+                 multi_var=args.multi_var, set_K_S_DS_equal_K_S_D=args.set_K_S_DS_equal_K_S_D, set_K_S_DI_equal_K_S_DS=False)
     mcmc.print_summary()
+
+    print("Saving last state.")
+    mcmc.post_warmup_state = mcmc.last_state
+    pickle.dump(jax.device_get(mcmc.post_warmup_state), open("Last_state.pickle", "wb"))
 
     trace = mcmc.get_samples(group_by_chain=False)
     pickle.dump(trace, open(os.path.join(traces_name+'.pickle'), "wb"))
 
-    ## Autocorrelation plot
-    az.plot_autocorr(trace);
-    plt.savefig(os.path.join(args.out_dir, 'Plot_autocorr'))
-    plt.ioff()
+    plotting_trace(trace, args.out_dir, nchain=args.nchain, nsample=args.niters)
 
     trace = mcmc.get_samples(group_by_chain=True)
     az.summary(trace).to_csv(traces_name+"_summary.csv")
-
-## Trace plot
-if len(trace.keys())>=10:
-    for param_name in ['logK', 'kcat', 'log_sigma', 'alpha', 'dE']:
-        trace_2 = {}
-        for key in trace.keys():
-            if key.startswith(param_name):
-                trace_2[key] = trace[key]
-        if len(trace_2)>0:
-            ## Trace plot
-            data = az.convert_to_inference_data(trace_2)
-            az.plot_trace(data, compact=False)
-            plt.tight_layout();
-            plt.savefig(os.path.join(args.out_dir, 'Plot_trace_'+param_name))
-            plt.ioff()
-else:
-    data = az.convert_to_inference_data(trace)
-    az.plot_trace(data, compact=False)
-    plt.tight_layout();
-    plt.savefig(os.path.join(args.out_dir, 'Plot_trace'))
-    plt.ioff()
 
 # Finding MAP
 if os.path.isfile(traces_name+'.pickle'):
@@ -161,7 +153,10 @@ if shared_params is not None and len(shared_params)>0:
         shared_idx = param['shared_idx']
         trace[f'{name}:{assigned_idx}'] = trace[f'{name}:{shared_idx}']
 
-[map_index, map_params, log_probs] = map_finding(trace, expts, prior_infor_update)
+[map_index, map_params, log_probs] = map_finding(trace, expts, prior_infor_update, 
+                                                 set_lognormal_dE=args.set_lognormal_dE, dE=args.dE,  
+                                                 set_K_S_DS_equal_K_S_D=args.set_K_S_DS_equal_K_S_D,
+                                                 set_K_S_DI_equal_K_S_DS=False)
 
 with open("map.txt", "w") as f:
     print("MAP index:" + str(map_index), file=f)
@@ -179,7 +174,12 @@ pickle.dump(map_values, open('map.pickle', "wb"))
 ## Fitting plot
 params_logK, params_kcat = extract_params_from_map_and_prior(trace, map_index, prior_infor_update)
 
-if args.set_error_E and args.dE>0:
+for n in range(len(expts)):
+    if args.set_K_S_DS_equal_K_S_D:
+        try: params_logK[f'logK_S_DS:{n}'] = params_logK[f'logK_S_D:{n}']
+        except: params_logK['logK_S_DS'] = params_logK['logK_S_D']
+
+if args.set_lognormal_dE and args.dE>0:
     _error_E = {key: trace[key][map_index] for key in trace.keys() if key.startswith('dE')}
 else: _error_E = None
 

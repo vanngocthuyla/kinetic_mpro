@@ -11,7 +11,7 @@ from _kinetics import DimerBindingModel, Enzyme_Substrate
 
 from _MAP_finding import _extract_logK_kcat, _lognormal_pdf, _log_normal_likelihood, _map_adjust_trace
 from _MAP_finding_mers import _log_priors
-from _model_mers import _dE_find_prior, _extract_conc_percent_error
+from _model_mers import _dE_find_prior
 
 
 def _extract_conc_lognormal(logConc, expt_value):
@@ -34,9 +34,9 @@ def _ReactionRate_uncertainty_conc(logMtot, logStot, logItot,
                                    kcat_MS=0., kcat_DS=0., kcat_DSI=0., kcat_DSS=0.,
                                    error_E=None, I0=None):
     """
-    Similar to function kinetics_adjustable_constraints.Adjustable_ReactionRate, this function
-    return the reaction rate given the parameters and adjusted enzyme/inhibitor concentration
-      v = kcat_MS*[MS] + kcat_DS*[DS] + kcat_DSS*[DSS] + kcat_DSI*[DSI]
+    Similar to function kinetics_.ReactionRate, this function return the reaction rate 
+    given the parameters and adjusted enzyme/ligand concentration
+        v = kcat_MS*[MS] + kcat_DS*[DS] + kcat_DSS*[DSS] + kcat_DSI*[DSI]
     
     Parameters
     ----------
@@ -79,7 +79,7 @@ def _ReactionRate_uncertainty_conc(logMtot, logStot, logItot,
     kcat_DSI : float
         Rate constant of dimer-substrate-inhibitor complex
     error_E  : float
-        Percentage of error concentration degraded within the reaction
+        Enzyme concentration uncertainty
     I0       : float
         The adjusted value of the highest concentration returned by the model in normal scale (M)
 
@@ -91,12 +91,14 @@ def _ReactionRate_uncertainty_conc(logMtot, logStot, logItot,
     if kcat_DSS is None: kcat_DSS = 0.
 
     if error_E is None: logM = logMtot
-    else: logM = _extract_conc_percent_error(logMtot, error_E)
+    # else: logM = _extract_conc_percent_error(logMtot, error_E)
+    else: logM = jnp.log(error_E*1E-9) 
+    
     if I0 is None: logI = logItot
     else: logI = _extract_conc_lognormal(logItot, I0)
     
     if logItot is None:
-        log_concs = Enzyme_Substrate(logMtot, logStot, logKd, logK_S_M, logK_S_D, logK_S_DS)
+        log_concs = Enzyme_Substrate(logM, logStot, logKd, logK_S_M, logK_S_D, logK_S_DS)
         v = kcat_MS*jnp.exp(log_concs['MS']) + kcat_DS*jnp.exp(log_concs['DS']) + kcat_DSS*jnp.exp(log_concs['DSS'])
     else:
         log_concs = DimerBindingModel(logM, logStot, logI,
@@ -117,10 +119,10 @@ def _log_likelihood_each_enzyme(type_expt, data, trace_logK, trace_kcat, trace_a
     trace_logK    : trace of all kcat
     trace_sigma   : trace of log_sigma
     ----------
-    Return log likelihood depending on the type of experiment and mcmc_trace
+    Return log likelihood given the experiment, mcmc_trace, enzyme/ligand concentration uncertainty
     """
     assert type_expt in ['kinetics', 'AUC', 'ICE'], "Experiments type should be kinetics, AUC, or ICE."
-    log_likelihoods = jnp.zeros(nsamples)
+    log_likelihoods = jnp.zeros(nsamples, dtype=jnp.float64)
 
     if type_expt == 'kinetics':
         [rate, kinetics_logMtot, kinetics_logStot, kinetics_logItot] = data
@@ -139,7 +141,7 @@ def _log_likelihood_each_enzyme(type_expt, data, trace_logK, trace_kcat, trace_a
     return log_likelihoods
 
 
-def _log_likelihoods(mcmc_trace, experiments, alpha_list=None, error_E_list=None, nsamples=None):
+def _log_likelihoods(mcmc_trace, experiments, alpha_list=None, E_list=None, nsamples=None, show_progress=True):
     """
     Sum of log likelihood of all parameters given their distribution information in params_dist
 
@@ -150,7 +152,7 @@ def _log_likelihoods(mcmc_trace, experiments, alpha_list=None, error_E_list=None
         Each dataset contains response, logMtot, lotStot, logItot
     ----------
     Return:
-        Sum of log likelihood given experiments and mcmc_trace
+        Sum of log likelihood given experiments, mcmc_trace, enzyme/ligand concentration uncertainty
     """
     params_name_logK = []
     params_name_kcat = []
@@ -177,7 +179,8 @@ def _log_likelihoods(mcmc_trace, experiments, alpha_list=None, error_E_list=None
             for n in range(len(expt['kinetics'])):
                 data_rate = expt['kinetics'][n]
                 if data_rate is not None:
-                    print("Kinetics experiment", idx_expt, ":", n)
+                    if show_progress: 
+                        print("Kinetics experiment", idx_expt, ":", n)
                     
                     if f'alpha:{idx_expt}:{n}' in mcmc_trace.keys():
                         trace_alpha = mcmc_trace[f'alpha:{idx_expt}:{n}'][: nsamples]
@@ -194,11 +197,12 @@ def _log_likelihoods(mcmc_trace, experiments, alpha_list=None, error_E_list=None
                     if f'log_sigma:{idx_expt}:{n}' in mcmc_trace.keys():
                         trace_sigma = jnp.exp(mcmc_trace[f'log_sigma:{idx_expt}:{n}'][: nsamples])
                     else:
-                        trace_sigma = jnp.zeros(nsamples)
+                        trace_sigma = jnp.ones(nsamples)
                     if n == 0: in_axis_nth.append(0) #index of vmap for sigma
 
-                    if error_E_list is not None:
-                        _trace_error_E = _dE_find_prior(data_rate, error_E_list)
+                    if E_list is not None:
+                        _trace_error_E = _dE_find_prior(data_rate, E_list)
+                        _trace_error_E = np.reshape(np.repeat(_trace_error_E, len(mcmc_trace[params_name_logK[0]])), (len(_trace_error_E), len(mcmc_trace[params_name_logK[0]])))
                     else:
                         _trace_error_E = _dE_find_prior(data_rate, mcmc_trace)
                     if np.size(_trace_error_E)>0:
@@ -222,7 +226,8 @@ def _log_likelihoods(mcmc_trace, experiments, alpha_list=None, error_E_list=None
         else:
             data_rate = expt['kinetics']
             if data_rate is not None:
-                print("Kinetics experiment", idx_expt)
+                if show_progress: 
+                    print("Kinetics experiment", idx_expt)
 
                 if f'alpha:{idx_expt}' in mcmc_trace.keys():
                     trace_alpha = mcmc_trace[f'alpha:{idx_expt}'][: nsamples]
@@ -232,14 +237,15 @@ def _log_likelihoods(mcmc_trace, experiments, alpha_list=None, error_E_list=None
                     trace_alpha = jnp.ones(nsamples)
                 in_axis_nth.append(0)
 
-                if f'log_sigma:{idx_expt}:{idx}' in mcmc_trace.keys():
-                    trace_sigma = jnp.exp(mcmc_trace[f'log_sigma:{idx_expt}:{idx}'][: nsamples])
+                if f'log_sigma:{idx_expt}' in mcmc_trace.keys():
+                    trace_sigma = jnp.exp(mcmc_trace[f'log_sigma:{idx_expt}'][: nsamples])
                 else:
-                    trace_sigma = jnp.zeros(nsamples)
+                    trace_sigma = jnp.ones(nsamples)
                 in_axis_nth.append(0)
 
-                if error_E_list is not None:
-                    _trace_error_E = _dE_find_prior(data_rate, error_E_list)
+                if E_list is not None:
+                    _trace_error_E = _dE_find_prior(data_rate, E_list)
+                    _trace_error_E = np.reshape(np.repeat(_trace_error_E, len(mcmc_trace[params_name_logK[0]])), (len(_trace_error_E), len(mcmc_trace[params_name_logK[0]])))
                 else:
                     _trace_error_E = _dE_find_prior(data_rate, mcmc_trace)
                 if np.size(_trace_error_E)>0:
@@ -256,13 +262,18 @@ def _log_likelihoods(mcmc_trace, experiments, alpha_list=None, error_E_list=None
                     trace_I0 = None
                     in_axis_nth.append(None)
 
-                log_likelihoods += _log_likelihood_each_enzyme('kinetics', data_rate, trace_nth, trace_nth, trace_alpha, trace_sigma, trace_error_E, trace_I0, in_axis_nth, nsamples)
+                log_likelihoods += _log_likelihood_each_enzyme(type_expt='kinetics', data=data_rate, 
+                                                               trace_logK=trace_nth, trace_kcat=trace_nth, 
+                                                               trace_alpha=trace_alpha, trace_sigma=trace_sigma,
+                                                               trace_error_E=trace_error_E, trace_I0=trace_I0, 
+                                                               in_axes_nth=in_axis_nth, nsamples=nsamples)
 
     return np.array(log_likelihoods)
 
 
-def map_finding(mcmc_trace, experiments, prior_infor, alpha_list=None, error_E_list=None,
-                nsamples=None, dE=1, dI=0.1):
+def map_finding(mcmc_trace, experiments, prior_infor, alpha_list=None, E_list=None,
+                nsamples=None, set_lognormal_dE=False, dE=0.1, dI=0.1, set_K_S_DI_equal_K_S_DS=False, 
+                set_K_S_DS_equal_K_S_D=False, show_progress=True):
     """
     Evaluate probability of a parameter set using posterior distribution
     Finding MAP (maximum a posterior) given prior distributions of parameters information
@@ -289,15 +300,17 @@ def map_finding(mcmc_trace, experiments, prior_infor, alpha_list=None, error_E_l
     assert nsamples <= len(mcmc_trace[params_name_logK[0]]), "nsamples too big"       
 
     print("Calculing log of priors.")
-    log_priors = _log_priors(mcmc_trace, experiments, prior_infor, nsamples, dE, dI)
+    log_priors = _log_priors(mcmc_trace=mcmc_trace, experiments=experiments, prior_infor=prior_infor, nsamples=nsamples, 
+                             set_lognormal_dE=set_lognormal_dE, dE=dE, dI=dI)
 
     print("Calculing log likelihoods:")
-    mcmc_trace_update = _map_adjust_trace(mcmc_trace, experiments, prior_infor, 
-                                          set_K_I_M_equal_K_S_M=None, set_K_S_DI_equal_K_S_DS=None, 
-                                          set_kcat_DSS_equal_kcat_DS=None, set_kcat_DSI_equal_kcat_DS=None,
-                                          set_kcat_DSI_equal_kcat_DSS=None)
-    log_likelihoods = _log_likelihoods(mcmc_trace_update, experiments, alpha_list, error_E_list, nsamples)
-
+    mcmc_trace_update = _map_adjust_trace(mcmc_trace=mcmc_trace.copy(), experiments=experiments, prior_infor=prior_infor,
+                                          set_K_I_M_equal_K_S_M=False, set_K_S_DS_equal_K_S_D=set_K_S_DS_equal_K_S_D,
+                                          set_K_S_DI_equal_K_S_DS=set_K_S_DI_equal_K_S_DS, set_kcat_DSS_equal_kcat_DS=False, 
+                                          set_kcat_DSI_equal_kcat_DS=False, set_kcat_DSI_equal_kcat_DSS=False)
+    log_likelihoods = _log_likelihoods(mcmc_trace=mcmc_trace_update, experiments=experiments, alpha_list=alpha_list, E_list=E_list, 
+                                       nsamples=nsamples, show_progress=show_progress)
+    
     log_probs = log_priors + log_likelihoods
     # map_idx = np.argmax(log_probs)
     map_idx = np.nanargmax(log_probs)

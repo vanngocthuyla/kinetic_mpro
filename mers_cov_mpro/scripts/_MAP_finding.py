@@ -6,7 +6,6 @@ import pandas as pd
 import numpyro.distributions as dist
 
 from _prior_distribution import logsigma_guesses
-from _kinetics_adjustable_constraints import Adjustable_ReactionRate, Adjustable_MonomerConcentration, Adjustable_CatalyticEfficiency
 from _load_prior_csv import _prior_group_name
 
 
@@ -96,8 +95,9 @@ def _extract_logK_kcat(mcmc_trace, idx, nsamples, all_params_logK_name=None, all
 
 
 def _map_adjust_trace(mcmc_trace, experiments, prior_infor, set_K_I_M_equal_K_S_M=False,
-                      set_K_S_DI_equal_K_S_DS=False, set_kcat_DSS_equal_kcat_DS=False,
-                      set_kcat_DSI_equal_kcat_DS=False, set_kcat_DSI_equal_kcat_DSS=False):
+                      set_K_S_DS_equal_K_S_D=False, set_K_S_DI_equal_K_S_DS=False,
+                      set_kcat_DSS_equal_kcat_DS=False, set_kcat_DSI_equal_kcat_DS=False, 
+                      set_kcat_DSI_equal_kcat_DSS=False):
 
     """
     Adjusting mcmc_trace based on constrains and prior information
@@ -128,7 +128,21 @@ def _map_adjust_trace(mcmc_trace, experiments, prior_infor, set_K_I_M_equal_K_S_
         elif prior_infor[idx]['fit'] == 'local':
             for n in range(n_enzymes):
                 mcmc_trace_update[f'logK_I_M:{n}'] = mcmc_trace_update[f'logK_S_M:{n}']
-    if set_K_S_DI_equal_K_S_DS:
+    if set_K_S_DS_equal_K_S_D:
+        idx = np.where(prior_infor_pd.name=='logK_S_D')[0][0]
+        if prior_infor[idx]['fit'] == 'global':
+            mcmc_trace_update['logK_S_DS'] = mcmc_trace_update['logK_S_D']
+        elif prior_infor[idx]['fit'] == 'local':
+            for n in range(n_enzymes):
+                mcmc_trace_update[f'logK_S_DS:{n}'] = mcmc_trace_update[f'logK_S_D:{n}']
+    if set_K_S_DS_equal_K_S_D and set_K_S_DI_equal_K_S_DS:
+        idx = np.where(prior_infor_pd.name=='logK_S_D')[0][0]
+        if prior_infor[idx]['fit'] == 'global':
+            mcmc_trace_update['logK_S_DI'] = mcmc_trace_update['logK_S_D']
+        elif prior_infor[idx]['fit'] == 'local':
+            for n in range(n_enzymes):
+                mcmc_trace_update[f'logK_S_DI:{n}'] = mcmc_trace_update[f'logK_S_D:{n}']
+    elif set_K_S_DI_equal_K_S_DS:
         idx = np.where(prior_infor_pd.name=='logK_S_DS')[0][0]
         if prior_infor[idx]['fit'] == 'global':
             mcmc_trace_update['logK_S_DI'] = mcmc_trace_update['logK_S_DS']

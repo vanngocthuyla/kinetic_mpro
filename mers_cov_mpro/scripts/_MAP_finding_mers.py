@@ -6,13 +6,14 @@ import pandas as pd
 import numpyro.distributions as dist
 
 from _prior_distribution import logsigma_guesses
-from _kinetics_adjustable_constraints import Adjustable_ReactionRate
+from _kinetics import ReactionRate
 from _load_prior_csv import _prior_group_name
 
 from _MAP_finding import _log_prior_sigma, _extract_logK_kcat, _gaussian_pdf, _uniform_pdf, _lognormal_pdf, _log_normal_likelihood, _map_adjust_trace
 
 
-def _log_priors(mcmc_trace, experiments, prior_infor, nsamples=None, dE=1, dI=0.1):
+def _log_priors(mcmc_trace, experiments, prior_infor, nsamples=None, 
+                set_lognormal_dE=False, dE=0.1, dI=0.1):
     """
     Sum of log prior of all parameters, assuming they follows uniform distribution
 
@@ -70,6 +71,7 @@ def _log_priors(mcmc_trace, experiments, prior_infor, nsamples=None, dE=1, dI=0.
 
                 # Log_prior of uncertainty for inhibitor concentration if lognormal, calculating log_prior based on its logItot
                 [rate, logMtot, logStot, logItot] = data_rate
+
                 # If each dataset has its own inhibitor concentration error
                 if f'I0:{idx_expt}:{n}' in mcmc_trace.keys():
                     log_priors += jnp.log(_lognormal_pdf(mcmc_trace[f'I0:{idx_expt}:{n}'][: nsamples], jnp.exp(jnp.max(logItot)), dI))
@@ -94,12 +96,18 @@ def _log_priors(mcmc_trace, experiments, prior_infor, nsamples=None, dE=1, dI=0.
                 log_priors += jnp.log(_lognormal_pdf(mcmc_trace[f'I0:{idx_expt}'][: nsamples], jnp.exp(jnp.max(logItot)), dI))
 
     for key in mcmc_trace.keys():
-        # log_prior of noise parameters:
+        # log_prior of normalization factor:
         if key.startswith('alpha'):
             log_priors += jnp.log(_uniform_pdf(mcmc_trace[key][: nsamples], 0, 2))
-        # Log_prior of uncertainty for concentration if uniform
-        if key.startswith('error') or key.startswith('percent_error') or key.startswith('dE'):
-            log_priors += jnp.log(_uniform_pdf(mcmc_trace[key][: nsamples], 0, dE))
+        # log prior of enzyme concentration uncertainty
+        if key.startswith('dE'): 
+            # If dE follow lognormal
+            if set_lognormal_dE and dE>0:
+                conc = int(key[3:])
+                log_priors = jnp.log(_lognormal_pdf(mcmc_trace[key][: nsamples], conc, dE))
+            # If dE follow uniform
+            elif dE>0 and dE<1: 
+                log_priors += jnp.log(_uniform_pdf(mcmc_trace[key][: nsamples], 0, dE))
 
     return np.array(log_priors)
 
@@ -114,7 +122,8 @@ def _log_likelihood_each_enzyme(type_expt, data, trace_logK, trace_kcat, trace_a
     trace_logK    : trace of all kcat
     trace_sigma   : trace of log_sigma
     ----------
-    Return log likelihood depending on the type of experiment and mcmc_trace
+    Return log likelihood depending on the type of experiment and mcmc_trace 
+    without enzyme/ligand concentration uncertainty.
     """
     assert type_expt in ['kinetics', 'AUC', 'ICE'], "Experiments type should be kinetics, AUC, or ICE."
     log_likelihoods = jnp.zeros(nsamples)
@@ -122,10 +131,10 @@ def _log_likelihood_each_enzyme(type_expt, data, trace_logK, trace_kcat, trace_a
     if type_expt == 'kinetics':
         [rate, kinetics_logMtot, kinetics_logStot, kinetics_logItot] = data
         f = vmap(lambda logKd, logK_S_M, logK_S_D, logK_S_DS, logK_I_M, logK_I_D, logK_I_DI, logK_S_DI, logKsp, kcat_MS, kcat_DS, kcat_DSI, kcat_DSS, alpha, sigma: _log_normal_likelihood(rate,
-                                                                                                                                                                                           Adjustable_ReactionRate(kinetics_logMtot, kinetics_logStot, kinetics_logItot,
-                                                                                                                                                                                                                   logKd, logK_S_M, logK_S_D, logK_S_DS,
-                                                                                                                                                                                                                   logK_I_M, logK_I_D, logK_I_DI, logK_S_DI, logKsp,
-                                                                                                                                                                                                                   kcat_MS, kcat_DS, kcat_DSI, kcat_DSS)*alpha,
+                                                                                                                                                                                           ReactionRate(kinetics_logMtot, kinetics_logStot, kinetics_logItot,
+                                                                                                                                                                                                        logKd, logK_S_M, logK_S_D, logK_S_DS,
+                                                                                                                                                                                                        logK_I_M, logK_I_D, logK_I_DI, logK_S_DI, logKsp,
+                                                                                                                                                                                                        kcat_MS, kcat_DS, kcat_DSI, kcat_DSS)*alpha,
                                                                                                                                                                                            sigma),
                  in_axes=list(in_axes_nth))
         log_likelihoods += f(trace_logK['logKd'], trace_logK['logK_S_M'], trace_logK['logK_S_D'],
@@ -147,7 +156,7 @@ def _log_likelihoods(mcmc_trace, experiments, nsamples=None):
         Each dataset contains response, logMtot, lotStot, logItot
     ----------
     Return:
-        Sum of log likelihood given experiments and mcmc_trace
+        Sum of log likelihood given experiments and mcmc_trace without enzyme/ligand concentration uncertainty.
     """
     params_name_logK = []
     params_name_kcat = []
@@ -170,17 +179,18 @@ def _log_likelihoods(mcmc_trace, experiments, nsamples=None):
 
         trace_nth, in_axis_nth = _extract_logK_kcat(mcmc_trace, idx, nsamples)
 
+        # alpha
         if f'alpha:{idx_expt}' in mcmc_trace.keys():
             trace_alpha = mcmc_trace[f'alpha:{idx_expt}'][: nsamples]
-            in_axis_nth.append(0) #for alpha
+            in_axis_nth.append(0)
         elif 'alpha' in mcmc_trace.keys():
             trace_alpha = mcmc_trace['alpha'][: nsamples]
-            in_axis_nth.append(0) #for alpha
+            in_axis_nth.append(0)
         else: 
             trace_alpha = None
             in_axis_nth.append(None)
 
-        in_axis_nth.append(0) #for sigma        
+        in_axis_nth.append(0) #for sigma
         if type(expt['kinetics']) is dict:
             for n in range(len(expt['kinetics'])):
                 data_rate = expt['kinetics'][n]
@@ -244,8 +254,7 @@ def map_finding(mcmc_trace, experiments, prior_infor, set_K_I_M_equal_K_S_M=Fals
     log_likelihoods = _log_likelihoods(mcmc_trace_update, experiments, nsamples)
 
     log_probs = log_priors + log_likelihoods
-    # map_idx = np.argmax(log_probs)
-    map_idx = np.nanargmax(log_probs)
+    map_idx = np.nanargmax(log_probs) #np.argmax(log_probs)
     print("Map index: %d" % map_idx)
 
     map_params = {}

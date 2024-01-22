@@ -80,16 +80,6 @@ for index, row in df.iterrows():
 trace = pickle.load(open(args.mcmc_file, "rb"))
 print(trace.keys())
 
-# expts_map = []
-# expts_map = expts_map + expts_no_I
-# for i in range(len(expts_plot_I)):
-#         expts_map.append({'enzyme': 'mers',
-#                           'kinetics': [expts_plot[i]['v'], expts_plot[i]['logMtot'],
-#                                        expts_plot[i]['logStot'], expts_plot[i]['logItot']]})
-
-# trace['alpha:2'] = trace['alpha:0']
-# trace['alpha:3'] = trace['alpha:0']
-
 expts_map = expts
 [map_index, map_params, log_probs] = map_finding(trace, expts_map, prior_infor_update, 
                                                  args.set_K_I_M_equal_K_S_M, args.set_K_S_DI_equal_K_S_DS, 

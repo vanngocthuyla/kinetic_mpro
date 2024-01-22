@@ -22,7 +22,7 @@ warnings.simplefilter(action='ignore', category=FutureWarning)
 warnings.simplefilter("ignore", UserWarning)
 warnings.simplefilter("ignore", RuntimeWarning)
 
-from _model_mers_ESI import global_fitting
+from _CRC_fitting_EI import global_fitting
 from _load_data_mers import load_data_no_inhibitor, load_data_one_inhibitor
 from _plotting import plot_data_conc_log, plotting_trace
 from _MAP_finding_mers_concs import map_finding
@@ -68,36 +68,42 @@ print("nchain:", args.nchain)
 print("nthin:", args.nthin)
 
 df_mers = pd.read_csv(args.input_file)
-expts_no_I, expts_plot_no_I = load_data_no_inhibitor(df_mers[df_mers['Inhibitor (nM)']==0.0], 
-                                                     multi_var=args.multi_var)
+
 inhibitor_name = np.array([args.name_inhibitor+'-001'])
-expts = expts_no_I
-expts_plot = expts_plot_no_I
 for i, name in enumerate(inhibitor_name):
-    expts_, expts_plot_ = load_data_one_inhibitor(df_mers[(df_mers['Inhibitor_ID']==name)*(df_mers['Drop']!=1)],
-                                                  multi_var=args.multi_var)
-    expts = expts + expts_
-    expts_plot = expts_plot + expts_plot_
+    expts, expts_plot = load_data_one_inhibitor(df_mers[(df_mers['Inhibitor_ID']==name)*(df_mers['Drop']!=1.0)],
+                                                multi_var=args.multi_var)
+
+if len(args.map_file)>0 and os.path.isfile(args.map_file):
+    map_sampling = pickle.load(open(args.map_file, "rb"))
+    
+    if args.set_K_S_DS_equal_K_S_D: 
+        map_sampling['logK_S_DS'] = map_sampling['logK_S_D']
+    if args.set_K_S_DI_equal_K_S_DS:
+        map_sampling['logK_S_DI'] = map_sampling['logK_S_DS']
+
+    for key in ['logKd', 'logK_S_M', 'logK_S_D', 'logK_S_DS',
+                'kcat_DS', 'kcat_DSS', 'dE:100', 'dE:50', 'dE:25']:
+        assert key in map_sampling.keys(), f"Please provide {key} in map_file."
 
 logKd_min = -27.63
 logKd_max = 0.
 kcat_min = 0.
-kcat_max = 20
+kcat_max = 10
 
 prior = {}
-prior['logKd'] = {'type':'logKd', 'name': 'logKd', 'fit':'global', 'dist': 'normal', 'loc': -9.9, 'scale': 0.5}
-prior['logK_S_M'] = {'type':'logK', 'name': 'logK_S_M', 'fit':'global', 'dist': 'uniform', 'lower': -14, 'upper': 0} 
-prior['logK_S_D'] = {'type':'logK', 'name': 'logK_S_D', 'fit':'global', 'dist': 'uniform', 'lower': -20, 'upper': -13}
-prior['logK_S_DS'] = {'type':'logK', 'name': 'logK_S_DS', 'fit':'global', 'dist': 'uniform', 'lower': -17.5, 'upper': 0.}
-prior['logK_I_M'] = {'type':'logK', 'name': 'logK_I_M', 'fit':'local', 'dist': [None, 'uniform'], 'value': 0, 'lower': -20.73, 'upper': logKd_max} #1E-6
-prior['logK_I_D'] = {'type':'logK', 'name': 'logK_I_D', 'fit':'local', 'dist': [None, 'uniform'], 'value': 0, 'lower': logKd_min, 'upper': 0} #1E-12 - 1E-3
-prior['logK_I_DI'] = {'type':'logK', 'name': 'logK_I_DI', 'fit':'local', 'dist': [None, 'uniform'], 'value': 0, 'lower': logKd_min, 'upper': 0} #1E-12 - 1E-3
-prior['logK_S_DI'] = {'type':'logK', 'name': 'logK_S_DI', 'fit':'local', 'dist': [None, 'uniform'], 'value': 0, 'lower': logKd_min, 'upper': 0} #1E-12 - 1E-3
+prior['logKd'] = {'type':'logKd', 'name': 'logKd', 'fit':'global', 'dist': None, 'value': map_sampling['logKd']}
+prior['logK_S_M'] = {'type':'logK', 'name': 'logK_S_M', 'fit':'global', 'dist': None, 'value': map_sampling['logK_S_M']} 
+prior['logK_S_D'] = {'type':'logK', 'name': 'logK_S_D', 'fit':'global', 'dist': None, 'value': map_sampling['logK_S_D']} 
+prior['logK_S_DS'] = {'type':'logK', 'name': 'logK_S_DS', 'fit':'global', 'dist': None, 'value': map_sampling['logK_S_DS']}
+prior['logK_I_M'] = {'type':'logK', 'name': 'logK_I_M', 'fit':'global', 'dist': 'uniform', 'lower': -20.73, 'upper': logKd_max} #1E-9
+prior['logK_I_D'] = {'type':'logK', 'name': 'logK_I_D', 'fit':'global', 'dist': 'uniform', 'lower': logKd_min, 'upper': -6.9}
+prior['logK_I_DI'] = {'type':'logK', 'name': 'logK_I_DI', 'fit':'global', 'dist': 'uniform', 'lower': logKd_min, 'upper': -6.9}
+prior['logK_S_DI'] = {'type':'logK', 'name': 'logK_S_DI', 'fit':'global', 'dist': 'uniform', 'lower': logKd_min, 'upper': logKd_max}
 
-# prior['kcat_MS'] = {'type':'kcat', 'name': 'kcat_MS', 'fit':'global', 'dist': None, 'value': 0.}
-prior['kcat_DS'] = {'type':'kcat', 'name': 'kcat_DS', 'fit':'global', 'dist': 'uniform', 'lower': kcat_min, 'upper': 5}
-prior['kcat_DSS'] = {'type':'kcat', 'name': 'kcat_DSS', 'fit':'global', 'dist': 'uniform', 'lower': kcat_min, 'upper': 5}
-prior['kcat_DSI'] = {'type':'kcat', 'name': 'kcat_DSI', 'fit':'local', 'dist': [None, 'uniform'], 'value': 0., 'lower': kcat_min, 'upper': kcat_max}
+prior['kcat_DS'] = {'type':'kcat', 'name': 'kcat_DS', 'fit':'global', 'dist': None, 'value': map_sampling['kcat_DS']}
+prior['kcat_DSS'] = {'type':'kcat', 'name': 'kcat_DSS', 'fit':'global', 'dist': None, 'value': map_sampling['kcat_DSS']}
+prior['kcat_DSI'] = {'type':'kcat', 'name': 'kcat_DSI', 'fit':'global', 'dist': 'uniform', 'lower': kcat_min, 'upper': kcat_max}
 
 shared_params = None
 
@@ -106,11 +112,16 @@ if args.set_K_S_DS_equal_K_S_D:
 if args.set_K_S_DI_equal_K_S_DS: 
     del prior['logK_S_DI']
 
+pickle.dump(prior, open(os.path.join('Prior.pickle'), "wb"))
 prior_infor = convert_prior_from_dict_to_list(prior, args.fit_E_S, args.fit_E_I)
 prior_infor_update = check_prior_group(prior_infor, len(expts))
 pd.DataFrame(prior_infor_update).to_csv("Prior_infor.csv", index=False)
 
 print("Prior information: \n", pd.DataFrame(prior_infor_update))
+
+E_list = {}
+for key in ['dE:100', 'dE:50', 'dE:25']:
+    E_list[key] = map_sampling[key]
 
 if args.fit_E_S and args.fit_E_I: traces_name = "traces"
 elif args.fit_E_S: traces_name = "traces_E_S"
@@ -132,19 +143,22 @@ if not os.path.isfile(traces_name+'.pickle'):
         print("\nKeep running from last state.")
         mcmc = MCMC(kernel, num_warmup=args.nburn, num_samples=args.niters, num_chains=args.nchain, progress_bar=True)
         mcmc.post_warmup_state = last_state
-        mcmc.run(mcmc.post_warmup_state.rng_key, experiments=expts, prior_infor=prior_infor_update, shared_params=shared_params,
-                 multi_alpha=args.multi_alpha, set_lognormal_dE=args.set_lognormal_dE, dE=args.dE, 
-                 multi_var=args.multi_var, set_K_S_DS_equal_K_S_D=args.set_K_S_DS_equal_K_S_D, set_K_S_DI_equal_K_S_DS=args.set_K_S_DI_equal_K_S_DS)
+        mcmc.run(mcmc.post_warmup_state.rng_key,  
+                 experiments=expts, E_list=E_list, prior_infor=prior_infor_update, shared_params=shared_params,
+                 multi_alpha=args.multi_alpha, multi_var=args.multi_var, 
+                 set_K_S_DS_equal_K_S_D=args.set_K_S_DS_equal_K_S_D, 
+                 set_K_S_DI_equal_K_S_DS=args.set_K_S_DI_equal_K_S_DS)
     else:
         mcmc = MCMC(kernel, num_warmup=args.nburn, num_samples=args.niters, num_chains=args.nchain, progress_bar=True)
-        mcmc.run(rng_key_, experiments=expts, prior_infor=prior_infor_update, shared_params=shared_params,
-                 multi_alpha=args.multi_alpha, set_lognormal_dE=args.set_lognormal_dE, dE=args.dE, 
-                 multi_var=args.multi_var, set_K_S_DS_equal_K_S_D=args.set_K_S_DS_equal_K_S_D, set_K_S_DI_equal_K_S_DS=args.set_K_S_DI_equal_K_S_DS)
-    mcmc.print_summary()
-
-    print("Saving last state.")
+        mcmc.run(rng_key_, experiments=expts, E_list=E_list, prior_infor=prior_infor_update, shared_params=shared_params,
+                 multi_alpha=args.multi_alpha, multi_var=args.multi_var, 
+                 set_K_S_DS_equal_K_S_D=args.set_K_S_DS_equal_K_S_D, 
+                 set_K_S_DI_equal_K_S_DS=args.set_K_S_DI_equal_K_S_DS)
+    
     mcmc.post_warmup_state = mcmc.last_state
     pickle.dump(jax.device_get(mcmc.post_warmup_state), open("Last_state.pickle", "wb"))
+
+    mcmc.print_summary()
 
     trace = mcmc.get_samples(group_by_chain=False)
     pickle.dump(trace, open(os.path.join(traces_name+'.pickle'), "wb"))
@@ -160,29 +174,6 @@ if os.path.isfile(traces_name+'.pickle'):
 else:
     trace = mcmc.get_samples(group_by_chain=False)
 
-prior = {}
-prior['logKd'] = {'type':'logKd', 'name': 'logKd', 'fit':'global', 'dist': 'normal', 'loc': -9.9, 'scale': 0.5}
-prior['logK_S_M'] = {'type':'logK', 'name': 'logK_S_M', 'fit':'global', 'dist': 'uniform', 'lower': -14, 'upper': 0} 
-prior['logK_S_D'] = {'type':'logK', 'name': 'logK_S_D', 'fit':'global', 'dist': 'uniform', 'lower': -20, 'upper': -13}
-prior['logK_S_DS'] = {'type':'logK', 'name': 'logK_S_DS', 'fit':'global', 'dist': 'uniform', 'lower': -17.5, 'upper': 0.}
-prior['logK_I_M'] = {'type':'logK', 'name': 'logK_I_M', 'fit':'local', 'dist': 'uniform', 'value': 0, 'lower': -20.72, 'upper': logKd_max}
-prior['logK_I_D'] = {'type':'logK', 'name': 'logK_I_D', 'fit':'local', 'dist': 'uniform', 'value': 0, 'lower': logKd_min, 'upper': 0}
-prior['logK_I_DI'] = {'type':'logK', 'name': 'logK_I_DI', 'fit':'local', 'dist': 'uniform', 'value': 0, 'lower': logKd_min, 'upper': 0}
-prior['logK_S_DI'] = {'type':'logK', 'name': 'logK_S_DI', 'fit':'local', 'dist': 'uniform', 'value': 0, 'lower': logKd_min, 'upper': 0}
-
-prior['kcat_DS'] = {'type':'kcat', 'name': 'kcat_DS', 'fit':'global', 'dist': 'uniform', 'lower': kcat_min, 'upper': 5}
-prior['kcat_DSS'] = {'type':'kcat', 'name': 'kcat_DSS', 'fit':'global', 'dist': 'uniform', 'lower': kcat_min, 'upper': 5}
-prior['kcat_DSI'] = {'type':'kcat', 'name': 'kcat_DSI', 'fit':'local', 'dist': 'uniform', 'lower': kcat_min, 'upper': kcat_max}
-
-if args.set_K_S_DS_equal_K_S_D: 
-    del prior['logK_S_DS']
-if args.set_K_S_DI_equal_K_S_DS: 
-    del prior['logK_S_DI']
-
-pickle.dump(prior, open(os.path.join('MAP_prior.pickle'), "wb"))
-prior_infor = convert_prior_from_dict_to_list(prior, args.fit_E_S, args.fit_E_I)
-prior_infor_update = check_prior_group(prior_infor, len(expts))
-
 if shared_params is not None and len(shared_params)>0:
     for name in shared_params.keys():
         param = shared_params[name]
@@ -191,13 +182,7 @@ if shared_params is not None and len(shared_params)>0:
         trace[f'{name}:{assigned_idx}'] = trace[f'{name}:{shared_idx}']
 
 trace_map = trace.copy()
-for name in ['logK_I_M', 'logK_I_D', 'logK_I_DI', 'logK_S_DI']:
-    if f'{name}:1' in trace_map.keys():
-        trace_map[f'{name}:0'] = trace_map[f'{name}:1']
-trace_map['kcat_DSI:0'] = jnp.zeros(args.nchain*args.niters)
-pickle.dump(trace_map, open(os.path.join('MAP_'+traces_name+'.pickle'), "wb"))
-
-[map_index, map_params, log_probs] = map_finding(trace_map, expts, prior_infor_update,  
+[map_index, map_params, log_probs] = map_finding(trace_map, expts, prior_infor=prior_infor_update, E_list=E_list, 
                                                  set_lognormal_dE=args.set_lognormal_dE, dE=args.dE,
                                                  set_K_S_DS_equal_K_S_D=args.set_K_S_DS_equal_K_S_D,
                                                  set_K_S_DI_equal_K_S_DS=args.set_K_S_DI_equal_K_S_DS)
@@ -213,34 +198,20 @@ pickle.dump(log_probs, open('log_probs.pickle', "wb"))
 map_values = {}
 for key in trace.keys():
     map_values[key] = trace[key][map_index]
+map_input = pickle.load(open(args.map_file, "rb"))
+for key in 'logKd', 'logK_S_M', 'logK_S_D', 'logK_S_DS', 'kcat_DS', 'kcat_DSS', 'dE:100', 'dE:50', 'dE:25':
+    if not key in map_values:
+        map_values[key] = map_input[key]
 pickle.dump(map_values, open('map.pickle', "wb"))
 
 ## Fitting plot
-params_logK, params_kcat = extract_params_from_map_and_prior(trace_map, map_index, prior_infor_update)
+params_logK, params_kcat = extract_params_from_map_and_prior(trace, map_index, prior_infor_update)
 
-if args.set_lognormal_dE and args.dE>0:
-    E_list = {key: trace[key][map_index] for key in trace.keys() if key.startswith('dE')}
-else: E_list = None
-
-for n in range(len(expts)):
-    if args.set_K_S_DS_equal_K_S_D:
-        try: params_logK[f'logK_S_DS:{n}'] = params_logK[f'logK_S_D:{n}']
-        except: params_logK['logK_S_DS'] = params_logK['logK_S_D']
-    if args.set_K_S_DI_equal_K_S_DS:
-        try: params_logK[f'logK_S_DI:{n}'] = params_logK[f'logK_S_DS:{n}']
-        except: params_logK['logK_S_DI'] = params_logK['logK_S_DS']
+no_expt = len(expts_plot)
+alphas = [trace[f'alpha:ESI:{i}'][map_index] for i in range(no_expt)]
 
 n = 0
-plot_data_conc_log(expts_plot_no_I, extract_logK_n_idx(params_logK, n, shared_params),
+plot_data_conc_log(expts_plot, extract_logK_n_idx(params_logK, n, shared_params),
                    extract_kcat_n_idx(params_kcat, n, shared_params),
-                   line_colors=['black', 'red', 'tab:brown'], ls='-.',
-                   error_E=E_list, plot_legend=True,
-                   OUTFILE=os.path.join(args.out_dir,'ES'))
-no_expt = 4
-_alpha = [trace[f'alpha:ESI:{i}'][map_index] for i in range(no_expt)]
-for i in range(len(inhibitor_name)):
-    n = i + 1
-    plot_data_conc_log(expts_plot[(i*no_expt+3):(i*no_expt+3+no_expt)], extract_logK_n_idx(params_logK, n, shared_params),
-                       extract_kcat_n_idx(params_kcat, n, shared_params),
-                       alpha=_alpha, error_E=E_list,
-                       OUTFILE=os.path.join(args.out_dir,'ESI'))
+                   alpha=alphas, error_E=E_list,
+                   OUTFILE=os.path.join(args.out_dir,'ESI'))

@@ -14,10 +14,9 @@ from _prior_check import check_prior_group, prior_group_multi_enzyme, define_uni
 from _model_mers import _dE_priors, _dE_find_prior
 
 
-def global_fitting(experiments, prior_infor=None,
-                   logKd_min=-20, logKd_max=0, kcat_min=0, kcat_max=1,
-                   shared_params=None, multi_alpha=False, set_lognormal_dE=False, dE=0.1,
-                   multi_var=False, log_sigmas=None, 
+def global_fitting(experiments, E_list, prior_infor=None,
+                   logKd_min=-20, logKd_max=0, kcat_min=0, kcat_max=1.,
+                   shared_params=None, multi_alpha=False, multi_var=False,
                    set_K_S_DS_equal_K_S_D=False, set_K_S_DI_equal_K_S_DS=False):
     """
     Parameters:
@@ -43,15 +42,6 @@ def global_fitting(experiments, prior_infor=None,
         prior_infor = check_prior_group(init_prior_infor, n_enzymes)
     params_logK, params_kcat = prior_group_multi_enzyme(prior_infor, n_enzymes)
 
-    if set_lognormal_dE and dE>0:
-        E_list = {}
-        E_list = _dE_priors(experiments, dE, 'lognormal')
-
-    if multi_alpha:
-        alphas = {}
-        for i in range(4):
-            alphas[i] = uniform_prior(f'alpha:ESI:{i}', lower=0.5, upper=1.5)
-
     for idx, expt in enumerate(experiments):
         try: idx_expt = expt['index']
         except: idx_expt = idx
@@ -60,47 +50,33 @@ def global_fitting(experiments, prior_infor=None,
                                           set_K_S_DI_equal_K_S_DS=set_K_S_DI_equal_K_S_DS)
         _params_kcat = extract_kcat_n_idx(params_kcat, idx, shared_params)
 
-        if idx == 0: alpha = 1
-        else: 
-            if not multi_alpha: 
-                if idx == 1: alpha = uniform_prior(f'alpha:ESI', lower=0, upper=2)
-
         if type(expt['kinetics']) is dict:
             for n in range(len(expt['kinetics'])):
                 data_rate = expt['kinetics'][n]
-                
-                if set_lognormal_dE and dE>0:
-                    Etot = _dE_find_prior(data_rate, E_list)
-                else:
-                    Etot = None
-                
-                if idx!=0 and multi_alpha:
-                    alpha = alphas[n]
-                
+
+                if multi_alpha: alpha = uniform_prior(f'alpha:ESI:{n}', lower=0, upper=2)
+                elif idx == 1: alpha = uniform_prior(f'alpha:ESI', lower=0, upper=2)
+
+                if len(E_list)>0: Etot = _dE_find_prior(data_rate, E_list)
+                else: Etot = None
+
                 if data_rate is not None:
-                    if log_sigmas is not None: 
-                        log_sigma = log_sigmas[f'log_sigma:{idx_expt}:{n}']
-                    else:
-                        log_sigma = None
                     fitting_each_dataset('kinetics', data_rate, [*_params_logK, *_params_kcat],
-                                         alpha, Etot, log_sigma, f'{idx_expt}:{n}')
+                                         alpha, Etot, f'{idx_expt}:{n}')
         else:
             data_rate = expt['kinetics']
-            
-            if set_lognormal_dE and dE>0:
-                Etot = _dE_find_prior(data_rate, E_list)
-            else:
-                Etot = None
+
+            if multi_alpha: alpha = uniform_prior(f'alpha:{idx}', lower=0, upper=2)
+            elif idx == 1: alpha = uniform_prior(f'alpha', lower=0, upper=2)
 
             if data_rate is not None:
-                if log_sigmas is not None: log_sigma = log_sigmas[f'log_sigma:{idx_expt}']
-                else: log_sigma = None
+                if len(E_list)>0: Etot = _dE_find_prior(data_rate, E_list)
+                else: Etot = None
                 fitting_each_dataset('kinetics', data_rate, [*_params_logK, *_params_kcat],
-                                     alpha, Etot, log_sigma, f'{idx_expt}')
+                                     alpha, percent_error_E, f'{idx_expt}')
 
 
-def fitting_each_dataset(type_expt, data, params, alpha=None,
-                         Etot=None, log_sigma_rate=None, index=''):
+def fitting_each_dataset(type_expt, data, params, alpha, Etot=None, index=''):
     """
     Parameters:
     ----------
@@ -121,13 +97,9 @@ def fitting_each_dataset(type_expt, data, params, alpha=None,
         else: logE = jnp.log(Etot*1E-9)
 
         rate_model = ReactionRate(logE, logStot, logItot, *params)
-
-        if alpha is None:
-            alpha = uniform_prior(f'alpha:{index}', lower=0, upper=2)
-        
-        if log_sigma_rate is None:
-            log_sigma_rate_min, log_sigma_rate_max = logsigma_guesses(rate) 
-            log_sigma_rate = uniform_prior(f'log_sigma:{index}', lower=log_sigma_rate_min, upper=log_sigma_rate_max)
+            
+        log_sigma_rate_min, log_sigma_rate_max = logsigma_guesses(rate) 
+        log_sigma_rate = uniform_prior(f'log_sigma:{index}', lower=log_sigma_rate_min, upper=log_sigma_rate_max)
         sigma = jnp.exp(log_sigma_rate)
 
         numpyro.sample(f'rate:{index}', dist.Normal(loc=rate_model*alpha, scale=sigma), obs=rate)
