@@ -3,67 +3,35 @@ import jax
 import jax.numpy as jnp
 import pandas as pd
 
-def load_data(df):
-  
-    kinetics_logMtot = []
-    kinetics_logStot = []
-    kinetics_logItot = []
-    rate = []
-
-    experiments = []
-
-    unique_enzyme = np.unique(df['Enzyme (nM)'])
-
-    for i, conc_enzyme in enumerate(unique_enzyme):
-        
-        dat = df[df['Enzyme (nM)']==conc_enzyme]
-        Stot = np.array(dat['Substrate (nM)'])*1E-9
-        Mtot = np.ones(len(Stot))*conc_enzyme*1E-9
-        v = np.array(dat['v (nM.min^{-1})'])*1E-9
-
-        experiments.append({'type':'kinetics',
-                            'enzyme': 'mers',
-                            'figure': i,
-                            'logMtot': np.log(Mtot), # M
-                            'logStot': np.log(Stot), # 5 uL of 5mM substrate diluted with 95 uL reaction mixture
-                            'logItot': np.array([np.log(1E-20)]*len(Mtot)), #None 
-                            'v': v, # M min^{-1}
-                            'x':'logStot'})
-        
-        kinetics_logMtot.append(np.log(Mtot))
-        kinetics_logStot.append(np.log(Stot))
-        kinetics_logItot.append(np.array([np.log(1E-20)]*len(Mtot)))
-        rate.append(v)
-
-    kinetics_logMtot = np.concatenate(kinetics_logMtot)
-    kinetics_logStot = np.concatenate(kinetics_logStot)
-    kinetics_logItot = np.concatenate(kinetics_logItot)
-    rate = np.concatenate(rate)
-
-    data_rate = [rate, kinetics_logMtot, kinetics_logStot, kinetics_logItot]
-
-    expt_combined = []
-    expt_combined.append({'enzyme': 'mers',
-                          'kinetics': data_rate, 
-                          'AUC': None,
-                          'ICE': None
-                          })
-    return expt_combined, experiments
-
 
 def load_data_no_inhibitor(df, multi_var=False):
-
+    """
+    Parameters:
+    ----------
+    df          : pandas dataframe, each row containing the following information
+        Plate           : plate name of experiment
+        Enzyme (nM)     : enzyme concentration under nM
+        Substrate (nM)  : substrate concentration under nM
+        Inhibitor (nM)  : inhibitor concentration under nM
+        v (nM.min^{-1}) : reaction rate under nM/min
+    multi_var   : optional, boolean, return the output that can be used to fit multiple variances for each plate
+    ----------
+    
+    Return the list of dict, each dict contain the information of experiment. 
+    This function is used for no inhibitior datasets.
+    """ 
     plate_list = np.unique(df['Plate'])
     multi_experiments = []
     experiment = []
-    for plate_i in plate_list:
+    data_rate = {}
+    for i, plate_i in enumerate(plate_list):
         kinetics_logMtot = []
         kinetics_logStot = []
         kinetics_logItot = []
         rate = []
 
         unique_enzyme = np.unique(df['Enzyme (nM)'])
-        for i, conc_enzyme in enumerate(unique_enzyme):
+        for n, conc_enzyme in enumerate(unique_enzyme):
             dat = df[(df['Enzyme (nM)']==conc_enzyme)*df['Plate']==plate_i]
             Stot = np.array(dat['Substrate (nM)'])*1E-9
             Mtot = np.ones(len(Stot))*conc_enzyme*1E-9
@@ -73,17 +41,17 @@ def load_data_no_inhibitor(df, multi_var=False):
             logStot = np.array([np.log(conc) if conc > 0 else np.log(1E-30) for conc in Stot])
 
             if len(np.unique(Stot))>1:
-                experiment.append({'type':'kinetics', 'enzyme': 'mers',
+                experiment.append({'type':'kinetics', 'enzyme': 'mers', 'plate': 'ES',
                                    'figure': plate_i[:-5], 'sub_figure': f'E:{conc_enzyme}nM',
                                    'logMtot': logMtot, # M
                                    'logStot': logStot, # M
-                                   'logItot': np.array([np.log(1E-20)]*len(Mtot)), #None
+                                   'logItot': None, #np.array([np.log(1E-20)]*len(Mtot)), #None
                                    'v': v, # M min^{-1}
                                    'x':'logStot'})
 
                 kinetics_logMtot.append(logMtot)
                 kinetics_logStot.append(logStot)
-                kinetics_logItot.append(np.array([np.log(1E-20)]*len(Mtot)))
+                kinetics_logItot.append(np.array([np.log(1E-30)]*len(Mtot)))
                 rate.append(v)
 
         if len(kinetics_logMtot)>1:
@@ -97,12 +65,12 @@ def load_data_no_inhibitor(df, multi_var=False):
             kinetics_logItot = kinetics_logItot[0]
             rate = rate[0]
 
-        if len(kinetics_logMtot)>0:
-            data_rate = [rate, kinetics_logMtot, kinetics_logStot, kinetics_logItot]
+        data_rate[i] = [np.array(rate), np.array(kinetics_logMtot), np.array(kinetics_logStot), None]
 
-            multi_experiments.append({'enzyme': 'mers', 'figure': plate_i[:-5],
-                                      'kinetics': data_rate, 'AUC': None, 'ICE': None
-                                      })
+    multi_experiments.append({'enzyme': 'mers', 'figure': 'No Inhibitor', 'index': 'ES',
+                              'plate' : np.repeat('ES', len(plate_list)), 
+                              'kinetics': data_rate, 'AUC': None, 'ICE': None,
+                              })
     if multi_var:
         return multi_experiments, experiment
     else:
@@ -114,30 +82,59 @@ def load_data_no_inhibitor(df, multi_var=False):
 
         logMtot = np.array([np.log(conc) if conc > 0 else np.log(1E-30) for conc in Mtot])
         logStot = np.array([np.log(conc) if conc > 0 else np.log(1E-30) for conc in Stot])
-        data_rate = [rate, logMtot, logStot, np.log(Itot)]
+        data_rate = [rate, logMtot, logStot, None] #np.log(Itot)]
 
         one_experiment = []
-        one_experiment.append({'enzyme': 'mers', 'figure': 'No Inhibitor',
+        one_experiment.append({'enzyme': 'mers', 'figure': 'No Inhibitor', 'index': 'ES',
+                               'plate' : 'ES',
                                'kinetics': data_rate, 'AUC': None, 'ICE': None
                                })
 
         return one_experiment, experiment
 
 
-def load_data_one_inhibitor(df, multi_var=False, name='Inhibitor'):
-
+def load_data_one_inhibitor(df, multi_var=False, name=None, min_points=8):
+    """
+    Parameters:
+    ----------
+    df          : pandas dataframe, each row containing the following information
+        Plate           : plate name of experiment
+        Enzyme (nM)     : enzyme concentration under nM
+        Substrate (nM)  : substrate concentration under nM
+        Inhibitor (nM)  : inhibitor concentration under nM
+        v (nM.min^{-1}) : reaction rate under nM/min
+    multi_var   : optional, boolean, return the output that can be used to fit multiple variances for each plate
+    name        : optional, string, name of inihbitor
+    min_points  : minimum data points required to fit the model
+    ----------
+    
+    Return the list of dict, each dict contain the information of experiment. 
+    This function is used for inhibitior datasets.
+    """ 
     plate_list = np.unique(df['Plate'])
     multi_experiments = []
     experiment = []
-    for plate_i in plate_list:
+
+    if name is None:
+        try: name = np.unique(df['Inhibitor_ID'])[0]
+        except: name = 'Inhibitor'
+
+    data_rate = {}
+    for i, plate_i in enumerate(plate_list):
         kinetics_logMtot = []
         kinetics_logStot = []
         kinetics_logItot = []
         rate = []
 
         unique_enzyme = np.unique(df['Enzyme (nM)'])
-        for i, conc_enzyme in enumerate(unique_enzyme):
+        for n, conc_enzyme in enumerate(unique_enzyme):
             dat = df[(df['Enzyme (nM)']==conc_enzyme)*df['Plate']==plate_i]
+            
+            # if len(dat)<min_points:
+            #     print(f"There was only {len(dat)} data points.")
+            #     data_rate[i] = [None, None, None, None]
+            #     break
+            
             Mtot = np.array(dat['Enzyme (nM)'])*1E-9
             Stot = np.array(dat['Substrate (nM)'])*1E-9
             Itot = np.array(dat['Inhibitor (nM)'])*1E-9
@@ -148,8 +145,9 @@ def load_data_one_inhibitor(df, multi_var=False, name='Inhibitor'):
             logItot = np.array([np.log(conc) if conc > 0 else np.log(1E-30) for conc in Itot])
 
             if len(np.unique(Itot))>1:
-                experiment.append({'type':'kinetics', 'enzyme': 'mers',
-                                   'figure': name, 'sub_figure': f'E:{conc_enzyme}nM, S:{np.unique(Stot)[0]*1E9}nM',
+                experiment.append({'type':'kinetics', 'enzyme': 'mers', 'plate': plate_i,
+                                   'index': name[7:12], #'ESI',
+                                   'figure': name, 'sub_figure': f'E:{conc_enzyme}nM, S:{int(np.unique(Stot)[0]*1E9)}nM',
                                    'logMtot': logMtot, # M
                                    'logStot': logStot, # M
                                    'logItot': logItot, # M
@@ -161,7 +159,8 @@ def load_data_one_inhibitor(df, multi_var=False, name='Inhibitor'):
                 rate.append(v)
 
             elif len(np.unique(Itot))==1 and len(np.unique(Stot))>1: # Fixed inhibitor (or no inhbitor)
-                experiment.append({'type':'kinetics', 'enzyme': 'mers',
+                experiment.append({'type':'kinetics', 'enzyme':'mers', 'plate': plate_i,
+                                   'index':name[7:12], #'index':'ESI',
                                    'figure': plate_i[:-5], 'sub_figure': f'E:{conc_enzyme}nM',
                                    'logMtot': logMtot, # M
                                    'logStot': logStot, # M
@@ -184,12 +183,12 @@ def load_data_one_inhibitor(df, multi_var=False, name='Inhibitor'):
             kinetics_logItot = kinetics_logItot[0]
             rate = rate[0]
 
-        if len(kinetics_logMtot)>0:
-            data_rate = [rate, kinetics_logMtot, kinetics_logStot, kinetics_logItot]
+        data_rate[i] = [rate, kinetics_logMtot, kinetics_logStot, kinetics_logItot]
 
-            multi_experiments.append({'enzyme': 'mers', 'figure': plate_i[:-5],
-                                      'kinetics': data_rate, 'AUC': None, 'ICE': None
-                                      })
+    multi_experiments.append({'enzyme': 'mers', 'figure': name, 'index':name[7:12], #'index':'ESI',
+                              'plate' : plate_list, 
+                              'kinetics': data_rate, 'AUC': None, 'ICE': None
+                              })
     if multi_var:
         return multi_experiments, experiment
     else:
@@ -205,10 +204,9 @@ def load_data_one_inhibitor(df, multi_var=False, name='Inhibitor'):
 
         data_rate = [rate, logMtot, logStot, logItot]
         one_experiment = []
-        one_experiment.append({'enzyme': 'mers',
-                               'figure': np.unique(df['Inhibitor_ID'])[0],
-                               'kinetics': data_rate,
-                               'AUC': None, 'ICE': None
+        one_experiment.append({'enzyme': 'mers', 'index': name[7:12], #'index':'ESI',
+                               'figure': name, 'plate' : name[7:12],
+                               'kinetics': data_rate, 'AUC': None, 'ICE': None
                                })
 
         return one_experiment, experiment

@@ -195,6 +195,7 @@ def Enzyme_Inhibitor(logMtot, logItot, logKd, logK_I_M, logK_I_D, logK_I_DI):
     return log_concs_full
 
 
+@jax.jit
 def ReactionRate(logMtot, logStot, logItot, 
                  logKd, logK_S_M, logK_S_D, logK_S_DS, logK_I_M, logK_I_D, logK_I_DI, logK_S_DI,
                  kcat_MS=0., kcat_DS=0., kcat_DSI=1., kcat_DSS=1.):
@@ -247,6 +248,7 @@ def ReactionRate(logMtot, logStot, logItot,
     if kcat_DSI is None: kcat_DSI = 0.
     if kcat_DSS is None: kcat_DSS = 0.
     if logItot is None: 
+        print("Fitting ES model.")
         log_concs = Enzyme_Substrate(logMtot, logStot, logKd, logK_S_M, logK_S_D, logK_S_DS)
     elif logStot is None:
         log_concs = Enzyme_Inhibitor(logMtot, logItot, logKd, logK_I_M, logK_I_D, logK_I_DI)
@@ -258,6 +260,7 @@ def ReactionRate(logMtot, logStot, logItot,
     return v
 
 
+@jax.jit
 def MonomerConcentration(logMtot, logStot, logItot, logKd, logK_S_M, logK_S_D, logK_S_DS, 
                          logK_I_M, logK_I_D, logK_I_DI, logK_S_DI):
     """
@@ -308,6 +311,7 @@ def MonomerConcentration(logMtot, logStot, logItot, logKd, logK_S_M, logK_S_D, l
     return M
 
 
+@jax.jit
 def CatalyticEfficiency(logMtot, logItot,
                         logKd, logK_S_M, logK_S_D, logK_S_DS, logK_I_M, logK_I_D, logK_I_DI, logK_S_DI,
                         kcat_MS=0., kcat_DS=0., kcat_DSI=1., kcat_DSS=1., 
