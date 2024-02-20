@@ -2,6 +2,7 @@ import warnings
 import numpy as np
 import sys
 import os
+import shutil
 import argparse
 
 import pickle
@@ -62,9 +63,10 @@ parser.add_argument( "--nchain",                        type=int,               
 parser.add_argument( "--random_key",                    type=int,               default=0)
 
 parser.add_argument( "--outlier_removal",               action="store_true",    default=False)
+parser.add_argument( "--converged_samples",             type=int,               default=500)
+parser.add_argument( "--no_running",                    type=int,               default=1)
 parser.add_argument( "--exclude_first_trace",           action="store_true",    default=True)
 parser.add_argument( "--key_to_check",                  type=str,               default="")
-parser.add_argument( "--converged_samples",             type=int,               default=500)
 
 parser.add_argument( "--enzyme_conc_nM",                type=int,               default="100")
 parser.add_argument( "--inhibitor_conc_nM",             type=int,               default="1350")
@@ -183,7 +185,7 @@ else:
 if not os.path.isdir(os.path.join(args.out_dir, 'Convergence')):
     os.mkdir(os.path.join(args.out_dir, 'Convergence'))
 
-no_limit = 10
+no_limit = args.no_running
 no_running = 1
 
 print(f"\nAnalyzing {inhibitor_name[0]}")
@@ -329,12 +331,13 @@ while no_running<=no_limit:
     del trace
     no_running += 1
 
-
 if no_running > no_limit:
     mes = "The number of fitting was exceeded."
     print(mes)
     with open(os.path.join(args.out_dir, 'Convergence', name_expt, "log.txt"), "a") as f:
         print(mes, file=f)
+else:
+    shutil.copy(os.path.join(expt_dir,'EI.png'), os.path.join(args.out_dir, 'Convergence', name_expt, 'EI.png'))
 
 [expts_outliers, _, mes_noise, mes_trend] = _expt_check_noise_trend(expts_init, OUT_DIR=os.path.join(args.out_dir, 'Convergence', name_expt))
 
