@@ -7,7 +7,11 @@ import arviz as az
 
 from _kinetics import ReactionRate, MonomerConcentration, CatalyticEfficiency
 # from _kinetics_adjustable_constraints import Adjustable_ReactionRate, Adjustable_MonomerConcentration, Adjustable_CatalyticEfficiency
+<<<<<<< HEAD
 from _model_mers import _dE_find_prior #, _extract_conc_percent_error
+=======
+from _model_mers import _dE_find_prior#, _extract_conc_percent_error
+>>>>>>> e16ad6bbbb4c64bfe977436054fce8235c94dbc0
 from _MAP_finding_mers_concs import _extract_conc_lognormal
 
 
@@ -175,8 +179,13 @@ def plot_kinetics_data(experiments, params_logK, params_kcat,
 #             plt.ioff()
 
 
+<<<<<<< HEAD
 def plot_data_conc_log(experiments, params_logK, params_kcat, alpha_list=None, E_list=None,
                        outliers=None, line_colors=['blue', 'green', 'orange', 'purple', 'red'], ls='-',
+=======
+def plot_data_conc_log(experiments, params_logK, params_kcat, alpha=1., error_E=None,
+                       line_colors=['blue', 'green', 'orange', 'purple'], ls='-',
+>>>>>>> e16ad6bbbb4c64bfe977436054fce8235c94dbc0
                        fontsize_tick=10, fontsize_label=12,
                        fig_size=(5, 3.5), dpi=80, plot_legend=True, OUTFILE=None):
     """
@@ -203,9 +212,20 @@ def plot_data_conc_log(experiments, params_logK, params_kcat, alpha_list=None, E
     OUTDIR          : optional, string, directory for saving plot
     ----------
     return plots of each experiments with the concentration of inhibitor under log10 scale
+<<<<<<< HEAD
     """    
     npoints=50
     plt.figure(figsize=fig_size, dpi=dpi)
+=======
+    """
+    if alpha is not None and np.size(np.array(alpha))==1:
+        _alpha = np.repeat(alpha, len(experiments))
+    else:
+        _alpha = np.array(alpha)
+    
+    npoints=200
+    plt.figure(figsize=fig_size)
+>>>>>>> e16ad6bbbb4c64bfe977436054fce8235c94dbc0
     for i, experiment in enumerate(experiments):
         # plt.title(experiment['figure'])
         x = experiment[experiment['x']]
@@ -213,10 +233,13 @@ def plot_data_conc_log(experiments, params_logK, params_kcat, alpha_list=None, E
         # Plot data
         if experiment['type']=='kinetics':
             plt.plot(np.log10(np.exp(x)), experiment['v']*1E9, '.', color=line_colors[i])
+<<<<<<< HEAD
 
         if outliers is not None and np.sum(outliers)>0:
             outlier = outliers[i]
             plt.plot(np.log10(np.exp(x[outlier])), experiment['v'][outlier]*1E9, color='r', ls=' ', marker='x', label='Outlier')
+=======
+>>>>>>> e16ad6bbbb4c64bfe977436054fce8235c94dbc0
 
         # Plot fit
         if experiment['x']=='logMtot':
@@ -239,6 +262,7 @@ def plot_data_conc_log(experiments, params_logK, params_kcat, alpha_list=None, E
             x = logItot
 
         if experiment['type']=='kinetics':
+<<<<<<< HEAD
             if E_list is not None:
                 dE = _dE_find_prior([None, logMtot, logStot, logItot], E_list)
                 logE = jnp.log(dE*1E-9)
@@ -252,6 +276,18 @@ def plot_data_conc_log(experiments, params_logK, params_kcat, alpha_list=None, E
 
             y_model = ReactionRate(logE, logStot, logItot, *params_logK, *params_kcat)*alpha
             plt.plot(np.log10(np.exp(logItot)), y_model*1E9, ls=ls, color=line_colors[i], 
+=======
+            if error_E is not None:
+                _error_E = _dE_find_prior([None, logMtot, logStot, logItot], error_E)
+                # logE = _extract_conc_percent_error(logMtot, _error_E)
+                logE = jnp.log(_error_E*1E-9)
+            else:
+                logE = logMtot
+
+            y_model = ReactionRate(logE, logStot, logItot, *params_logK, *params_kcat)*_alpha[i]
+
+            plt.plot(np.log10(np.exp(x)), y_model*1E9, ls=ls, color=line_colors[i],
+>>>>>>> e16ad6bbbb4c64bfe977436054fce8235c94dbc0
                      label=experiment['sub_figure'])
 
         if logItot is None:

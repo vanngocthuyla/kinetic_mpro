@@ -22,7 +22,11 @@ warnings.simplefilter(action='ignore', category=FutureWarning)
 warnings.simplefilter("ignore", UserWarning)
 warnings.simplefilter("ignore", RuntimeWarning)
 
+<<<<<<< HEAD
 from _model_mers import global_fitting
+=======
+from _model_mers_ESI import global_fitting
+>>>>>>> e16ad6bbbb4c64bfe977436054fce8235c94dbc0
 from _load_data_mers import load_data_no_inhibitor
 from _plotting import plot_data_conc_log, plotting_trace
 from _MAP_finding_mers_concs import map_finding
@@ -30,8 +34,11 @@ from _MAP_finding_mers_concs import map_finding
 from _prior_check import convert_prior_from_dict_to_list, check_prior_group
 from _params_extraction import extract_logK_n_idx, extract_kcat_n_idx
 from _trace_analysis import extract_params_from_map_and_prior
+<<<<<<< HEAD
 
 from _save_setting import save_model_setting
+=======
+>>>>>>> e16ad6bbbb4c64bfe977436054fce8235c94dbc0
 
 parser = argparse.ArgumentParser()
 
@@ -122,12 +129,20 @@ if not os.path.isfile(traces_name+'.pickle'):
         mcmc.post_warmup_state = last_state
         mcmc.run(mcmc.post_warmup_state.rng_key, experiments=expts, prior_infor=prior_infor_update, shared_params=shared_params,
                  multi_alpha=args.multi_alpha, set_lognormal_dE=args.set_lognormal_dE, dE=args.dE, 
+<<<<<<< HEAD
                  set_K_S_DS_equal_K_S_D=args.set_K_S_DS_equal_K_S_D, set_K_S_DI_equal_K_S_DS=False)
+=======
+                 multi_var=args.multi_var, set_K_S_DS_equal_K_S_D=args.set_K_S_DS_equal_K_S_D, set_K_S_DI_equal_K_S_DS=False)
+>>>>>>> e16ad6bbbb4c64bfe977436054fce8235c94dbc0
     else:
         mcmc = MCMC(kernel, num_warmup=args.nburn, num_samples=args.niters, num_chains=args.nchain, progress_bar=True)
         mcmc.run(rng_key_, experiments=expts, prior_infor=prior_infor_update, shared_params=shared_params,
                  multi_alpha=args.multi_alpha, set_lognormal_dE=args.set_lognormal_dE, dE=args.dE, 
+<<<<<<< HEAD
                  set_K_S_DS_equal_K_S_D=args.set_K_S_DS_equal_K_S_D, set_K_S_DI_equal_K_S_DS=False)
+=======
+                 multi_var=args.multi_var, set_K_S_DS_equal_K_S_D=args.set_K_S_DS_equal_K_S_D, set_K_S_DI_equal_K_S_DS=False)
+>>>>>>> e16ad6bbbb4c64bfe977436054fce8235c94dbc0
     mcmc.print_summary()
 
     print("Saving last state.")
@@ -182,16 +197,27 @@ for n in range(len(expts)):
         except: params_logK['logK_S_DS'] = params_logK['logK_S_D']
 
 if args.set_lognormal_dE and args.dE>0:
+<<<<<<< HEAD
     E_list = {key: trace[key][map_index] for key in trace.keys() if key.startswith('dE')}
 else: E_list = None
+=======
+    _error_E = {key: trace[key][map_index] for key in trace.keys() if key.startswith('dE')}
+else: _error_E = None
+>>>>>>> e16ad6bbbb4c64bfe977436054fce8235c94dbc0
 
 n = 0
 plot_data_conc_log(expts_plot_no_I, extract_logK_n_idx(params_logK, n, shared_params),
                    extract_kcat_n_idx(params_kcat, n, shared_params),
                    line_colors=['black', 'red', 'tab:brown'], ls='-.',
+<<<<<<< HEAD
                    E_list=E_list, plot_legend=True,
                    fontsize_tick=12, fontsize_label=18,
                    OUTFILE=os.path.join(args.out_dir,'ES'))
 
 ## Saving the model fitting condition
 save_model_setting(args, OUTDIR=args.out_dir, OUTFILE='setting.pickle')
+=======
+                   error_E=_error_E, plot_legend=True,
+                   fontsize_tick=12, fontsize_label=18,
+                   OUTFILE=os.path.join(args.out_dir,'ES'))
+>>>>>>> e16ad6bbbb4c64bfe977436054fce8235c94dbc0

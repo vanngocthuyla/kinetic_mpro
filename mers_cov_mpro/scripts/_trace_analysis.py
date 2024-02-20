@@ -6,6 +6,27 @@ import pickle
 import arviz as az
 from pymbar import timeseries
 
+<<<<<<< HEAD
+=======
+def _trace_ln_to_log(trace, group_by_chain=False, nchain=4):
+    """
+    Parameters:
+    ----------
+    trace        : mcmc.get_samples(group_by_chain=True)
+
+    return kinetic parameters in the log10 scale
+    """
+    trace_log = {}
+    for key in trace.keys():
+        if key.startswith('log') or key.startswith('ln'):
+            if group_by_chain: trace_log[key] = np.reshape(np.log10(np.exp(trace[key])), (nchain, int(len(trace[key])/nchain)))
+            else: trace_log[key] = np.log10(np.exp(trace[key]))
+        else:
+            if group_by_chain: trace_log[key] = np.reshape(trace[key], (nchain, int(len(trace[key])/nchain)))
+            else: trace_log[key] = trace[key]
+    return trace_log
+
+>>>>>>> e16ad6bbbb4c64bfe977436054fce8235c94dbc0
 
 def extract_samples_from_trace(trace, params, burn=0, thin=0):
     """
@@ -159,6 +180,7 @@ def extract_params_from_map_and_prior(trace, map_idx, prior_infor):
     return params_logK, params_kcat
 
 
+<<<<<<< HEAD
 def _rhat(trace, nchain=4):
     """
     Parameters:
@@ -356,10 +378,48 @@ def _trace_pymbar(trace, nskip=100, nchain=4, key_to_check=""):
     t0 = 0
     for key in key_to_check:
         trace_t = trace[key]
+=======
+def _trace_convergence(mcmc_files, out_dir, nskip=100, nchain=4, nsample=10000,
+                       key_to_check="", converged_trace_name='Converged_trace'):
+    """
+    Parameters:
+    ----------
+    mcmc_files      : all traces.pickle files from different directory
+    out_dir         : directory to save output
+    nskip           : nskip in timeseries.detect_equilibration
+    nchain          : number of chain from mcmc trace
+    nsample         : number of samples expected for the output traces.pickle
+    key_to_check    : parameters that would be check
+    ----------
+    If all the chains converged and the number of nsample lower than expected, save the new trace.
+    Otherwise, reporting that there is not enough samples after the converged point ('t0').
+    """
+    if not os.path.exists(out_dir):
+        os.mkdir(out_dir)
+
+    for mcmc_file in mcmc_files: 
+        with open(os.path.join(out_dir, "log.txt"), "a") as f:
+            print(f'Loading {mcmc_file}', file=f)
+
+    # Combining multiple traces
+    multi_trace = _combining_multi_trace(mcmc_files, nchain)
+
+    if len(key_to_check)>0:
+        for key in key_to_check:
+            assert key in multi_trace.keys(), "Please provide the correct parameter name."
+    else:
+        key_to_check = multi_trace.keys()
+    # print("Checking parameters:", key_to_check)
+
+    t0 = 0
+    for key in key_to_check:
+        trace_t = multi_trace[key]
+>>>>>>> e16ad6bbbb4c64bfe977436054fce8235c94dbc0
         _t0, g, Neff_max = timeseries.detect_equilibration(trace_t, nskip=nskip)
         if _t0 > t0:
             t0 = _t0
 
+<<<<<<< HEAD
     converged_nsample = int(len(trace_t[t0:])/nchain)
     converged_trace={}
     for key in trace.keys():
@@ -443,6 +503,32 @@ def _trace_convergence(mcmc_files, out_dir=None, nskip=100, nchain=4, expected_n
             az.summary(trace_group).to_csv(os.path.join(out_dir, "Converged_summary.csv"))
 
     return [trace, convergence_flag, nchain_update]
+=======
+    _nsample = int(len(trace_t[t0:])/nchain)
+    trace = {}
+    if _nsample < nsample:
+        print("There is still not enough", nsample, "samples. Only", _nsample, "available.")
+        convergence_flag = False
+        for key in multi_trace.keys():
+            trace[key] = multi_trace[key][t0:]
+        with open(os.path.join(out_dir, "log.txt"), "a") as f:
+            print(f"\nThere is still not enough {nsample} samples. Only {_nsample} available.", file=f)
+    else: 
+        convergence_flag = True
+        for key in multi_trace.keys():
+            trace[key] = multi_trace[key][t0:(t0+nchain*nsample)]
+        with open(os.path.join(out_dir, "log.txt"), "a") as f:
+            print(f'\nThere is {nsample} samples available.', file=f)
+
+    pickle.dump(trace, open(os.path.join(out_dir, converged_trace_name+".pickle"), "wb"))
+
+    trace_group = {}
+    for key in trace.keys():
+        trace_group[key] = np.reshape(trace[key], (nchain, int(len(trace[key])/nchain)))
+    az.summary(trace_group).to_csv(os.path.join(out_dir, "Converged_summary.csv"))
+
+    return trace, convergence_flag
+>>>>>>> e16ad6bbbb4c64bfe977436054fce8235c94dbc0
 
 
 def _combining_multi_trace(mcmc_files, nchain=4, nsample=None, params_names=None,

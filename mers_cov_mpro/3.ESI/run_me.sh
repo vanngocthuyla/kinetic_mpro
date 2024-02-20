@@ -16,4 +16,8 @@ export N_BURN=200
 
 export N_CHAIN=4
 
+<<<<<<< HEAD
 python $SCRIPT --input_file $INPUT --out_dir $OUT_DIR --running_script $RUNNING_SCRIPT --map_dir $MAP_DIR --niters $N_INTER --nburn $N_BURN --nchain $N_CHAIN --fit_E_S --fit_E_I --set_lognormal_dE --dE 0.5 --multi_var
+=======
+python $SCRIPT --input_file $INPUT --out_dir $OUT_DIR --running_script $RUNNING_SCRIPT --map_dir $MAP_DIR --niters $N_INTER --nburn $N_BURN --nchain $N_CHAIN --fit_E_S --fit_E_I --set_lognormal_dE --dE 0.5 --multi_var --multi_alpha
+>>>>>>> e16ad6bbbb4c64bfe977436054fce8235c94dbc0

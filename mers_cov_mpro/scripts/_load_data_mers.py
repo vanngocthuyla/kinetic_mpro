@@ -68,8 +68,12 @@ def load_data_no_inhibitor(df, multi_var=False):
         data_rate[i] = [np.array(rate), np.array(kinetics_logMtot), np.array(kinetics_logStot), None]
 
     multi_experiments.append({'enzyme': 'mers', 'figure': 'No Inhibitor', 'index': 'ES',
+<<<<<<< HEAD
                               'plate' : np.repeat('ES', len(plate_list)), 
                               'kinetics': data_rate, 'AUC': None, 'ICE': None,
+=======
+                              'kinetics': data_rate, 'AUC': None, 'ICE': None
+>>>>>>> e16ad6bbbb4c64bfe977436054fce8235c94dbc0
                               })
     if multi_var:
         return multi_experiments, experiment
@@ -86,7 +90,10 @@ def load_data_no_inhibitor(df, multi_var=False):
 
         one_experiment = []
         one_experiment.append({'enzyme': 'mers', 'figure': 'No Inhibitor', 'index': 'ES',
+<<<<<<< HEAD
                                'plate' : 'ES',
+=======
+>>>>>>> e16ad6bbbb4c64bfe977436054fce8235c94dbc0
                                'kinetics': data_rate, 'AUC': None, 'ICE': None
                                })
 
@@ -145,8 +152,12 @@ def load_data_one_inhibitor(df, multi_var=False, name=None, min_points=8):
             logItot = np.array([np.log(conc) if conc > 0 else np.log(1E-30) for conc in Itot])
 
             if len(np.unique(Itot))>1:
+<<<<<<< HEAD
                 experiment.append({'type':'kinetics', 'enzyme': 'mers', 'plate': plate_i,
                                    'index': name[7:12], #'ESI',
+=======
+                experiment.append({'type':'kinetics', 'enzyme': 'mers', 'index': name[7:12], #'ESI',
+>>>>>>> e16ad6bbbb4c64bfe977436054fce8235c94dbc0
                                    'figure': name, 'sub_figure': f'E:{conc_enzyme}nM, S:{int(np.unique(Stot)[0]*1E9)}nM',
                                    'logMtot': logMtot, # M
                                    'logStot': logStot, # M
@@ -159,8 +170,12 @@ def load_data_one_inhibitor(df, multi_var=False, name=None, min_points=8):
                 rate.append(v)
 
             elif len(np.unique(Itot))==1 and len(np.unique(Stot))>1: # Fixed inhibitor (or no inhbitor)
+<<<<<<< HEAD
                 experiment.append({'type':'kinetics', 'enzyme':'mers', 'plate': plate_i,
                                    'index':name[7:12], #'index':'ESI',
+=======
+                experiment.append({'type':'kinetics', 'enzyme': 'mers', 'index':name[7:12], #'index':'ESI',
+>>>>>>> e16ad6bbbb4c64bfe977436054fce8235c94dbc0
                                    'figure': plate_i[:-5], 'sub_figure': f'E:{conc_enzyme}nM',
                                    'logMtot': logMtot, # M
                                    'logStot': logStot, # M
@@ -186,7 +201,10 @@ def load_data_one_inhibitor(df, multi_var=False, name=None, min_points=8):
         data_rate[i] = [rate, kinetics_logMtot, kinetics_logStot, kinetics_logItot]
 
     multi_experiments.append({'enzyme': 'mers', 'figure': name, 'index':name[7:12], #'index':'ESI',
+<<<<<<< HEAD
                               'plate' : plate_list, 
+=======
+>>>>>>> e16ad6bbbb4c64bfe977436054fce8235c94dbc0
                               'kinetics': data_rate, 'AUC': None, 'ICE': None
                               })
     if multi_var:
@@ -204,9 +222,16 @@ def load_data_one_inhibitor(df, multi_var=False, name=None, min_points=8):
 
         data_rate = [rate, logMtot, logStot, logItot]
         one_experiment = []
+<<<<<<< HEAD
         one_experiment.append({'enzyme': 'mers', 'index': name[7:12], #'index':'ESI',
                                'figure': name, 'plate' : name[7:12],
                                'kinetics': data_rate, 'AUC': None, 'ICE': None
+=======
+        one_experiment.append({'enzyme': 'mers', 'index':name[7:12], #'index':'ESI',
+                               'figure': name,
+                               'kinetics': data_rate,
+                               'AUC': None, 'ICE': None
+>>>>>>> e16ad6bbbb4c64bfe977436054fce8235c94dbc0
                                })
 
         return one_experiment, experiment

@@ -8,7 +8,11 @@ export OUT_DIR="/home/exouser/python/mers_mpro/1.ES"
 
 export N_INTER=1000
 
+<<<<<<< HEAD
 export N_BURN=1000
+=======
+export N_BURN=200
+>>>>>>> e16ad6bbbb4c64bfe977436054fce8235c94dbc0
 
 export N_CHAIN=4
 

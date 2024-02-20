@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 import warnings
 import numpy as np
 import sys
@@ -183,4 +184,174 @@ for i in range(len(inhibitor_name)):
     plot_data_conc_log(expts_plot[start:end], extract_logK_n_idx(params_logK, n, shared_params),
                        extract_kcat_n_idx(params_kcat, n, shared_params),
                        alpha_list=alpha_list, E_list=E_list,
+=======
+import warnings
+import numpy as np
+import sys
+import os
+import argparse
+
+import pickle
+import arviz as az
+import pandas as pd
+
+import jax
+import jax.numpy as jnp
+
+warnings.simplefilter(action='ignore', category=FutureWarning)
+warnings.simplefilter("ignore", UserWarning)
+warnings.simplefilter("ignore", RuntimeWarning)
+
+from _load_data_mers import load_data_no_inhibitor, load_data_one_inhibitor
+from _plotting import plot_data_conc_log
+from _MAP_finding_mers_concs import map_finding
+
+from _prior_check import convert_prior_from_dict_to_list, check_prior_group
+from _params_extraction import extract_logK_n_idx, extract_kcat_n_idx
+from _trace_analysis import extract_params_from_map_and_prior, extract_params_from_trace_and_prior
+
+parser = argparse.ArgumentParser()
+
+parser.add_argument( "--kinetic_file",                  type=str,               default="")
+parser.add_argument( "--mcmc_file",                     type=str,               default="")
+parser.add_argument( "--out_dir",                       type=str,               default="")
+parser.add_argument( "--name_inhibitor",                type=str,               default="")
+parser.add_argument( "--prior_infor",                   type=str,               default="")
+
+parser.add_argument( "--fit_E_S",                       action="store_true",    default=False)
+parser.add_argument( "--fit_E_I",                       action="store_true",    default=False)
+
+parser.add_argument( "--global_fitting",                action="store_true",    default=False)
+
+parser.add_argument( "--multi_var",                     action="store_true",    default=False)
+parser.add_argument( "--multi_alpha",                   action="store_true",    default=False)
+parser.add_argument( "--set_lognormal_dE",              action="store_true",    default=False)
+parser.add_argument( "--dE",                            type=float,             default=0.1)
+
+parser.add_argument( "--set_K_S_DS_equal_K_S_D",        action="store_true",    default=False)
+parser.add_argument( "--set_K_S_DI_equal_K_S_DS",       action="store_true",    default=False)
+
+parser.add_argument( "--niters",                        type=int,               default=0)
+parser.add_argument( "--nchain",                        type=int,               default=4)
+
+parser.add_argument( "--nsamples",                      type=str,               default=None)
+
+args = parser.parse_args()
+
+# Loading experimental information
+df_mers = pd.read_csv(args.kinetic_file)
+if len(args.name_inhibitor)>0:
+    inhibitor_name = np.array([args.name_inhibitor.split()+'-001'])
+else:
+    inhibitor_name = np.unique(df_mers[df_mers['Inhibitor (nM)']>0.0]['Inhibitor_ID'])
+
+expts_no_I, expts_plot_no_I = load_data_no_inhibitor(df_mers[df_mers['Inhibitor (nM)']==0.0], 
+                                                     multi_var=args.multi_var)
+expts = expts_no_I
+expts_plot = expts_plot_no_I
+for i, name in enumerate(inhibitor_name):
+    expts_, expts_plot_ = load_data_one_inhibitor(df_mers[df_mers['Inhibitor_ID']==name],
+                                                  multi_var=args.multi_var)
+    expts = expts + expts_
+    expts_plot = expts_plot + expts_plot_
+
+shared_params = None
+
+trace = pickle.load(open(args.mcmc_file, "rb"))
+
+if args.global_fitting:
+    assert os.path.isfile(args.prior_infor), "Please provide the prior information."
+    prior = pickle.load(open(args.prior_infor, "rb"))
+
+    assert (args.set_K_S_DS_equal_K_S_D and 'logK_S_DS' in prior.keys()) or (args.set_K_S_DI_equal_K_S_DS and 'logK_S_DI' in prior.keys()), "The constraint was incorrect."
+
+    prior_infor = convert_prior_from_dict_to_list(prior, args.fit_E_S, args.fit_E_I)
+    prior_infor_update = check_prior_group(prior_infor, len(expts))
+    pd.DataFrame(prior_infor_update).to_csv(os.path.join(args.out_dir, "Prior_infor.csv"), index=False)
+    print("Prior information: \n", pd.DataFrame(prior_infor_update))
+
+    trace_map = trace.copy()
+    if args.niters == 0:
+        key = list(trace.keys())
+        niters = int(len(trace[key[0]])/args.nchain)
+
+    for name in ['logK_I_M', 'logK_I_D', 'logK_I_DI', 'logK_S_DI']:
+        if f'{name}:1' in trace_map.keys():
+            trace_map[f'{name}:0'] = trace_map[f'{name}:1']
+    trace_map['kcat_DSI:0'] = jnp.zeros(args.nchain*niters)
+
+    [map_index, map_params, log_probs] = map_finding(trace_map, expts, prior_infor_update, 
+                                                     set_lognormal_dE=args.set_lognormal_dE, dE=args.dE,
+                                                     set_K_S_DS_equal_K_S_D=args.set_K_S_DS_equal_K_S_D,
+                                                     set_K_S_DI_equal_K_S_DS=args.set_K_S_DI_equal_K_S_DS)
+
+    if args.set_lognormal_dE and args.dE>0:
+        _error_E = {key: trace[key][map_index] for key in trace.keys() if key.startswith('dE')}
+    else: _error_E = None
+
+    no_expt = 4
+    _alpha = [trace[f'alpha:ESI:{i}'][map_index] for i in range(no_expt)]
+
+else:
+    # Loading prior information
+    assert os.path.isfile(args.prior_infor), "Please provide the prior information."
+    prior = pickle.load(open(args.prior_infor, "rb"))
+    prior_infor = convert_prior_from_dict_to_list(prior, args.fit_E_S, args.fit_E_I)
+    prior_infor_update = check_prior_group(prior_infor, len(expts))
+    pd.DataFrame(prior_infor_update).to_csv(os.path.join(args.out_dir, "Prior_infor.csv"), index=False)
+    print("Prior information: \n", pd.DataFrame(prior_infor_update))
+    
+    E_list = {}
+    E_list['dE:100'] = 0.618
+    E_list['dE:50'] = 0.314
+    E_list['dE:25'] = 0.073
+
+    _alpha = jnp.array([0.791, 1.183, 0.981, 1.244])
+    alpha_list = {}
+    alpha_list['alpha:0'] = _alpha[0]
+    alpha_list['alpha:1'] = _alpha[1]
+    alpha_list['alpha:2'] = _alpha[2]
+    alpha_list['alpha:3'] = _alpha[3]
+
+    [map_index, map_params, log_probs] = map_finding(trace, expts, prior_infor=prior_infor_update, alpha_list=alpha_list, E_list=E_list, 
+                                                     set_lognormal_dE=args.set_lognormal_dE, dE=args.dE)
+
+with open(os.path.join(args.out_dir, "map.txt"), "w") as f:
+    print("MAP index:" + str(map_index), file=f)
+    print("\nKinetics parameters:", file=f)
+    for key in trace.keys():
+        print(key, ': %.3f' %trace[key][map_index], file=f)
+
+pickle.dump(log_probs, open(os.path.join(args.out_dir, 'log_probs.pickle'), "wb"))
+
+map_values = {}
+for key in trace.keys():
+    map_values[key] = trace[key][map_index]
+pickle.dump(map_values, open(os.path.join(args.out_dir, 'map.pickle'), "wb"))
+
+## Fitting plot
+params_logK, params_kcat = extract_params_from_map_and_prior(trace, map_index, prior_infor_update)
+
+for n in range(len(expts)):
+    if args.set_K_S_DS_equal_K_S_D:
+        try: params_logK[f'logK_S_DS:{n}'] = params_logK[f'logK_S_D:{n}']
+        except: params_logK['logK_S_DS'] = params_logK['logK_S_D']
+    if args.set_K_S_DI_equal_K_S_DS:
+        try: params_logK[f'logK_S_DI:{n}'] = params_logK[f'logK_S_DS:{n}']
+        except: params_logK['logK_S_DI'] = params_logK['logK_S_DS']
+
+n = 0
+plot_data_conc_log(expts_plot_no_I, extract_logK_n_idx(params_logK, n, shared_params),
+                   extract_kcat_n_idx(params_kcat, n, shared_params),
+                   line_colors=['black', 'red', 'tab:brown'], ls='-.',
+                   error_E=_error_E, plot_legend=True,
+                   OUTFILE=os.path.join(args.out_dir, 'ES'))
+no_expt = 4
+_alpha = [trace[f'alpha:ESI:{i}'][map_index] for i in range(no_expt)]
+for i in range(len(inhibitor_name)):
+    n = i + 1
+    plot_data_conc_log(expts_plot[(i*no_expt+3):(i*no_expt+3+no_expt)], extract_logK_n_idx(params_logK, n, shared_params),
+                       extract_kcat_n_idx(params_kcat, n, shared_params),
+                       alpha=_alpha, error_E=_error_E,
+>>>>>>> e16ad6bbbb4c64bfe977436054fce8235c94dbc0
                        OUTFILE=os.path.join(args.out_dir, 'ESI_'+str(i)))

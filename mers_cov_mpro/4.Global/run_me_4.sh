@@ -12,7 +12,11 @@ export LAST_RUN_DIR="/home/exouser/python/mers_mpro/4.Global/sampling_3"
 
 export MAP_FILE="/home/exouser/python/mers_mpro/4.Global/sampling_1/map_sampling.pickle"
 
+<<<<<<< HEAD
 export N_INTER=500
+=======
+export N_INTER=1000
+>>>>>>> e16ad6bbbb4c64bfe977436054fce8235c94dbc0
 
 export N_BURN=0
 
