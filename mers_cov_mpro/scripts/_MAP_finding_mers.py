@@ -74,11 +74,7 @@ def _log_priors(mcmc_trace, experiments, prior_infor, nsamples=None,
 
                 # If each dataset has its own inhibitor concentration error
                 if f'I0:{idx_expt}:{n}' in mcmc_trace.keys():
-<<<<<<< HEAD
                     log_priors += jnp.log(_lognormal_pdf(mcmc_trace[f'I0:{idx_expt}:{n}'][: nsamples], jnp.exp(jnp.max(logItot)), jnp.exp(jnp.max(logItot))*dI))
-=======
-                    log_priors += jnp.log(_lognormal_pdf(mcmc_trace[f'I0:{idx_expt}:{n}'][: nsamples], jnp.exp(jnp.max(logItot)), dI))
->>>>>>> e16ad6bbbb4c64bfe977436054fce8235c94dbc0
                 
                 # If all datasets shares one inhibitor concentration error, combining all logItot
                 elif f'I0:{idx_expt}' in mcmc_trace.keys():
@@ -87,11 +83,7 @@ def _log_priors(mcmc_trace, experiments, prior_infor, nsamples=None,
             # Calculating log_prior of combined logItot
             if len(_all_logItot)>0:
                 max_logItot = jnp.max(np.concatenate(_all_logItot))
-<<<<<<< HEAD
                 log_priors += jnp.log(_lognormal_pdf(mcmc_trace[f'I0:{idx_expt}'][: nsamples], jnp.exp(max_logItot), jnp.exp(max_logItot)*dI))
-=======
-                log_priors += jnp.log(_lognormal_pdf(mcmc_trace[f'I0:{idx_expt}'][: nsamples], max_logItot, dI))
->>>>>>> e16ad6bbbb4c64bfe977436054fce8235c94dbc0
         else:
             data_rate = expt['kinetics']
             # log_prior of sigma
@@ -101,11 +93,7 @@ def _log_priors(mcmc_trace, experiments, prior_infor, nsamples=None,
             # Log_prior of uncertainty for concentration if lognormal
             [rate, logMtot, logStot, logItot] = data_rate
             if f'I0:{idx_expt}' in mcmc_trace.keys():
-<<<<<<< HEAD
                 log_priors += jnp.log(_lognormal_pdf(mcmc_trace[f'I0:{idx_expt}'][: nsamples], jnp.exp(jnp.max(logItot)), jnp.exp(jnp.max(logItot))*dI))
-=======
-                log_priors += jnp.log(_lognormal_pdf(mcmc_trace[f'I0:{idx_expt}'][: nsamples], jnp.exp(jnp.max(logItot)), dI))
->>>>>>> e16ad6bbbb4c64bfe977436054fce8235c94dbc0
 
     for key in mcmc_trace.keys():
         # log_prior of normalization factor:
@@ -116,11 +104,7 @@ def _log_priors(mcmc_trace, experiments, prior_infor, nsamples=None,
             # If dE follow lognormal
             if set_lognormal_dE and dE>0:
                 conc = int(key[3:])
-<<<<<<< HEAD
                 log_priors = jnp.log(_lognormal_pdf(mcmc_trace[key][: nsamples], conc, dE*conc))
-=======
-                log_priors = jnp.log(_lognormal_pdf(mcmc_trace[key][: nsamples], conc, dE))
->>>>>>> e16ad6bbbb4c64bfe977436054fce8235c94dbc0
             # If dE follow uniform
             elif dE>0 and dE<1: 
                 log_priors += jnp.log(_uniform_pdf(mcmc_trace[key][: nsamples], 0, dE))

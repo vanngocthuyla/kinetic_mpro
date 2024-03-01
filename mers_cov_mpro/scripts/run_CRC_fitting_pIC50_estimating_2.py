@@ -63,10 +63,9 @@ parser.add_argument( "--nchain",                        type=int,               
 parser.add_argument( "--random_key",                    type=int,               default=0)
 
 parser.add_argument( "--outlier_removal",               action="store_true",    default=False)
-parser.add_argument( "--converged_samples",             type=int,               default=500)
-parser.add_argument( "--no_running",                    type=int,               default=1)
-parser.add_argument( "--exclude_first_trace",           action="store_true",    default=True)
+parser.add_argument( "--exclude_first_trace",           action="store_true",    default=False)
 parser.add_argument( "--key_to_check",                  type=str,               default="")
+parser.add_argument( "--converged_samples",             type=int,               default=500)
 
 parser.add_argument( "--enzyme_conc_nM",                type=int,               default="100")
 parser.add_argument( "--inhibitor_conc_nM",             type=int,               default="1350")
@@ -99,6 +98,7 @@ else:
 
 if len(args.map_file)>0 and os.path.isfile(args.map_file):
     map_sampling = pickle.load(open(args.map_file, "rb"))
+    logK_dE_alpha = map_sampling
 
     if args.set_K_S_DS_equal_K_S_D:
         map_sampling['logK_S_DS'] = map_sampling['logK_S_D']
@@ -108,6 +108,8 @@ if len(args.map_file)>0 and os.path.isfile(args.map_file):
     for key in ['logKd', 'logK_S_M', 'logK_S_D', 'logK_S_DS',
                 'kcat_DS', 'kcat_DSS']:
         assert key in map_sampling.keys(), f"Please provide {key} in map_file."
+else:
+    logK_dE_alpha = None
 
 ### Prior
 logKd_min = -27.63
@@ -141,12 +143,6 @@ prior_infor = convert_prior_from_dict_to_list(prior, args.fit_E_S, args.fit_E_I)
 prior_infor_update = check_prior_group(prior_infor, len(expts))
 pd.DataFrame(prior_infor_update).to_csv(os.path.join(args.out_dir, "Prior_infor.csv"), index=False)
 
-# print("Prior information: \n", pd.DataFrame(prior_infor_update), "\n")
-
-# E_list = {}
-# for key in ['dE:100', 'dE:50', 'dE:25']:
-#     E_list[key] = map_sampling[key]
-
 ### Other information for fitting
 if args.fit_E_S and args.fit_E_I: traces_name = "traces"
 elif args.fit_E_S: traces_name = "traces_E_S"
@@ -168,15 +164,6 @@ logDtot = np.ones(n_points)*init_logDtot
 logStot = np.ones(n_points)*init_logStot
 logItot = np.linspace(np.log(min_conc), np.log(max_conc), n_points)
 
-if len(args.map_file)>0 and os.path.isfile(args.map_file):
-    init_values = pickle.load(open(args.map_file, "rb"))
-    # print("Initial values:", init_values, "\n")
-    kernel = NUTS(model=CRC_EI_fitting, init_strategy=init_to_value(values=init_values))
-    logK_dE_alpha = init_values
-else:
-    kernel = NUTS(CRC_EI_fitting)
-    logK_dE_alpha = None
-
 if len(args.key_to_check)>0:
     key_to_check = args.key_to_check.split()
 else:
@@ -185,7 +172,7 @@ else:
 if not os.path.isdir(os.path.join(args.out_dir, 'Convergence')):
     os.mkdir(os.path.join(args.out_dir, 'Convergence'))
 
-no_limit = args.no_running
+no_limit = 10
 no_running = 1
 
 print(f"\nAnalyzing {inhibitor_name[0]}")
@@ -209,20 +196,35 @@ while no_running<=no_limit:
         with open(os.path.join(expt_dir, "log.txt"), "a") as f:
             print(mes, file=f)
 
-        if no_running>2 and os.path.isfile(os.path.join(last_dir, "Last_state.pickle")):
-            last_state = pickle.load(open(os.path.join(last_dir, "Last_state.pickle"), "rb"))
-            mes = "Keep running from last state."
-            print(mes)
-            with open(os.path.join(expt_dir, "log.txt"), "a") as f:
-                print(mes, file=f)
+        if no_running>1 and os.path.isfile(os.path.join(last_dir, "Last_state.pickle")):
+            if no_running==2 and args.exclude_first_trace:
+                init_values = pickle.load(open(os.path.join(last_dir, "map.pickle"), 'rb'))
+                mes = f"Initial values: {init_values}"
+                print(mes)
+                with open(os.path.join(expt_dir, "log.txt"), "a") as f:
+                    print(mes, file=f)
 
-            mcmc = MCMC(kernel, num_warmup=args.nburn, num_samples=args.niters, num_chains=args.nchain, progress_bar=True)
-            mcmc.post_warmup_state = last_state
-            mcmc.run(mcmc.post_warmup_state.rng_key,
-                     experiments=expts, prior_infor=prior_infor_update, shared_params=shared_params,
-                     multi_alpha=args.multi_alpha, set_lognormal_dE=args.set_lognormal_dE, dE=args.dE, 
-                     set_K_S_DS_equal_K_S_D=args.set_K_S_DS_equal_K_S_D, set_K_S_DI_equal_K_S_DS=args.set_K_S_DI_equal_K_S_DS)
+                kernel = NUTS(model=CRC_EI_fitting, init_strategy=init_to_value(values=init_values))
+                mcmc = MCMC(kernel, num_warmup=args.nburn, num_samples=args.niters, num_chains=args.nchain, progress_bar=True)
+                mcmc.run(rng_key_, experiments=expts, prior_infor=prior_infor_update, shared_params=shared_params,
+                         multi_alpha=args.multi_alpha, set_lognormal_dE=args.set_lognormal_dE, dE=args.dE, 
+                         set_K_S_DS_equal_K_S_D=args.set_K_S_DS_equal_K_S_D, set_K_S_DI_equal_K_S_DS=args.set_K_S_DI_equal_K_S_DS)
+            else:
+                last_state = pickle.load(open(os.path.join(last_dir, "Last_state.pickle"), "rb"))
+                mes = "Keep running from last state."
+                print(mes)
+                with open(os.path.join(expt_dir, "log.txt"), "a") as f:
+                    print(mes, file=f)
+
+                kernel = NUTS(CRC_EI_fitting)
+                mcmc = MCMC(kernel, num_warmup=args.nburn, num_samples=args.niters, num_chains=args.nchain, progress_bar=True)
+                mcmc.post_warmup_state = last_state
+                mcmc.run(mcmc.post_warmup_state.rng_key,
+                         experiments=expts, prior_infor=prior_infor_update, shared_params=shared_params,
+                         multi_alpha=args.multi_alpha, set_lognormal_dE=args.set_lognormal_dE, dE=args.dE, 
+                         set_K_S_DS_equal_K_S_D=args.set_K_S_DS_equal_K_S_D, set_K_S_DI_equal_K_S_DS=args.set_K_S_DI_equal_K_S_DS)
         else:
+            kernel = NUTS(CRC_EI_fitting)
             mcmc = MCMC(kernel, num_warmup=args.nburn, num_samples=args.niters, num_chains=args.nchain, progress_bar=True)
             mcmc.run(rng_key_, experiments=expts, prior_infor=prior_infor_update, shared_params=shared_params,
                      multi_alpha=args.multi_alpha, set_lognormal_dE=args.set_lognormal_dE, dE=args.dE, 
@@ -324,7 +326,7 @@ while no_running<=no_limit:
                 print(mes, file=f)
             
             pickle.dump(trace, open(os.path.join(args.out_dir, 'Convergence', name_expt, "traces.pickle"), "wb"))
-            plotting_trace(trace, os.path.join(args.out_dir, 'Convergence', name_expt), args.nchain)
+            plotting_trace(trace, os.path.join(args.out_dir, 'Convergence', name_expt), nchain_updated)
             
             break
 

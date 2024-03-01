@@ -97,11 +97,7 @@ def _extract_logK_kcat(mcmc_trace, idx, nsamples, all_params_logK_name=None, all
 def _map_adjust_trace(mcmc_trace, experiments, prior_infor, set_K_I_M_equal_K_S_M=False,
                       set_K_S_DS_equal_K_S_D=False, set_K_S_DI_equal_K_S_DS=False,
                       set_kcat_DSS_equal_kcat_DS=False, set_kcat_DSI_equal_kcat_DS=False, 
-<<<<<<< HEAD
                       set_kcat_DSI_equal_kcat_DSS=False, show_progress=True):
-=======
-                      set_kcat_DSI_equal_kcat_DSS=False):
->>>>>>> e16ad6bbbb4c64bfe977436054fce8235c94dbc0
 
     """
     Adjusting mcmc_trace based on constrains and prior information
@@ -175,11 +171,7 @@ def _map_adjust_trace(mcmc_trace, experiments, prior_infor, set_K_I_M_equal_K_S_
             for n in range(n_enzymes):
                 mcmc_trace_update[f'kcat_DSI:{n}'] = mcmc_trace_update[f'kcat_DSS:{n}']
     
-<<<<<<< HEAD
     if len(mcmc_trace_update.keys())>len(keys) and show_progress:
-=======
-    if len(mcmc_trace_update.keys())>len(keys):
->>>>>>> e16ad6bbbb4c64bfe977436054fce8235c94dbc0
         print("Adjusted trace with keys: ", mcmc_trace_update.keys())
 
     return mcmc_trace_update

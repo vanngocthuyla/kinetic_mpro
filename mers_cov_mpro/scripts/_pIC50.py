@@ -181,22 +181,26 @@ def parameter_estimation(data, theta=None, variances=None, itnmax=100, tol=1e-4)
 
     if theta is None:
         theta = [min_y, max_y, data['x'][np.argmin(np.square(data['y']-np.mean(data['y'])))], 1.0]
-        upper = [min_y + 0.25*range_y, max_y + 0.25*range_y, 20, 20]
+        upper = [min_y + 0.25*range_y, max_y + 0.25*range_y, 0, 20]
         lower = [min_y - 0.25*range_y, max_y - 0.25*range_y, -20, -20]
     else:
-        upper = [theta[0] + 0.25*range_y, theta[1] + 0.25*range_y, 20, 20]
+        upper = [theta[0] + 0.25*range_y, theta[1] + 0.25*range_y, 0, 20]
         lower = [theta[0] - 0.25*range_y, theta[1] - 0.25*range_y, -20, -20]
 
-    fit_f, var_matrix = curve_fit(f_curve_vec, xdata=np.array(data['x']), ydata=np.array(data['y']),
-                                  absolute_sigma=True, p0=theta,
-                                  bounds=(lower, upper))
+    fit_f, var_matrix, _, mes, ier = curve_fit(f_curve_vec, xdata=np.array(data['x']), ydata=np.array(data['y']),
+                                               absolute_sigma=True, p0=theta, 
+                                               bounds=(lower, upper), full_output=True)
 
     # Estimate ASE for theta
     y_hat = f_curve_vec(data['x'], *fit_f)
     sigma = np.sqrt(np.sum((y_hat - data['y'])**2)/(len(y_hat)-4))
     ASE = np.sqrt(np.diag(var_matrix))*sigma #unscale_SE*sigma
 
-    mle = [fit_f, ASE, np.array([sigma**2])]
+    if ier in [1, 2, 3, 4]:
+        mle = [fit_f, ASE, np.array([sigma**2])]
+    else:
+        fit_f = ASE = [0, 0, 0, 0]
+        mle = [fit_f, ASE, None]
 
     return mle
 
@@ -237,13 +241,13 @@ def f_parameter_estimation(x, y):
     range_y = max_y - min_y
 
     theta0 = [min_y, max_y, x[np.argmin(np.square(y-np.mean(y)))], 1.0]
-    upper = [min_y + 0.25*range_y, max_y + 0.25*range_y, 20, 20]
+    upper = [min_y + 0.25*range_y, max_y + 0.25*range_y, 0, 20]
     lower = [min_y - 0.25*range_y, max_y - 0.25*range_y, -20, -20]
 
     try:
-        res, var_matrix = curve_fit(f_curve_vec, xdata=x, ydata=y, absolute_sigma=True, p0=theta0,
-                                    bounds=(lower, upper))
-        if res[3]>0:
+        res, var_matrix, _, mes, ier = curve_fit(f_curve_vec, xdata=x, ydata=y, absolute_sigma=True, p0=theta0,
+                                                 bounds=(lower, upper), full_output=True)
+        if ier in [1, 2, 3, 4]:
             return res[2], res[3]
         else: 
             return 0, 0
@@ -264,12 +268,12 @@ def _adjust_trace(dat, logK_dE_alpha):
     """ 
     dat.insert(3, 'logK_S_DS', logK_dE_alpha['logK_S_DS']*np.ones(len(dat)))
     dat.insert(3, 'logK_S_D', logK_dE_alpha['logK_S_D']*np.ones(len(dat)))
-    dat.insert(3, 'logK_S_M', logK_dE_alpha['logK_S_M']*np.ones(len(dat)))
+    # dat.insert(3, 'logK_S_M', logK_dE_alpha['logK_S_M']*np.ones(len(dat)))
     dat.insert(3, 'logKd', logK_dE_alpha['logKd']*np.ones(len(dat)))
 
     dat.insert(2, 'kcat_DSS', logK_dE_alpha['kcat_DSS']*np.ones(len(dat)))
     dat.insert(2, 'kcat_DS', logK_dE_alpha['kcat_DS']*np.ones(len(dat)))
-    dat.insert(2, 'kcat_MS', np.zeros(len(dat)))
+    # dat.insert(2, 'kcat_MS', np.zeros(len(dat)))
     return dat
 
 
@@ -362,16 +366,19 @@ def _table_pIC50_hill(inhibitor_list, mcmc_dir, logDtot, logStot, logItot, logK_
             sns.kdeplot(data=df[df.hill>0], x='pIC50', shade=True, alpha=0.1);
             plt.savefig(os.path.join(OUTDIR, 'Plot', inhibitor_name))
 
-        df_inhibitor = df[['logK_I_M', 'logK_I_D', 'logK_I_DI', 'logK_S_DI', 'pIC50', 'hill']]
+        df_inhibitor = df[['logK_I_D', 'logK_I_DI', 'logK_S_DI', 'pIC50', 'hill']]
         df_inhibitor = df_inhibitor[df_inhibitor.hill>0]
+
+        del df
+
         table_mean.insert(len(table_mean.columns), inhibitor_name, df_inhibitor.median())
         table_std.insert(len(table_std.columns), inhibitor_name, df_inhibitor.std())
 
     table_mean = table_mean.T
-    table_std = table_std.T.rename(columns={'logK_I_M': 'logK_I_M_std', 'logK_I_D': 'logK_I_D_std', 
-                                            'logK_I_DI': 'logK_I_DI_std', 'logK_S_DI': 'logK_S_DI_std', 
+    table_std = table_std.T.rename(columns={'logK_I_D': 'logK_I_D_std', 'logK_I_DI': 'logK_I_DI_std', 'logK_S_DI': 'logK_S_DI_std', 
                                             'pIC50': 'pIC50_std', 'hill': 'hill_std'})
     table = pd.concat([table_mean, table_std], axis=1)
+
     return table
 
 
@@ -413,8 +420,10 @@ def _table_pIC50_hill_find_conc(inhibitor_list, mcmc_dir, logDtot, logStot, logI
         df.insert(len(df.columns), 'pIC50', pIC50_list)
         df.insert(len(df.columns), 'hill', hill_list)
 
-        df_inhibitor = df[['logK_I_M', 'logK_I_D', 'logK_I_DI', 'logK_S_DI', 'pIC50', 'hill']]
+        df_inhibitor = df[['logK_I_D', 'logK_I_DI', 'logK_S_DI', 'pIC50', 'hill']]
         df_inhibitor = df_inhibitor[df_inhibitor.hill>0]
+
+        del df
         
         return np.median(df_inhibitor.pIC50), np.std(df_inhibitor.pIC50), np.median(df_inhibitor.hill), np.std(df_inhibitor.hill)
 

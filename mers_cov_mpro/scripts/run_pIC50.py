@@ -1,3 +1,9 @@
+"""
+Estimating the pIC50 for a list of inhibitor giving their traces.pickle files in mcmc_dir.
+The results showed a table of enzyme-inhibitor parameters, pIC50, hill slope, and some message
+about the curves (trending, noise).
+"""
+
 import warnings
 import numpy as np
 import sys
@@ -31,7 +37,7 @@ parser.add_argument( "--logK_dE_alpha_file",            type=str,               
 
 parser.add_argument( "--multi_var",                     action="store_true",    default=True)
 parser.add_argument( "--enzyme_conc_nM",                type=int,               default="100")
-parser.add_argument( "--inhibitor_conc_nM",             type=int,               default="1350")
+parser.add_argument( "--substrate_conc_nM",             type=int,               default="1350")
 
 parser.add_argument( "--set_K_S_DS_equal_K_S_D",        action="store_true",    default=False)
 parser.add_argument( "--set_K_S_DI_equal_K_S_DS",       action="store_true",    default=False)
@@ -54,14 +60,13 @@ if len(args.logK_dE_alpha_file)>0 and os.path.isfile(args.logK_dE_alpha_file):
     if args.set_K_S_DI_equal_K_S_DS:
         logK_dE_alpha['logK_S_DI'] = logK_dE_alpha['logK_S_DS']
 
-    for key in ['logKd', 'logK_S_M', 'logK_S_D', 'logK_S_DS',
-                'kcat_DS', 'kcat_DSS']:
+    for key in ['logKd', 'logK_S_D', 'logK_S_DS', 'kcat_DS', 'kcat_DSS']:
         assert key in logK_dE_alpha.keys(), f"Please provide {key} in logK_dE_alpha_file."
 else:
     logK_dE_alpha = None
 
 init_logMtot = np.log(args.enzyme_conc_nM*1E-9)
-init_logStot = np.log(args.inhibitor_conc_nM*1E-9)
+init_logStot = np.log(args.substrate_conc_nM*1E-9)
 init_logDtot = init_logMtot-np.log(2)
 
 n_points = 50
@@ -107,17 +112,14 @@ for n, inhibitor in enumerate(inhibitor_list):
     for index, row in df.iterrows():
         logKd = row.logKd
         # Substrate binding to enzyme
-        logK_S_M = row.logK_S_M
         logK_S_D = row.logK_S_D
         logK_S_DS = row.logK_S_DS
         # Inhibitor binding to enzyme
-        logK_I_M = row.logK_I_M
         logK_I_D = row.logK_I_D
         logK_I_DI = row.logK_I_DI
 
         logK_S_DI = row.logK_S_DI
         # rate parameters
-        kcat_MS = 0. #row.kcat_MS
         kcat_DS = row.kcat_DS
         kcat_DSI = row.kcat_DSI
         kcat_DSS = row.kcat_DSS
@@ -150,7 +152,7 @@ for n, inhibitor in enumerate(inhibitor_list):
     sns.kdeplot(data=df[df.hill>0], x='pIC50', shade=True, alpha=0.1);
     plt.savefig(os.path.join('Plot', inhibitor_name))
 
-    df_inhibitor = df[['logK_I_M', 'logK_I_D', 'logK_I_DI', 'logK_S_DI', 'pIC50', 'hill']]
+    df_inhibitor = df[['logK_I_D', 'logK_I_DI', 'logK_S_DI', 'pIC50', 'hill']]
     df_inhibitor = df_inhibitor[df_inhibitor.hill>0]
     table_mean.insert(len(table_mean.columns), inhibitor_name, df_inhibitor.median())
     table_std.insert(len(table_std.columns), inhibitor_name, df_inhibitor.std())
@@ -167,8 +169,7 @@ for n, inhibitor in enumerate(inhibitor_list):
     table_mes.insert(len(table_mes.columns), inhibitor_name, [mes_noise, mes_trend])
 
 table_mean = table_mean.T
-table_std = table_std.T.rename(columns={'logK_I_M': 'logK_I_M_std', 'logK_I_D': 'logK_I_D_std', 
-                                        'logK_I_DI': 'logK_I_DI_std', 'logK_S_DI': 'logK_S_DI_std', 
+table_std = table_std.T.rename(columns={'logK_I_D': 'logK_I_D_std', 'logK_I_DI': 'logK_I_DI_std', 'logK_S_DI': 'logK_S_DI_std', 
                                         'pIC50': 'pIC50_std', 'hill': 'hill_std'})
 table_mes = table_mes.T
 table = pd.concat([table_mean, table_std, table_mes], axis=1)
