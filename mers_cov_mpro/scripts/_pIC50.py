@@ -438,3 +438,10 @@ def _table_pIC50_hill_find_conc(inhibitor_list, mcmc_dir, logDtot, logStot, logI
 
     table = pd.merge(table_mean.T, table_std.T, on='ID')
     return table
+
+
+def f_pIC90(pIC50, hill):
+    #logIC90 = np.log10(IC50) + 1/hill*np.log10(9)
+    #logIC90 = logIC50 + 1/hill*np.log10(9)
+    #-pIC90 = -pIC50 + 1/hill*np.log10(9)
+    return pIC50 - 1/hill*np.log10(9)

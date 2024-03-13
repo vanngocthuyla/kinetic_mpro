@@ -11,6 +11,7 @@ import matplotlib.pyplot as plt
 import seaborn as sns
 
 from _chemical_reactions import ChemicalReactions
+from _pIC50 import f_pIC90
 
 
 def _wm(x, w):
@@ -279,3 +280,78 @@ def _pd_mean_std(df, name):
         mean.append(df[name][df.ID == _ID].mean())
         std.append(df[name][df.ID == _ID].std())
     return pd.DataFrame([ID, mean, std], index=['ID', name, name+'_std']).T
+
+
+def correlation_table(pIC50, pIC90):
+    pIC90 = pIC90.T
+    column = pIC90.columns
+    table = pIC50
+    table.columns = column
+    n = len(column)
+    for i in range(0, n):
+        for j in range(0, n):
+            if i>j:
+                table[column[i]][j] = pIC90[column[i]][j]
+    return table.replace(np. nan,'',regex=True)
+
+
+def _df_biochem_pIC50_pIC90(df, name=''):
+
+    df_update = df.copy()
+    N = len(df)
+    df_update.insert(len(df_update.columns), name+'pIC50', len(df_update))
+    df_update.insert(len(df_update.columns), name+'pIC90', len(df_update))
+
+    for i in range(N):
+        dat = df_update.iloc[i]
+        _pIC50 = -np.log10(dat[name+'IC50']*1E-6)
+        hill = dat['hill']
+        if hill > 0:
+            _pIC90 = f_pIC90(_pIC50, hill)
+        else:
+            _pIC90 = float('nan')
+        df_update.at[i, name+'pIC50'] = _pIC50
+        df_update.at[i, name+'pIC90'] = _pIC90
+
+    return df_update
+
+
+def _cell_row_pIC50_pIC90(row, name=''):
+    if row[name+'IC50_Mod']=='=':
+        pIC50 = -np.log10(row[name+'IC50']*1E-6)
+    else:
+        pIC50 = float('nan')
+    if row[name+'IC90_Mod']=='=' and row[name+'IC90']>0:
+        pIC90 = -np.log10(row.IC90*1E-6)
+    elif pIC50>0 and (row['hill']>0 or row['hill']<0):
+        pIC90 = f_pIC90(pIC50, row['hill'])
+    else:
+        pIC90 = float('nan')
+    return pIC50, pIC90
+
+
+def _df_cell_pIC50_pIC90(df, name=''):
+
+    df_update = df.copy()
+    N = len(df)
+    df_update.insert(len(df_update.columns), name+'pIC50', len(df_update))
+    df_update.insert(len(df_update.columns), name+'pIC90', len(df_update))
+
+    for i in range(N):
+        _pIC50, _pIC90 = _cell_row_pIC50_pIC90(df_update.iloc[i], name=name)
+        df_update.at[i, name+'pIC50'] = _pIC50
+        df_update.at[i, name+'pIC90'] = _pIC90
+
+    return df_update
+
+
+def _biochem_row_pIC50_pIC90(row, name=''):
+
+    pIC50 = -np.log10(row[name+'IC50']*1E-6)
+    if name+'IC90' in row.columns and row.colrow[name+'IC90']>0:
+        pIC90 = -np.log10(row[name+'IC90']*1E-6)
+    elif pIC50>0 and (row['hill']>0 or row['hill']<0):
+        pIC90 = f_pIC90(pIC50, row['hill'])
+    else:
+        pIC90 = float('nan')
+    return pIC50, pIC90
