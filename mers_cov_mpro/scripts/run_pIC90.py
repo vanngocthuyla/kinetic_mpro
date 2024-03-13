@@ -100,7 +100,7 @@ for n, inhibitor in enumerate(inhibitor_list):
     trace = pickle.load(open(os.path.join(args.mcmc_dir, inhibitor_dir, 'traces.pickle'), "rb"))
     data = az.InferenceData.to_dataframe(az.convert_to_inference_data(trace))
 
-    nthin = int(len(data)/100)
+    nthin = int(len(data)/50)
     if logK_dE_alpha is not None:
         df = _adjust_trace(data.iloc[::nthin, :].copy(), logK_dE_alpha)
     else:
@@ -139,7 +139,7 @@ for n, inhibitor in enumerate(inhibitor_list):
             pIC50_list.append(-x50)
             hill_list.append(H)
             pIC90_list.append(f_pIC90(-x50, H))
-            if H > 0:
+            if H > 1:
                 temp = np.linspace(min(data['x']), max(data['x']), 50)
                 # plt.plot(data['x'], scaling_data(data['y'], min(data['y']), max(data['y'])), ".")
                 plt.plot(temp, f_curve_vec(temp, *theta), "-")
@@ -156,11 +156,11 @@ for n, inhibitor in enumerate(inhibitor_list):
     df.to_csv(os.path.join('Parameters', inhibitor_name+".csv"), index=False)
 
     plt.figure()
-    sns.kdeplot(data=df[df.hill>0], x='pIC50', shade=True, alpha=0.1);
+    sns.kdeplot(data=df[df.hill>1], x='pIC50', shade=True, alpha=0.1);
     plt.savefig(os.path.join('Plot', inhibitor_name))
 
     df_inhibitor = df[['logK_I_D', 'logK_I_DI', 'logK_S_DI', 'pIC50', 'pIC90', 'hill']]
-    df_inhibitor = df_inhibitor[df_inhibitor.hill>0]
+    df_inhibitor = df_inhibitor[df_inhibitor.hill>1]
     table_mean.insert(len(table_mean.columns), inhibitor_name, df_inhibitor.median())
     table_std.insert(len(table_std.columns), inhibitor_name, df_inhibitor.std())
 
@@ -180,4 +180,4 @@ table_std = table_std.T.rename(columns={'logK_I_D': 'logK_I_D_std', 'logK_I_DI':
                                         'pIC50': 'pIC50_std', 'pIC90': 'pIC90_std', 'hill': 'hill_std'})
 table_mes = table_mes.T
 table = pd.concat([table_mean, table_std, table_mes], axis=1)
-table.to_csv("pIC50_table.csv", index=True)
+table.to_csv("pIC90_table.csv", index=True)
