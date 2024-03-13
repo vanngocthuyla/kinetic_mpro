@@ -16,7 +16,7 @@ parser.add_argument( "--out_dir",                       type=str,               
 parser.add_argument( "--converged_trace_name",          type=str,               default="Converged_trace")
 
 parser.add_argument( "--nchain",                        type=int,               default=4)
-parser.add_argument( "--niters",                        type=int,               default=10000)
+parser.add_argument( "--niters",                        type=int,               default=1000)
 parser.add_argument( "--nskip",                         type=int,               default=100)
 
 parser.add_argument( "--multi_expt",                    action="store_true",    default=False)
@@ -66,7 +66,7 @@ if args.multi_expt:
         if not flag: unconverged_list.append('ASAP-00'+expt)
 else:
     trace_files = [os.path.join(args.mcmc_dir, f, "traces.pickle") for f in mcmc_dir if os.path.isfile(os.path.join(args.mcmc_dir, f, "traces.pickle"))]
-    [trace, flag, nchain_updated] = _trace_convergence(mcmc_files=trace_files, out_dir=os.path.join(args.out_dir, expt), 
+    [trace, flag, nchain_updated] = _trace_convergence(mcmc_files=trace_files, out_dir=args.out_dir, 
                                                        nskip=args.nskip, nchain=args.nchain, expected_nsample=args.niters,
                                                        key_to_check=args.key_to_check.split(), converged_trace_name=args.converged_trace_name)
     if args.plotting: plotting_trace(trace, args.out_dir, nchain_updated)
