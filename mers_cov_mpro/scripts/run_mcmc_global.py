@@ -22,7 +22,7 @@ warnings.simplefilter(action='ignore', category=FutureWarning)
 warnings.simplefilter("ignore", UserWarning)
 warnings.simplefilter("ignore", RuntimeWarning)
 
-from _model_mers_ESI import global_fitting
+from _model_mers import global_fitting
 from _load_data_mers import load_data_no_inhibitor, load_data_one_inhibitor
 from _plotting import plot_data_conc_log, plotting_trace_global
 from _MAP_finding_mers_concs import map_finding
@@ -99,11 +99,11 @@ prior = {}
 prior['logKd'] = {'type':'logKd', 'name': 'logKd', 'fit':'global', 'dist': 'normal', 'loc': -9.9, 'scale': 0.5}
 prior['logK_S_M'] = {'type':'logK', 'name': 'logK_S_M', 'fit':'global', 'dist': 'uniform', 'lower': -14, 'upper': 0} 
 prior['logK_S_D'] = {'type':'logK', 'name': 'logK_S_D', 'fit':'global', 'dist': 'uniform', 'lower': -20.72, 'upper': -13}
-prior['logK_S_DS'] = {'type':'logK', 'name': 'logK_S_DS', 'fit':'global', 'dist': 'uniform', 'lower': -8, 'upper': 0.}
-prior['logK_I_M'] = {'type':'logK', 'name': 'logK_I_M', 'fit':'local', 'dist': [None, 'uniform', 'uniform', 'uniform', 'uniform', 'uniform', 'uniform', 'uniform', 'uniform', 'uniform', 'uniform', 'uniform', 'uniform', 'uniform'], 'value': 0, 'lower': [-19.11,-12.92,-14.06,-17.,-13.12,-17.6,-17.76,-12.,-14.05,-14.42,-13.97,-12.24,-16.28], 'upper': 0}
-prior['logK_I_D'] = {'type':'logK', 'name': 'logK_I_D', 'fit':'local', 'dist': [None, 'uniform', 'uniform', 'uniform', 'uniform', 'uniform', 'uniform', 'uniform', 'uniform', 'uniform', 'uniform', 'uniform', 'uniform', 'uniform'], 'value': 0, 'lower': [-27.58,-18.84,-19.77,-22.17,-19.64,-25.57,-24.62,-18.16,-19.43,-20.54,-20.08,-18.17,-22.77], 'upper': [-3.41,-0.01,-6.08,-3.94,-4.71,-3.77,-4.4,-3.3,-0.79,-6.2,-5.84,-3.56,-3.38]}
-prior['logK_I_DI'] = {'type':'logK', 'name': 'logK_I_DI', 'fit':'local', 'dist': [None, 'uniform', 'uniform', 'uniform', 'uniform', 'uniform', 'uniform', 'uniform', 'uniform', 'uniform', 'uniform', 'uniform', 'uniform', 'uniform'], 'value': 0, 'lower': logKd_min, 'upper': [0,-14.6,-16.04,0,-14.68,0,0,-15.04,-16.33,-15.63,-16.26,-15.4,0.]}
-prior['logK_S_DI'] = {'type':'logK', 'name': 'logK_S_DI', 'fit':'local', 'dist': [None, 'uniform', 'uniform', 'uniform', 'uniform', 'uniform', 'uniform', 'uniform', 'uniform', 'uniform', 'uniform', 'uniform', 'uniform', 'uniform'], 'value': 0, 'lower': [-27.6,-26.39,-24.85,-27.62,-26.95,-27.59,-27.61,-26.47,-24.63,-25.63,-25.59,-25.98,-27.59], 'upper': [-7.4,0,-11.66,-9.45,-11.24,-9.6,-9.09,-11.81,0,-11.32,-11.64,-11.49,-10.38]}
+prior['logK_S_DS'] = {'type':'logK', 'name': 'logK_S_DS', 'fit':'global', 'dist': 'uniform', 'lower': -20.72, 'upper': 0.}
+prior['logK_I_M'] = {'type':'logK', 'name': 'logK_I_M', 'fit':'local', 'dist': [None, 'uniform', 'uniform', 'uniform', 'uniform', 'uniform', 'uniform', 'uniform', 'uniform', 'uniform', 'uniform', 'uniform', 'uniform', 'uniform'], 'value': 0, 'lower': [logKd_min,-17.05,-12.95,-13.93,-16.91,-13.02,-17.46,-13.09,-12.01,-13.86,-14.55,-14.05,-12.57,-16.29], 'upper': 0}
+prior['logK_I_D'] = {'type':'logK', 'name': 'logK_I_D', 'fit':'local', 'dist': [None, 'uniform', 'uniform', 'uniform', 'uniform', 'uniform', 'uniform', 'uniform', 'uniform', 'uniform', 'uniform', 'uniform', 'uniform', 'uniform'], 'value': 0, 'lower': [logKd_min,-23.79,-18.92,-19.79,-22.71,-20.25,-24.02,-24.,-18.96,-20.24,-20.94,-20.31,-18.32,-22.48], 'upper': [0,-3.44,-3.63,-5.92,-9.38,-4.47,-3.71,-10.16,-3.05,-6.63,-6.55,-5.89,-4.05,-2.97]}
+prior['logK_I_DI'] = {'type':'logK', 'name': 'logK_I_DI', 'fit':'local', 'dist': [None, 'uniform', 'uniform', 'uniform', 'uniform', 'uniform', 'uniform', 'uniform', 'uniform', 'uniform', 'uniform', 'uniform', 'uniform', 'uniform'], 'value': 0, 'lower': [logKd_min,-27.63,-27.63,-27.63,-27.63,-27.63,-27.63,-27.63,-27.63,-27.63,-27.63,-27.62,-27.63,-27.63], 'upper': [0,0,-14.64,-16.11,-1.5,-14.84,0,-16.81,-15.35,-16.12,-15.95,-15.69,-15.38,0]}
+prior['logK_S_DI'] = {'type':'logK', 'name': 'logK_S_DI', 'fit':'local', 'dist': [None, 'uniform', 'uniform', 'uniform', 'uniform', 'uniform', 'uniform', 'uniform', 'uniform', 'uniform', 'uniform', 'uniform', 'uniform', 'uniform'], 'value': 0, 'lower': [logKd_min,-27.61,-26.74,-24.66,-23.69,-26.53,-27.63,-23.48,-26.68,-24.67,-25.1,-25.51,-26.37,-27.6], 'upper': [0,-9.45,-11.25,-11.45,-11.63,-11.31,-10.22,-12.56,-11.75,-11.72,-11.34,-11.38,-11.27,-10.42]}
 
 # prior['kcat_MS'] = {'type':'kcat', 'name': 'kcat_MS', 'fit':'global', 'dist': None, 'value': 0.}
 prior['kcat_DS'] = {'type':'kcat', 'name': 'kcat_DS', 'fit':'global', 'dist': 'uniform', 'lower': kcat_min, 'upper': 5}
@@ -186,9 +186,9 @@ else:
 prior = {}
 prior['logKd'] = {'type':'logKd', 'name': 'logKd', 'fit':'global', 'dist': 'normal', 'loc': -9.9, 'scale': 0.5}
 prior['logK_S_M'] = {'type':'logK', 'name': 'logK_S_M', 'fit':'global', 'dist': 'uniform', 'lower': -14, 'upper': 0} 
-prior['logK_S_D'] = {'type':'logK', 'name': 'logK_S_D', 'fit':'global', 'dist': 'uniform', 'lower': -18, 'upper': -12}
-prior['logK_S_DS'] = {'type':'logK', 'name': 'logK_S_DS', 'fit':'global', 'dist': 'uniform', 'lower': -17.5, 'upper': 0.}
-prior['logK_I_M'] = {'type':'logK', 'name': 'logK_I_M', 'fit':'local', 'dist': 'uniform', 'lower': -20.73, 'upper': 0.}
+prior['logK_S_D'] = {'type':'logK', 'name': 'logK_S_D', 'fit':'global', 'dist': 'uniform', 'lower': -20.72, 'upper': -13}
+prior['logK_S_DS'] = {'type':'logK', 'name': 'logK_S_DS', 'fit':'global', 'dist': 'uniform', 'lower': 20.72, 'upper': 0.}
+prior['logK_I_M'] = {'type':'logK', 'name': 'logK_I_M', 'fit':'local', 'dist': 'uniform', 'lower': -20.72, 'upper': 0.}
 prior['logK_I_D'] = {'type':'logK', 'name': 'logK_I_D', 'fit':'local', 'dist': 'uniform', 'lower': logKd_min, 'upper': logKd_max}
 prior['logK_I_DI'] = {'type':'logK', 'name': 'logK_I_DI', 'fit':'local', 'dist': 'uniform', 'lower': logKd_min, 'upper': logKd_max}
 prior['logK_S_DI'] = {'type':'logK', 'name': 'logK_S_DI', 'fit':'local', 'dist': 'uniform', 'lower': logKd_min, 'upper': logKd_max}

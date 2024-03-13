@@ -186,8 +186,9 @@ if args.set_lognormal_dE and args.dE>0:
 else: E_list = None
 
 n = 0
-plot_data_conc_log(expts_plot_no_I, extract_logK_n_idx(params_logK, n, shared_params),
-                   extract_kcat_n_idx(params_kcat, n, shared_params),
+plot_data_conc_log(experiments=expts_plot_no_I, 
+                   params_logK=extract_logK_n_idx(params_logK, n, shared_params),
+                   params_kcat=extract_kcat_n_idx(params_kcat, n, shared_params),
                    line_colors=['black', 'red', 'tab:brown'], ls='-.',
                    E_list=E_list, plot_legend=True,
                    fontsize_tick=12, fontsize_label=18,
