@@ -193,9 +193,10 @@ for name in assay_names:
     IC50_keys.append(name + 'pIC50')
 
 frameon=False
+tick_size = 30
 
 #Set the white background, Zoom the font scale
-sns.set(style="white", font_scale=1.5)
+sns.set(style="white", font_scale=2.5)
 
 n = len(IC50_keys)
 fig, axes = plt.subplots(n, n, figsize=(18, 16), constrained_layout=True)
@@ -205,14 +206,16 @@ for i in range(0,n):
         if i>j:
             sns.scatterplot(ax=axes[i, j],
                             data=dat[[IC50_keys[i], IC50_keys[j]]],
-                            x=IC50_keys[j], y=IC50_keys[i], palette=['blue'], legend=True)
-            corr_pearsonr_N_sample(dat[IC50_keys[i]], dat[IC50_keys[j]], ax=axes[i, j])
+                            x=IC50_keys[j], y=IC50_keys[i], palette=['blue'], legend=True, s=60)
+            # corr_pearsonr_N_sample(dat[IC50_keys[i]], dat[IC50_keys[j]], ax=axes[i, j])
             # handles, labels = axes[i, j].get_legend_handles_labels()
             # axes[i, j].get_legend().remove()
             axes[i, j].set_xlim(4, 8)
             axes[i, j].set_ylim(4, 8)
             axes[i, j].set(xticks=[4, 5, 6, 7, 8], yticks=[4, 5, 6, 7, 8])
             axes[i, j].grid(True)
+            axes[i, j].tick_params(axis='x', labelsize=tick_size)
+            axes[i, j].tick_params(axis='y', labelsize=tick_size)
             if j == 0:
                 plt.setp(axes[i, j], xlabel='')
                 plt.setp(axes[i, j], ylabel=assay_name[i])
