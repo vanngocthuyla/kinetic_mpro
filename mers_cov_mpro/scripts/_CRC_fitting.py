@@ -51,9 +51,9 @@ def CRC_EI_fitting(experiments, prior_infor=None,
     if E_list is None:
         if set_lognormal_dE and dE>0:
             E_list = _dE_priors(experiments, dE, 'lognormal')
-        else:
-            E_list = {}
-            E_list['dE:50'] = uniform_prior('dE:50', lower=40, upper=60)
+        # else:
+        #     E_list = {}
+        #     E_list['dE:50'] = uniform_prior('dE:50', lower=40, upper=60)
 
     if not multi_alpha:
         alpha_list = _alpha_priors(experiments, lower=0, upper=2)
@@ -77,7 +77,10 @@ def CRC_EI_fitting(experiments, prior_infor=None,
                 else: 
                     alpha = None
                 
-                Etot = _dE_find_prior(data_rate, E_list)
+                if E_list is not None:
+                    Etot = _dE_find_prior(data_rate, E_list)
+                else:
+                    Etot = None
 
                 if data_rate is not None:
                     fitting_each_dataset(type_expt='kinetics', data=data_rate, params=[*_params_logK, *_params_kcat],
@@ -90,8 +93,6 @@ def CRC_EI_fitting(experiments, prior_infor=None,
                 alpha = alpha_list[f'alpha:{plate}']
             else: 
                 alpha = None
-
-            Etot = _dE_find_prior(data_rate, E_list)
 
             if data_rate is not None:
                 if len(E_list)>0: 
@@ -135,9 +136,9 @@ def CRC_ESI_fitting(experiments, prior_infor=None,
     if E_list is None: 
         if set_lognormal_dE and dE>0:
             E_list = _dE_priors(experiments, dE, 'lognormal')
-        else:
-            E_list = {}
-            E_list['dE:50'] = uniform_prior('dE:50', lower=40, upper=60)
+        # else:
+        #     E_list = {}
+        #     E_list['dE:50'] = uniform_prior('dE:50', lower=40, upper=60)
 
     if not multi_alpha:
         alpha_list = _alpha_priors(experiments, lower=alpha_min, upper=alpha_max)
@@ -160,9 +161,9 @@ def CRC_ESI_fitting(experiments, prior_infor=None,
                 else: 
                     alpha = None
                 
-                if set_lognormal_dE and dE>0:
+                if E_list is not None:
                     Etot = _dE_find_prior(data_rate, E_list)
-                else: 
+                else:
                     Etot = None
 
                 if data_rate is not None:
@@ -178,10 +179,11 @@ def CRC_ESI_fitting(experiments, prior_infor=None,
             else: 
                 alpha = None
 
-            if set_lognormal_dE and dE>0:
+            if E_list is not None:
                 Etot = _dE_find_prior(data_rate, E_list)
-            else: 
+            else:
                 Etot = None
+
             if data_rate is not None:
                 
                 fitting_each_dataset(type_expt='kinetics', data=data_rate, params=[*_params_logK, *_params_kcat],
