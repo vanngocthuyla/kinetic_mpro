@@ -79,8 +79,12 @@ if args.global_fitting:
     assert os.path.isfile(args.prior_infor), "Please provide the prior information."
     prior = pickle.load(open(args.prior_infor, "rb"))
 
-    assert (args.set_K_S_DS_equal_K_S_D and not 'logK_S_DS' in prior.keys()) or (args.set_K_S_DI_equal_K_S_DS and not 'logK_S_DI' in prior.keys()), "The constraint was incorrect."
+    if args.set_K_S_DS_equal_K_S_D:
+        assert not 'logK_S_DS' in prior.keys(), "The constraint was incorrect."
+    if args.set_K_S_DI_equal_K_S_DS:
+        assert not 'logK_S_DI' in prior.keys(), "The constraint was incorrect."
 
+    pickle.dump(prior, open(os.path.join('MAP_prior.pickle'), "wb"))
     prior_infor = convert_prior_from_dict_to_list(prior, args.fit_E_S, args.fit_E_I)
     prior_infor_update = check_prior_group(prior_infor, len(expts))
     pd.DataFrame(prior_infor_update).to_csv(os.path.join(args.out_dir, "Prior_infor.csv"), index=False)
@@ -95,6 +99,7 @@ if args.global_fitting:
         if f'{name}:1' in trace_map.keys():
             trace_map[f'{name}:0'] = trace_map[f'{name}:1']
     trace_map['kcat_DSI:0'] = jnp.zeros(args.nchain*niters)
+    pickle.dump(trace_map, open(os.path.join('MAP_traces.pickle'), "wb"))
 
     [map_index, map_params, log_probs] = map_finding(trace_map, expts, prior_infor_update, 
                                                      set_lognormal_dE=args.set_lognormal_dE, dE=args.dE,
@@ -113,11 +118,18 @@ else:
     # Loading prior information
     assert os.path.isfile(args.prior_infor), "Please provide the prior information."
     prior = pickle.load(open(args.prior_infor, "rb"))
+
+    if args.set_K_S_DS_equal_K_S_D:
+        assert not 'logK_S_DS' in prior.keys(), "The constraint was incorrect."
+    if args.set_K_S_DI_equal_K_S_DS:
+        assert not 'logK_S_DI' in prior.keys(), "The constraint was incorrect."
+
+    pickle.dump(prior, open(os.path.join('MAP_prior.pickle'), "wb"))
     prior_infor = convert_prior_from_dict_to_list(prior, args.fit_E_S, args.fit_E_I)
     prior_infor_update = check_prior_group(prior_infor, len(expts))
     pd.DataFrame(prior_infor_update).to_csv(os.path.join(args.out_dir, "Prior_infor.csv"), index=False)
     print("Prior information: \n", pd.DataFrame(prior_infor_update))
-    
+
     if len(args.map_file)>0 and os.path.isfile(args.map_file):
         map_sampling = pickle.load(open(args.map_file, "rb"))
     
@@ -130,7 +142,6 @@ else:
                 'alpha:E100_S1350', 'alpha:E100_S50', 'alpha:E100_S750', 'alpha:E50_S150',
                 'kcat_DS', 'kcat_DSS', 'dE:100', 'dE:50', 'dE:25']:
         assert key in map_sampling.keys(), f"Please provide {key} in map_file."
-
 
     alpha_list = {}
     for key in map_sampling.keys():
@@ -173,7 +184,7 @@ n = 0
 plot_data_conc_log(expts_plot_no_I, extract_logK_n_idx(params_logK, n, shared_params),
                    extract_kcat_n_idx(params_kcat, n, shared_params),
                    line_colors=['black', 'red', 'tab:brown'], ls='-.',
-                   E_list=E_list, plot_legend=True,
+                   E_list=E_list, plot_legend=False,
                    OUTFILE=os.path.join(args.out_dir, 'ES'))
 
 for i in range(len(inhibitor_name)):
@@ -182,5 +193,5 @@ for i in range(len(inhibitor_name)):
     end   = i*no_expt[n]+no_expt[0]+no_expt[n]    
     plot_data_conc_log(expts_plot[start:end], extract_logK_n_idx(params_logK, n, shared_params),
                        extract_kcat_n_idx(params_kcat, n, shared_params),
-                       alpha_list=alpha_list, E_list=E_list,
+                       alpha_list=alpha_list, E_list=E_list, plot_legend=False,
                        OUTFILE=os.path.join(args.out_dir, 'ESI_'+str(i)))
