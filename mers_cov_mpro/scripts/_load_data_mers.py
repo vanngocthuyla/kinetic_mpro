@@ -45,7 +45,7 @@ def load_data_no_inhibitor(df, multi_var=False):
                                    'figure': plate_i[:-5], 'sub_figure': f'E:{conc_enzyme}nM',
                                    'logMtot': logMtot, # M
                                    'logStot': logStot, # M
-                                   'logItot': None, #np.array([np.log(1E-20)]*len(Mtot)), #None
+                                   'logItot': None, #np.array([np.log(1E-20)]*len(Mtot))
                                    'v': v, # M min^{-1}
                                    'x':'logStot'})
 
