@@ -1,0 +1,26 @@
+MAP index:102
+
+Kinetics parameters:
+alpha:E100_S1350 : 0.801
+alpha:E100_S50 : 1.507
+alpha:E100_S750 : 0.877
+alpha:E50_S150 : 1.355
+dE:100 : 100.541
+dE:25 : 57.607
+dE:50 : 82.312
+kcat_DS : 0.179
+kcat_DSI:1 : 9.229
+kcat_DSS : 4.024
+logK_I_D:1 : -12.741
+logK_I_DI:1 : -20.489
+logK_I_M:1 : -1.563
+logK_S_D : -17.860
+logK_S_DI:1 : -16.339
+logK_S_DS : -1.672
+logK_S_M : -4.020
+logKd : -9.624
+log_sigma_CRC:00214:0 : -23.399
+log_sigma_CRC:00214:1 : -22.902
+log_sigma_CRC:00214:2 : -19.051
+log_sigma_CRC:00214:3 : -22.385
+log_sigma_CRC:ES:0 : -23.350

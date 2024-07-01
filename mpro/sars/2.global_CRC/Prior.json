@@ -1,0 +1,102 @@
+{
+    // This file is used to declare the shared parameters information for Bayesian regression of kinetic model.
+    // Prior information should be assigned as dictionary for each parameter. For uniform prior, "lower" and "upper" are required. For normal prior, "loc" and "scale" are required. If "dist"=null, "value" should be assigned.
+    // For local parameter, an array [] should be used. For example, if you have two enzyme with different dimerization logKd, then "dist": ["uniform", "normal"], "lower": [-20, null], "upper": [0, null], "loc": [null, -14], "scale": [null, 2].
+    //
+    // Dissociation constants in ln scale
+    "logKd": {
+        "type": "logKd",
+        "name": "logKd",
+        "fit": "local",
+        "dist": ["uniform", "normal", "normal"],
+        "lower": [-20.73, null, null],
+        "upper": [0.0, null, null],
+        "loc": [null, -14, -14],
+        "scale": [null, 2, 2]
+    },
+    "logK_S_M": {
+        "type": "logK",
+        "name": "logK_S_M",
+        "fit": "global",
+        "dist": "uniform",
+        "lower": -20.73,
+        "upper": 0.0
+    },
+    "logK_S_D": {
+        "type": "logK",
+        "name": "logK_S_D",
+        "fit": "global",
+        "dist": "uniform",
+        "lower": -20.73,
+        "upper": 0.0
+    },
+    "logK_S_DS": {
+        "type": "logK",
+        "name": "logK_S_DS",
+        "fit": "global",
+        "dist": "uniform",
+        "lower": -20.73,
+        "upper": 0.0
+    },
+    "logK_I_M": {
+        "type": "logK",
+        "name": "logK_I_M",
+        "fit": "local",
+        "dist": "uniform",
+        "lower": -20.73,
+        "upper": 0.0
+    },
+    "logK_I_D": {
+        "type": "logK",
+        "name": "logK_I_D",
+        "fit": "local",
+        "dist": ["normal", "normal", "uniform"],
+        "loc": [-15, -15, null],
+        "scale": [2, 2, null],
+        "lower": [null, null, -20.73],
+        "upper": [null, null, 0.0]
+    },
+    "logK_I_DI": {
+        "type": "logK",
+        "name": "logK_I_DI",
+        "fit": "local",
+        "dist": ["normal", "normal", "uniform"],
+        "loc": [-15, -15, null],
+        "scale": [2, 2, null],
+        "lower": [null, null, -20.73],
+        "upper": [null, null, 0.0]
+    },
+    "logK_S_DI": {
+        "type": "logK",
+        "name": "logK_S_DI",
+        "fit": "local",
+        "dist": "uniform",
+        "lower": -20.73,
+        "upper": 0.0
+    },
+    // Rate constants, kcat_MS assumed to be 0.
+    "kcat_DS": {
+        "type": "kcat",
+        "name": "kcat_DS",
+        "fit": "local",
+        "dist": "uniform",
+        "lower": 0.0,
+        "upper": [1, 200.0, 200.0]
+    },
+    "kcat_DSI": {
+        "type": "kcat",
+        "name": "kcat_DSI",
+        "fit": "local",
+        "dist": "uniform",
+        "lower": 0.0,
+        "upper": [1, 200.0, 200.0]
+    },
+    "kcat_DSS": {
+        "type": "kcat",
+        "name": "kcat_DSS",
+        "fit": "local",
+        "dist": "uniform",
+        "lower": 0.0,
+        "upper": [1, 200.0, 200.0]
+    }
+}

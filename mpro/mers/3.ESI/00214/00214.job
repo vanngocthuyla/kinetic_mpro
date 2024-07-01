@@ -1,0 +1,13 @@
+#!/bin/bash
+#SBATCH --partition=RM-shared
+#SBATCH --nodes=1
+#SBATCH --time=48:00:00
+#SBATCH --ntasks-per-node=4
+#SBATCH -o /home/exouser/python/mpro/mers/3.ESI/00214/00214.log 
+
+module load anaconda3/2022.10
+conda activate mpro
+cd /home/exouser/python/mpro/mers/3.ESI/00214
+date
+python /home/exouser/python/mpro/scripts/run_mcmc_ESI_4_curves.py --input_file /home/exouser/python/mpro/mers/input/ESI_mean_drop.csv --prior_infor /home/exouser/python/mpro/mers/3.ESI/Prior.json  --initial_values /home/exouser/python/mpro/mers/2.ESI/00214/map.pickle  --out_dir /home/exouser/python/mpro/mers/3.ESI/00214 --name_inhibitor ASAP-0000214 --fit_E_S  --fit_E_I  --multi_var   --set_lognormal_dE  --dE 0.50000    --niters 1000  --nburn 200  --nthin 1  --nchain 4  --random_key 0 
+date 

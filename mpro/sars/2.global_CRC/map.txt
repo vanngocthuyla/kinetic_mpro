@@ -1,0 +1,30 @@
+MAP index:1753
+
+Kinetics parameters:
+alpha:20650 : 0.070
+kcat_DS:0 : 0.156
+kcat_DS:1 : 0.133
+kcat_DSI:0 : 0.958
+kcat_DSI:1 : 123.657
+kcat_DSI:2 : 77.649
+kcat_DSS:0 : 0.813
+kcat_DSS:1 : 33.776
+logK_I_D:0 : -16.905
+logK_I_D:2 : -2.959
+logK_I_DI:0 : -15.250
+logK_I_DI:2 : -1.439
+logK_I_M:0 : -6.888
+logK_I_M:2 : -16.556
+logK_S_D : -20.132
+logK_S_DI:0 : -4.088
+logK_S_DI:2 : -15.043
+logK_S_DS : -8.890
+logK_S_M : -13.829
+logKd:0 : -3.604
+logKd:1 : -15.141
+log_sigma_AUC:mut : -15.932
+log_sigma_CRC:20650 : -24.206
+log_sigma_ICE:mut : 6.094
+log_sigma_rate:mut : -15.061
+log_sigma_rate:wt_1:0 : -12.832
+log_sigma_rate:wt_1:1 : -16.789

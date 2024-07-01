@@ -1,0 +1,33 @@
+{
+    // This file is used to declare the shared parameters information for Bayesian regression of kinetic model
+    // For each parameter, both "assigned_idx" and "shared_idx" are required for indices of shared parameter.
+    // For example, we have three enzymes A, B, and C with indices 0, 1, 2, respectively. A and B have the same value of dimerization logKd. Then we assigned "logKd": "assigned_idx": 0, "shared_idx": 1.
+    "logKd": {
+        "assigned_idx": 2,
+        "shared_idx": 1
+    },
+    "kcat_DS": {
+        "assigned_idx": 2,
+        "shared_idx": 1
+    },
+    "kcat_DSS": {
+        "assigned_idx": 2,
+        "shared_idx": 1
+    },
+    "logK_I_M": {
+        "assigned_idx": 1,
+        "shared_idx": 0
+    },
+    "logK_I_D": {
+        "assigned_idx": 1,
+        "shared_idx": 0
+    },
+    "logK_I_DI": {
+        "assigned_idx": 1,
+        "shared_idx": 0
+    },
+    "logK_S_DI": {
+        "assigned_idx": 1,
+        "shared_idx": 0
+    }
+}

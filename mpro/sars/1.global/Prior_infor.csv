@@ -1,0 +1,12 @@
+type,name,fit,dist,lower,upper,loc,scale
+logKd,logKd,local,"['uniform', 'normal']",[-20.73    nan],[ 0. nan],[ nan -14.],[nan  2.]
+logK,logK_S_M,global,uniform,-20.73,0.0,,
+logK,logK_S_D,global,uniform,-20.73,0.0,,
+logK,logK_S_DS,global,uniform,-20.73,0.0,,
+logK,logK_I_M,global,uniform,-20.73,0.0,,
+logK,logK_I_D,global,normal,,,-15,2
+logK,logK_I_DI,global,normal,,,-15,2
+logK,logK_S_DI,global,uniform,-20.73,0.0,,
+kcat,kcat_DS,local,uniform,[0. 0.],[  1. 200.],,
+kcat,kcat_DSS,local,uniform,[0. 0.],[  1. 200.],,
+kcat,kcat_DSI,local,uniform,[0. 0.],[  1. 200.],,
