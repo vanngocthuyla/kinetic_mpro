@@ -1,3 +1,10 @@
+"""
+This code is designed to fit the model that involves enzyme - substrate - inhibitors. 
+Data was extracted from the publication of Nash et al. (2022) and Vuong et al (2022)
+depending on the input argument --fit_mutant or --fit_wildtype. Additional CRC with 
+the ID as --name_inhibitor from the --input_file can be included when running mcmc.
+"""
+
 import warnings
 import numpy as np
 import os

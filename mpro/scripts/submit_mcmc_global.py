@@ -1,3 +1,9 @@
+"""
+This file is used to submit the batch file and run the code in one of the following files:
+- run_mcmc_global.py
+- run_mcmc_global_CRC.py
+"""
+
 import os
 import glob
 import argparse

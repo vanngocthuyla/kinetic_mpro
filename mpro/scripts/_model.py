@@ -259,9 +259,15 @@ def global_fitting(experiments, prior_infor, shared_params, args):
         # Extract parameters by index
         try: idx_expt = expt['index']
         except: idx_expt = idx
-        _params_logK = extract_logK_n_idx(params_logK, idx, shared_params, set_K_S_DS_equal_K_S_D=args.set_K_S_DS_equal_K_S_D,
+        
+        _params_logK = extract_logK_n_idx(params_logK, idx, shared_params, 
+                                          set_K_I_M_equal_K_S_M=args.set_K_I_M_equal_K_S_M, 
+                                          set_K_S_DS_equal_K_S_D=args.set_K_S_DS_equal_K_S_D,
                                           set_K_S_DI_equal_K_S_DS=args.set_K_S_DI_equal_K_S_DS)
-        _params_kcat = extract_kcat_n_idx(params_kcat, idx, shared_params)
+        _params_kcat = extract_kcat_n_idx(params_kcat, idx, shared_params,
+                                          set_kcat_DSS_equal_kcat_DS=args.set_kcat_DSS_equal_kcat_DS,
+                                          set_kcat_DSI_equal_kcat_DS=args.set_kcat_DSI_equal_kcat_DS,
+                                          set_kcat_DSI_equal_kcat_DSS=args.set_kcat_DSI_equal_kcat_DSS)
 
         # Fitting each dataset
         if 'kinetics' in expt.keys():
@@ -339,9 +345,12 @@ def EI_fitting(experiments, prior_infor, shared_params, args):
         try: idx_expt = expt['index']
         except: idx_expt = idx
 
-        _params_logK = extract_logK_n_idx(params_logK, idx, shared_params, set_K_S_DS_equal_K_S_D=args.set_K_S_DS_equal_K_S_D, 
+        _params_logK = extract_logK_n_idx(params_logK, idx, shared_params, 
+                                          set_K_I_M_equal_K_S_M=args.set_K_I_M_equal_K_S_M, 
                                           set_K_S_DI_equal_K_S_DS=args.set_K_S_DI_equal_K_S_DS)
-        _params_kcat = extract_kcat_n_idx(params_kcat, idx, shared_params)
+        _params_kcat = extract_kcat_n_idx(params_kcat, idx, shared_params,
+                                          set_kcat_DSI_equal_kcat_DS=args.set_kcat_DSI_equal_kcat_DS,
+                                          set_kcat_DSI_equal_kcat_DSS=args.set_kcat_DSI_equal_kcat_DSS)
 
         if type(expt['CRC']) is dict:
             

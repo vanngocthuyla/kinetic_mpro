@@ -1,3 +1,7 @@
+"""
+This code is designed to fit the model that involves only enzyme and substrate.
+"""
+
 import warnings
 import os
 import pandas as pd
@@ -41,9 +45,6 @@ parser.add_argument( "--multi_var",                     action="store_true",    
 parser.add_argument( "--multi_alpha",                   action="store_true",    default=False)
 parser.add_argument( "--set_lognormal_dE",              action="store_true",    default=False)
 parser.add_argument( "--dE",                            type=float,             default=0.1)
-
-parser.add_argument( "--set_K_S_DS_equal_K_S_D",        action="store_true",    default=False)
-parser.add_argument( "--set_K_S_DI_equal_K_S_DS",       action="store_true",    default=False)
 
 parser.add_argument( "--niters",				        type=int, 				default=10000)
 parser.add_argument( "--nburn",                         type=int, 				default=2000)

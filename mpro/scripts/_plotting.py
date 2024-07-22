@@ -132,13 +132,19 @@ def plot_data_conc_log(experiments, params_logK, params_kcat, alpha_list=None, E
             if plot_legend:
                 plt.legend()
             if OUTFILE is not None:
-                plt.savefig(f'{OUTFILE}_{i}')
+                if len(experiments)>1:
+                    plt.savefig(f'{OUTFILE}_{i}')
+                else:
+                    plt.savefig(f'{OUTFILE}')
 
     if combined_plots:
         if plot_legend:
             plt.legend()
         plt.tight_layout()
-        if OUTFILE is not None:
+        
+        if len(experiments)>1:
+            plt.savefig(f'{OUTFILE}_{i}')
+        else:
             plt.savefig(f'{OUTFILE}')
 
 

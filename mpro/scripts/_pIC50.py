@@ -12,131 +12,7 @@ import matplotlib.pyplot as plt
 import seaborn as sns
 
 from _chemical_reactions import ChemicalReactions
-
-def Dimerization(logMtot, logKd):
-    """
-    Parameters:
-    ----------
-    logMtot : numpy array
-        Log of the total protein concentation summed over bound and unbound species (units of log molar)
-    logKd   : float
-        Log of the dissociation constant of dimerization (units of log molar)
-    ----------
-    Return  : equilibrium concentrations of species for dimerization of protein
-    """
-    Mtot = jnp.exp(logMtot)
-    Kd = jnp.exp(logKd)
-    x = (4*Mtot + Kd - jnp.sqrt(Kd**2 + 8*Mtot*Kd))/8
-    log_concs = {}
-    log_concs['D'] = np.log(x)
-    log_concs['M'] = np.log(Mtot - 2*x)
-
-    return log_concs
-
-
-@jax.jit
-def DimerOnlyModel(logDtot, logStot, logItot,
-                   logK_S_D, logK_S_DS, logK_I_D, logK_I_DI, logK_S_DI):
-    """
-    Compute equilibrium concentrations for a binding model in which a ligand and substrate
-    competitively binds to a dimer, or dimer complexed with a ligand.
-
-    Parameters
-    ----------
-    logDtot : numpy array
-        Log of the total protein concentation summed over bound and unbound species
-    logStot : numpy array
-        Log of the total substrate concentation summed over bound and unbound species
-    logItot : numpy array
-        Log of the total ligand concentation summed over bound and unbound species
-    logK_S_D : float
-        Log of the dissociation constant between the substrate and free dimer
-    logK_S_DS : float
-        Log of the dissociation constant between the substrate and ligand-dimer complex
-    logK_I_D : float
-        Log of the dissociation constant between the inhibitor and free dimer
-    logK_I_DI : float
-        Log of the dissociation constant between the inhibitor and inhibitor-dimer complex
-    logK_I_DS: float
-        Log of the dissociation constant between the inhibitor and substrate-dimer complex
-    logK_S_DI: float
-        Log of the dissociation constant between the substrate and inhibitor-dimer complex
-
-    All dissociation constants are in units of log molar
-    """
-    dtype = jnp.float64
-    logDtot = logDtot.astype(dtype)  # promote to dtype
-    logStot = logStot.astype(dtype)  # promote to dtype
-    logItot = logItot.astype(dtype)  # promote to dtype
-
-    species = ['D','I','S','DI','DII','DS','DSI','DSS']
-    # relationships between dissociation constants due to loops
-    logK_I_DS = logK_I_D + logK_S_DI - logK_S_D
-
-    reactions = [{'D':1, 'S':1, 'DS': -1},
-                 {'DS':1, 'S':1, 'DSS':-1},
-                 {'D':1, 'I':1, 'DI':-1},
-                 {'DI':1, 'I':1, 'DII':-1},
-                 {'DS':1, 'I':1, 'DSI':-1},     # Substrate and inhibitor binding
-                 {'DI':1, 'S':1, 'DSI':-1}
-                 ]
-    conservation_equations = [{'D':+1,'DI':+1,'DII':+1, 'DS':+1,'DSI': +1,'DSS':+1}, # Total dimer
-                              {'S':+1,'DS':+1,'DSI':+1,'DSS':+2}, # Total substrate
-                              {'I':+1,'DI':+1,'DII':+2,'DSI':+1} # Total ligand
-                             ]
-    binding_model = ChemicalReactions(reactions, conservation_equations)
-    f_log_c = vmap(lambda logD, logS, logI: binding_model.logceq(jnp.array([logK_S_D, logK_S_DS, logK_I_D, logK_I_DI, logK_I_DS, logK_S_DI]),
-                                                                 jnp.array([logD, logS, logI])))
-    log_c = f_log_c(logDtot, logStot, logItot).T
-    sorted_species = sorted(['D','I','S','DI','DII','DS','DSI','DSS'])
-    log_concs = dict([(key, log_c[n]) for n, key in enumerate(sorted_species)])
-    return log_concs
-
-
-@jax.jit
-def ReactionRate_DimerOnly(logDtot, logStot, logItot,
-                           logK_S_D, logK_S_DS, logK_I_D, logK_I_DI, logK_S_DI,
-                           kcat_DS=0., kcat_DSI=1., kcat_DSS=1.):
-    """
-    Reaction Rate
-      v = kcat_+DS*[DS] + kcat_DSI*[DSI] + kcat_DSS*[DSS]
-    
-    Parameters
-    ----------
-    logDtot : numpy array
-        Log of the total protein concentation summed over bound and unbound species
-    logStot : numpy array
-        Log of the total substrate concentation summed over bound and unbound species
-    logItot : numpy array
-        Log of the total ligand concentation summed over bound and unbound species      
-    logK_S_D : float
-        Log of the dissociation constant between the substrate and free dimer
-    logK_S_DS : float
-        Log of the dissociation constant between the substrate and ligand-dimer complex
-    logK_I_D : float
-        Log of the dissociation constant between the inhibitor and free dimer
-    logK_I_DI : float
-        Log of the dissociation constant between the inhibitor and inhibitor-dimer complex
-    logK_I_DS: float
-        Log of the dissociation constant between the inhibitor and substrate-dimer complex
-    logK_S_DI: float
-        Log of the dissociation constant between the substrate and inhibitor-dimer complex
-    kcat_DS: float
-        Rate constant of dimer-substrate complex
-    kcat_DSI: float
-        Rate constant of dimer-substrate-inhibitor complex
-    kcat_DSS: float
-        Rate constant of dimer-substrate-substrate complex
-    
-    All dissociation constants are in units of log molar 
-    """
-    if kcat_DS is None: kcat_DS = 0.
-    if kcat_DSI is None: kcat_DSI = 0.
-    if kcat_DSS is None: kcat_DSS = 0.
-    log_concs = DimerOnlyModel(logDtot, logStot, logItot,
-                               logK_S_D, logK_S_DS, logK_I_D, logK_I_DI, logK_S_DI)
-    v = kcat_DS*jnp.exp(log_concs['DS']) + kcat_DSI*jnp.exp(log_concs['DSI']) + kcat_DSS*jnp.exp(log_concs['DSS'])
-    return v
+from _kinetics import ReactionRate_DimerOnly
 
 
 def f_curve_vec(x, R_b, R_t, x_50, H):
@@ -233,7 +109,7 @@ def f_parameter_estimation(x, y):
     y         : vector of response
     theta     : vector of 4 parameters (bottom response, top response, logIC50, hill slope)
     ----------
-    return x50 and hill slope
+    return Rb, Rt, pIC50, hill slope and pIC90
     """
     assert len(x)==len(y), print("Vectors of concentration and data should have the same length.")
     min_y = min(y)
@@ -248,11 +124,16 @@ def f_parameter_estimation(x, y):
         res, var_matrix, _, mes, ier = curve_fit(f_curve_vec, xdata=x, ydata=y, absolute_sigma=True, p0=theta0,
                                                  bounds=(lower, upper), full_output=True)
         if ier in [1, 2, 3, 4]:
-            return res[2], res[3]
+            [Rb, Rt, x50, H] = res
+            if H!=0:
+                pIC90 = f_pIC90(-x50, H)
+                return [Rb, Rt, -x50, H, pIC90]
+            else:
+                return [Rb, Rt, -x50, H, 0]
         else: 
-            return 0, 0
+            return [0, 0, 0, 0, 0]
     except: 
-        return 0, 0
+        return [0, 0, 0, 0, 0]
 
 
 def _adjust_trace(dat, logK_dE_alpha):
@@ -266,18 +147,14 @@ def _adjust_trace(dat, logK_dE_alpha):
     ----------
     return new dataframes with added parameters from logK_dE_alpha
     """ 
-    dat.insert(3, 'logK_S_DS', logK_dE_alpha['logK_S_DS']*np.ones(len(dat)))
-    dat.insert(3, 'logK_S_D', logK_dE_alpha['logK_S_D']*np.ones(len(dat)))
-    # dat.insert(3, 'logK_S_M', logK_dE_alpha['logK_S_M']*np.ones(len(dat)))
-    dat.insert(3, 'logKd', logK_dE_alpha['logKd']*np.ones(len(dat)))
-
-    dat.insert(2, 'kcat_DSS', logK_dE_alpha['kcat_DSS']*np.ones(len(dat)))
-    dat.insert(2, 'kcat_DS', logK_dE_alpha['kcat_DS']*np.ones(len(dat)))
-    # dat.insert(2, 'kcat_MS', np.zeros(len(dat)))
+    params_list = ['logKd', 'logK_S_M', 'logK_S_D', 'logK_S_DS', 'kcat_MS', 'kcat_DS', 'kcat_DSS']
+    for param in params_list:
+        if (not param in dat.columns) and (param in logK_dE_alpha.keys()):
+            dat.insert(len(dat.columns), param, logK_dE_alpha[param]*np.ones(len(dat)))
     return dat
 
 
-def _pIC50_hill(df, logDtot, logStot, logItot):
+def _pIC_hill(df, logDtot, logStot, logItot):
     """
     The function first simulates the dimer-only concentration-response curve (CRC) from mcmc trace, 
     then estimate the pIC50 and hill slopes for each CRC
@@ -289,10 +166,8 @@ def _pIC50_hill(df, logDtot, logStot, logItot):
     logStot   : vector of substrate concentration
     logItot   : vector of inhibitor concentration
     ----------
-    return list of pIC50 and list of hill slope
+    return list of 5 parameters
     """
-    pIC50_list = []
-    hill_list = []
 
     f_v = vmap(lambda logK_S_D, logK_S_DS, logK_I_D, logK_I_DI, logK_S_DI, kcat_DS, kcat_DSI, kcat_DSS: ReactionRate_DimerOnly(logDtot, logStot, logItot, logK_S_D, logK_S_DS, logK_I_D, logK_I_DI, logK_S_DI, kcat_DS, kcat_DSI, kcat_DSS))
     v_sim = f_v(jnp.array(df.logK_S_D), jnp.array(df.logK_S_DS), jnp.array(df.logK_I_D), jnp.array(df.logK_I_DI), jnp.array(df.logK_S_DI), jnp.array(df.kcat_DS), jnp.array(df.kcat_DSI), jnp.array(df.kcat_DSS))
@@ -307,13 +182,102 @@ def _pIC50_hill(df, logDtot, logStot, logItot):
     f_theta = lambda y: f_parameter_estimation(x, np.array(y))
     thetas = np.array(list(map(f_theta, ys)))
 
-    pIC50_list = -thetas.T[0]
-    hill_list = thetas.T[1]
-
-    return pIC50_list, hill_list
+    return thetas.T
 
 
-def _table_pIC50_hill(inhibitor_list, mcmc_dir, logDtot, logStot, logItot, logK_dE_alpha=None, OUTDIR=None):
+def table_pIC_hill_one_inhibitor(inhibitor, mcmc_dir, logDtot, logStot, logItot, 
+                                 logK_dE_alpha=None, OUTDIR=None):
+    """
+    For one inhibitor, dimer-only pIC50s can be simulated given the specified values of 
+    dimer/substrate concentrations and kinetic parameters from mcmc trace. 
+
+    Parameters:
+    ----------
+    inhibitor       : name of inhibitor
+    mcmc_dir        : str, directory of traces
+    logDtot         : vector of dimer concentration
+    logStot         : vector of substrate concentration
+    logItot         : vector of inhibitor concentration
+    measure         : statistical measure, can be 'mean' or 'median'
+    logK_dE_alpha   : dict, information of fixed logK, dE and alpha
+    ----------
+    return table of kinetic parameters, pIC50, and hill slope for each inhibitor
+    """
+    inhibitor_dir = inhibitor[7:12]
+    inhibitor_name = inhibitor[:12]
+
+    if not os.path.isfile(os.path.join(mcmc_dir, inhibitor_dir, 'traces.pickle')):
+        return None
+
+    trace = pickle.load(open(os.path.join(mcmc_dir, inhibitor_dir, 'traces.pickle'), "rb"))
+    data = az.InferenceData.to_dataframe(az.convert_to_inference_data(trace))
+
+    nthin = int(len(data)/100)
+    if logK_dE_alpha is not None:
+        df = _adjust_trace(data.iloc[::nthin, :].copy(), logK_dE_alpha)
+    else:
+        df = data.iloc[::nthin, :].copy()
+
+    thetas = _pIC_hill(df, logDtot, logStot, logItot)
+    Rb_list = thetas[0]
+    Rt_list = thetas[1]
+    pIC50_list = thetas[2]
+    hill_list = thetas[3]
+    pIC90_list = thetas[4]
+
+    df.insert(len(df.columns), 'pIC50', pIC50_list)
+    df.insert(len(df.columns), 'hill', hill_list)
+    df.insert(len(df.columns), 'pIC90', pIC90_list)
+
+    if OUTDIR is not None:
+        plt.figure()
+        for i in range(len(pIC50_list)):
+            if hill_list[i]>0:
+                temp = np.linspace(np.log10(1E-12), np.log10(1E-3), 50)
+                plt.plot(temp, f_curve_vec(temp, Rb_list[i], Rt_list[i], -pIC50_list[i], hill_list[i]), "-")
+        plt.savefig(os.path.join('Plot', 'CRC_'+inhibitor_name))
+
+        df.to_csv(os.path.join(OUTDIR, 'Parameters', inhibitor_name+".csv"), index=False)
+        plt.figure()
+        sns.kdeplot(data=df[df.hill>0], x='pIC50', shade=True, alpha=0.1);
+        plt.savefig(os.path.join(OUTDIR, 'Plot', inhibitor_name))
+
+    df_inhibitor = df[['logK_I_D', 'logK_I_DI', 'logK_S_DI', 'pIC50', 'hill', 'pIC90']]
+    df_inhibitor = df_inhibitor[df_inhibitor.hill>0]
+    
+    return df_inhibitor
+
+
+def _pIC_hill_one_inhibitor(inhibitor, mcmc_dir, logDtot, logStot, logItot, 
+                            measure='mean', logK_dE_alpha=None, OUTDIR=None):
+    """
+    For one inhibitor, dimer-only pIC50s can be simulated given the specified values of 
+    dimer/substrate concentrations and kinetic parameters from mcmc trace. 
+
+    Parameters:
+    ----------
+    inhibitor       : name of inhibitor
+    mcmc_dir        : str, directory of traces
+    logDtot         : vector of dimer concentration
+    logStot         : vector of substrate concentration
+    logItot         : vector of inhibitor concentration
+    measure         : statistical measure, can be 'mean' or 'median'
+    logK_dE_alpha   : dict, information of fixed logK, dE and alpha
+    ----------
+    return mean/median of pIC50 and hill slope for each inhibitor
+    """
+    assert measure in ['mean', 'median'], print("Please check the statistical measure again.")
+        
+    df = table_pIC_hill_one_inhibitor(inhibitor, mcmc_dir, logDtot, logStot, logItot, 
+                                      logK_dE_alpha, OUTDIR)
+    if measure == 'mean':
+        return np.mean(df.pIC50), np.std(df.pIC50), np.mean(df.hill), np.std(df.hill), np.mean(df.pIC90), np.std(df.pIC90), 
+    else:
+        return np.median(df.pIC50), np.std(df.pIC50), np.median(df.hill), np.std(df.hill), np.median(df.pIC90), np.std(df.pIC90), 
+
+
+def table_pIC_hill_multi_inhibitor(inhibitor_list, mcmc_dir, logDtot, logStot, logItot, 
+                                   measure='mean', logK_dE_alpha=None, OUTDIR=None):
     """
     For a set of inhibitors, dimer-only pIC50s can be simulated given the specified values of 
     dimer/substrate concentrations and kinetic parameters from mcmc trace. 
@@ -335,113 +299,77 @@ def _table_pIC50_hill(inhibitor_list, mcmc_dir, logDtot, logStot, logItot, logK_
         if not os.path.exists(os.path.join(OUTDIR, 'Plot')):
             os.makedirs(os.path.join(OUTDIR, 'Plot'))
 
-    table_mean = pd.DataFrame()
-    table_std = pd.DataFrame()
+    f_table = _pIC_hill_one_inhibitor
+    args = [mcmc_dir, logDtot, logStot, logItot, measure, logK_dE_alpha, OUTDIR]
+    list_median_std = np.array(list(map(lambda i: f_table(i, *args), inhibitor_list)))
     
-    for n, inhibitor in enumerate(inhibitor_list):
-
-        inhibitor_dir = inhibitor[7:12]
-        inhibitor_name = inhibitor[:12]
-
-        if not os.path.isfile(os.path.join(mcmc_dir, inhibitor_dir, 'traces.pickle')):
-            continue
-
-        trace = pickle.load(open(os.path.join(mcmc_dir, inhibitor_dir, 'traces.pickle'), "rb"))
-        data = az.InferenceData.to_dataframe(az.convert_to_inference_data(trace))
-
-        nthin = int(len(data)/100)
-        if logK_dE_alpha is not None:
-            df = _adjust_trace(data.iloc[::nthin, :].copy(), logK_dE_alpha)
-        else:
-            df = data.iloc[::nthin, :].copy()
-
-        pIC50_list, hill_list = _pIC50_hill(df, logDtot, logStot, logItot)
-
-        df.insert(len(df.columns), 'pIC50', pIC50_list)
-        df.insert(len(df.columns), 'hill', hill_list)
-        
-        if OUTDIR is not None:
-            df.to_csv(os.path.join(OUTDIR, 'Parameters', inhibitor_name+".csv"), index=False)
-            plt.figure()
-            sns.kdeplot(data=df[df.hill>0], x='pIC50', shade=True, alpha=0.1);
-            plt.savefig(os.path.join(OUTDIR, 'Plot', inhibitor_name))
-
-        df_inhibitor = df[['logK_I_D', 'logK_I_DI', 'logK_S_DI', 'pIC50', 'hill']]
-        df_inhibitor = df_inhibitor[df_inhibitor.hill>0]
-
-        del df
-
-        table_mean.insert(len(table_mean.columns), inhibitor_name, df_inhibitor.median())
-        table_std.insert(len(table_std.columns), inhibitor_name, df_inhibitor.std())
-
-    table_mean = table_mean.T
-    table_std = table_std.T.rename(columns={'logK_I_D': 'logK_I_D_std', 'logK_I_DI': 'logK_I_DI_std', 'logK_S_DI': 'logK_S_DI_std', 
-                                            'pIC50': 'pIC50_std', 'hill': 'hill_std'})
-    table = pd.concat([table_mean, table_std], axis=1)
-
-    return table
-
-
-def _table_pIC50_hill_find_conc(inhibitor_list, mcmc_dir, logDtot, logStot, logItot, logK_dE_alpha=None):
-    """
-    For a set of inhibitors, dimer-only pIC50s can be simulated given the specified values of 
-    dimer/substrate concentrations and kinetic parameters from mcmc trace. 
-
-    Parameters:
-    ----------
-    inhibitor_list  : list of inhibitor
-    mcmc_dir        : str, directory of traces
-    logDtot         : vector of dimer concentration
-    logStot         : vector of substrate concentration
-    logItot         : vector of inhibitor concentration
-    logK_dE_alpha   : dict of information about fixed logK, dE and alpha
-    ----------
-    return table of kinetic parameters, pIC50, and hill slope for the whole dataset of multiple inhibitors
-    """
-    def f_table(inhibitor):
-        
-        inhibitor_dir = inhibitor[7:12]
-        inhibitor_name = inhibitor[:12]
-
-        if not os.path.isfile(os.path.join(mcmc_dir, inhibitor_dir, 'traces.pickle')):
-            return None
-
-        trace = pickle.load(open(os.path.join(mcmc_dir, inhibitor_dir, 'traces.pickle'), "rb"))
-        data = az.InferenceData.to_dataframe(az.convert_to_inference_data(trace))
-
-        nthin = int(len(data)/100)
-        if logK_dE_alpha is not None:
-            df = _adjust_trace(data.iloc[::nthin, :].copy(), logK_dE_alpha)
-        else:
-            df = data.iloc[::nthin, :].copy()
-
-        pIC50_list, hill_list = _pIC50_hill(df, logDtot, logStot, logItot)
-
-        df.insert(len(df.columns), 'pIC50', pIC50_list)
-        df.insert(len(df.columns), 'hill', hill_list)
-
-        df_inhibitor = df[['logK_I_D', 'logK_I_DI', 'logK_S_DI', 'pIC50', 'hill']]
-        df_inhibitor = df_inhibitor[df_inhibitor.hill>0]
-
-        del df
-        
-        return np.median(df_inhibitor.pIC50), np.std(df_inhibitor.pIC50), np.median(df_inhibitor.hill), np.std(df_inhibitor.hill)
-
-    list_median_std = np.array(list(map(f_table, inhibitor_list)))
     pIC50_median = list_median_std.T[0]
     pIC50_std = list_median_std.T[1]
     hill_median = list_median_std.T[2]
     hill_std = list_median_std.T[3]
+    pIC90_median = list_median_std.T[4]
+    pIC90_std = list_median_std.T[5]
 
-    table_mean = pd.DataFrame([inhibitor_list, pIC50_median, hill_median], index=['ID', 'pIC50', 'hill'])
-    table_std = pd.DataFrame([inhibitor_list, pIC50_std, hill_std], index=['ID', 'pIC50_std', 'hill_std'])        
+    table_mean = pd.DataFrame([inhibitor_list, pIC50_median, hill_median, pIC90_median], index=['ID', 'pIC50', 'hill', 'pIC90'])
+    table_std = pd.DataFrame([inhibitor_list, pIC50_std, hill_std, pIC90_std], index=['ID', 'pIC50_std', 'hill_std', 'pIC90_std'])        
 
     table = pd.merge(table_mean.T, table_std.T, on='ID')
+
     return table
 
 
 def f_pIC90(pIC50, hill):
-    #logIC90 = np.log10(IC50) + 1/hill*np.log10(9)
-    #logIC90 = logIC50 + 1/hill*np.log10(9)
-    #-pIC90 = -pIC50 + 1/hill*np.log10(9)
+    """
+    Calculating pIC90 given pIC50 and hill slope
+        logIC90 = np.log10(IC50) + 1/hill*np.log10(9)
+        logIC90 = logIC50 + 1/hill*np.log10(9)
+        -pIC90 = -pIC50 + 1/hill*np.log10(9)
+        pIC90 = pIC50 - 1/hill*np.log10(9)
+    """
     return pIC50 - 1/hill*np.log10(9)
+
+
+def _pd_mean_std_pIC(df, name_pIC='pIC50', measure='mean'):
+    """
+    Given a dataframe of cellular IC50/hill slope values of multiple experiments, 
+    return mean/std of pIC50 for each inhibitor.
+
+    Parameters:
+    ----------
+    df          : input dataframe
+    name_pIC    : name of column
+    measure     : statistical measure, can be 'mean' or 'median'
+    ----------
+    """
+    assert measure in ['mean', 'median'], print("Please check the statistical measure again.")
+    
+    ID = np.unique(df['ID'])
+    mean = []
+    std = []
+    for _ID in ID:
+        if measure == 'mean':
+            mean.append(df[name_pIC][df.ID == _ID].mean())
+        else:
+            mean.append(df[name_pIC][df.ID == _ID].median())
+        std.append(df[name_pIC][df.ID == _ID].std())
+    
+    return pd.DataFrame([ID, mean, std], index=['ID', name_pIC, name_pIC+'_std']).T
+
+
+def _correct_ID(df, correct='add'):
+    """
+    Correct the ID from ASAP-0000153 to ASAP-0000153-001 or vice versa
+    """
+    assert correct in ['add', 'drop'], print("ID can only be correct by adding or dropping -001.")
+    
+    colnames = df.columns
+    ID = np.unique(df['ID'])
+    if correct == 'add':
+        new_ID = [_ID+'-001' for _ID in df['ID']]
+    else: 
+        new_ID = [_ID[:12] for _ID in df['ID']]
+    df_update = df.copy()
+    df_update = df_update.drop('ID', axis=1)
+    df_update.insert(0, 'ID', new_ID)
+    
+    return df_update

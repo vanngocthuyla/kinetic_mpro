@@ -1,3 +1,9 @@
+"""
+This file is used to fit to one CRC. First, it checks if there is outlier(s) in the CRC. 
+Then, model is fitted. If the model converges, pIC50 is estimated. Otherwise, more samples can be 
+generated and all the samples of multiple runnings are combined before checking the convergence again.
+"""
+
 import warnings
 import numpy as np
 import sys
@@ -25,14 +31,14 @@ warnings.filterwarnings("ignore")
 from _load_data_mers import load_data_one_inhibitor
 
 from _define_model import Model
-from _CRC_fitting import _run_CRC_EI, _expt_check_noise_trend
+from _CRC_fitting import _run_mcmc_CRC, _expt_check_noise_trend
 
 from _MAP_mpro import _map_running
 from _params_extraction import extract_logK_n_idx, extract_kcat_n_idx
 from _trace_analysis import extract_params_from_map_and_prior, _trace_convergence, _convergence_rhat
-from _plotting import plot_data_conc_log
+from _plotting import plot_data_conc_log, plotting_trace
 
-from _pIC50 import _adjust_trace, _pIC50_hill
+from _pIC50 import _adjust_trace, _pIC_hill
 
 from _save_setting import save_model_setting
 
@@ -43,11 +49,10 @@ parser.add_argument( "--name_inhibitor",                type=str,               
 parser.add_argument( "--prior_infor",                   type=str,               default="")
 parser.add_argument( "--shared_params_infor",           type=str,               default="")
 parser.add_argument( "--initial_values",                type=str,               default="")
-parser.add_argument( "--last_run_dir",                  type=str,               default="")
 parser.add_argument( "--out_dir",                       type=str,               default="")
 
-parser.add_argument( "--fit_E_S",                       action="store_true",    default=True)
-parser.add_argument( "--fit_E_I",                       action="store_true",    default=True)
+parser.add_argument( "--fit_E_S",                       action="store_true",    default=False)
+parser.add_argument( "--fit_E_I",                       action="store_true",    default=False)
 
 parser.add_argument( "--multi_var",                     action="store_true",    default=False)
 parser.add_argument( "--multi_alpha",                   action="store_true",    default=False)
@@ -68,8 +73,8 @@ parser.add_argument( "--exclude_first_trace",           action="store_true",    
 parser.add_argument( "--key_to_check",                  type=str,               default="")
 parser.add_argument( "--converged_samples",             type=int,               default=500)
 
-parser.add_argument( "--enzyme_conc_nM",                type=int,               default="100")
-parser.add_argument( "--inhibitor_conc_nM",             type=int,               default="1350")
+parser.add_argument( "--enzyme_conc_nM",                type=float,             default="100")
+parser.add_argument( "--substrate_conc_nM",             type=float,             default="1350")
 
 args = parser.parse_args()
 
@@ -121,7 +126,7 @@ os.chdir(args.out_dir)
 
 ### Concentration for the estimation of dimer-only pIC50
 init_logMtot = np.log(args.enzyme_conc_nM*1E-9)
-init_logStot = np.log(args.inhibitor_conc_nM*1E-9)
+init_logStot = np.log(args.substrate_conc_nM*1E-9)
 init_logDtot = init_logMtot-np.log(2)
 
 n_points = 50
@@ -172,7 +177,7 @@ while no_running<=no_limit:
                 with open(os.path.join(expt_dir, "log.txt"), "a") as f:
                     print(mes, file=f)
 
-                trace = _run_CRC_EI(expts, model.prior_infor, model.shared_params, init_values, '', expt_dir, model.args)
+                trace = _run_mcmc_CRC(expts, model.prior_infor, model.shared_params, init_values, '', expt_dir, model.args)
 
             else:
                 last_state = pickle.load(open(os.path.join(last_dir, "Last_state.pickle"), "rb"))
@@ -181,9 +186,9 @@ while no_running<=no_limit:
                 with open(os.path.join(expt_dir, "log.txt"), "a") as f:
                     print(mes, file=f)
 
-                trace = _run_CRC_EI(expts, model.prior_infor, model.shared_params, None, last_dir, expt_dir, model.args)
+                trace = _run_mcmc_CRC(expts, model.prior_infor, model.shared_params, None, last_dir, expt_dir, model.args)
         else:
-            trace = _run_CRC_EI(expts, model.prior_infor, model.shared_params, None, last_dir, expt_dir, model.args)
+            trace = _run_mcmc_CRC(expts, model.prior_infor, model.shared_params, None, last_dir, expt_dir, model.args)
 
         ## Finding MAP
         [trace_map, map_index] = _map_running(trace.copy(), expts, model.prior_infor, model.shared_params, model.args)
@@ -229,7 +234,9 @@ while no_running<=no_limit:
         else:
             df = data.iloc[::_nthin, :].copy()
 
-        pIC50_list, hill_list = _pIC50_hill(df, logDtot, logStot, logItot)
+        thetas = _pIC_hill(df, logDtot, logStot, logItot)
+        pIC50_list = thetas[2]
+        hill_list = thetas[3]
         
         if _convergence_rhat(trace=pIC50_list, nchain=nchain_updated, digit=1):
             

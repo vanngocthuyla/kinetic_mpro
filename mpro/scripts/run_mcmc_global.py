@@ -1,3 +1,8 @@
+"""
+This code is designed to fit the model that involves enzyme - substrate - inhibitors. 
+Posterior from previous steps can be used to assign the prior for this global fitting of multiple inhibitors. 
+"""
+
 import warnings
 import os
 import numpy as np

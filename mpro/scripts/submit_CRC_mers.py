@@ -1,3 +1,8 @@
+"""
+This file is used to submit the batch file and run the code in run_CRC_fitting_pIC50_estimating.py
+A list of experiments can be provided, then separated into multiple batch file to run them in parallel.
+"""
+
 import sys
 import os
 import glob
@@ -16,8 +21,8 @@ parser.add_argument( "--out_dir",                       type=str,               
 
 parser.add_argument( "--running_script",                type=str,               default="")
 
-parser.add_argument( "--fit_E_S",                       action="store_true",    default=False)
-parser.add_argument( "--fit_E_I",                       action="store_true",    default=False)
+parser.add_argument( "--fit_E_S",                       action="store_true",    default=True)
+parser.add_argument( "--fit_E_I",                       action="store_true",    default=True)
 
 parser.add_argument( "--multi_var",                     action="store_true",    default=False)
 parser.add_argument( "--multi_alpha",                   action="store_true",    default=False)
@@ -26,6 +31,9 @@ parser.add_argument( "--dE",                            type=float,             
 
 parser.add_argument( "--set_K_S_DS_equal_K_S_D",        action="store_true",    default=False)
 parser.add_argument( "--set_K_S_DI_equal_K_S_DS",       action="store_true",    default=False)
+
+parser.add_argument( "--split_by",                      type=int,               default=0)
+parser.add_argument( "--exclude_experiments",           type=str,               default="")
 
 parser.add_argument( "--niters",                        type=int,               default=10000)
 parser.add_argument( "--nburn",                         type=int,               default=2000)
@@ -108,33 +116,61 @@ if args.key_to_check:
 else:
     key_to_check = ""
 
-if not os.path.isdir(args.out_dir):
-    os.mkdir(args.out_dir)
+name_inhibitors = args.name_inhibitor.split()
+if len(name_inhibitors) == 0:
+    df_mers = pd.read_csv(args.input_file)
+    _inhibitor_list = np.unique(df_mers[df_mers['Inhibitor (nM)']>0.0]['Inhibitor_ID'])
+else:
+    _inhibitor_list = name_inhibitors
 
-if not os.path.isdir(args.out_dir):
-    os.mkdir(args.out_dir)
+exclude_experiments = args.exclude_experiments.split()
+inhibitor_list = [name for name in _inhibitor_list if name[:12] not in exclude_experiments]
+inhibitor_list = np.sort(np.array(inhibitor_list))
 
-qsub_file = os.path.join(args.out_dir, f"CRC_pIC50.sh")
-log_file = os.path.join(args.out_dir, f"CRC_pIC50.log")
+if args.split_by != 0:
+    inhibitor_multi_list = np.array_split(np.array(inhibitor_list), args.split_by)
+else: 
+    inhibitor_multi_list = inhibitor_list
 
-qsub_script = '''#!/bin/bash
-    conda activate mpro ''' + '''\ncd ''' + args.out_dir + '''\n date \n((''' + \
-    '''python ''' + args.running_script + \
-    ''' --name_inhibitor ''' + args.name_inhibitor + \
-    ''' --input_file ''' + args.input_file + prior_infor + shared_params + \
-    fit_E_S + fit_E_I + map_file + ''' --out_dir ''' + args.out_dir + \
-    multi_var + multi_alpha + set_lognormal_dE + ''' --dE %0.5f '''%args.dE + \
-    set_K_S_DS_equal_K_S_D + set_K_S_DI_equal_K_S_DS + \
-    ''' --niters %d '''%args.niters + \
-    ''' --nburn %d '''%args.nburn + \
-    ''' --nthin %d '''%args.nthin + \
-    ''' --nchain %d '''%args.nchain + \
-    ''' --random_key %d '''%args.random_key + outlier_removal + \
-    outlier_removal + exclude_first_trace + key_to_check + \
-    ''' --converged_samples %d '''%args.converged_samples +\
-    ''' --enzyme_conc_nM %d '''%args.enzyme_conc_nM + \
-    ''' --substrate_conc_nM %d '''%args.substrate_conc_nM + \
-    '''\n\n'''
-open(qsub_file, "w").write(qsub_script)
-qsub_script = ''') 2>&1) | tee ''' + log_file
-open(qsub_file, "a").write(qsub_script)
+for list_idx, _inhibitor_list in enumerate(inhibitor_multi_list):
+
+    if not os.path.isdir(args.out_dir):
+        os.mkdir(args.out_dir)
+
+    if not os.path.isdir(os.path.join(args.out_dir, 'running_files')):
+        os.mkdir(os.path.join(args.out_dir, 'running_files'))
+
+    qsub_file = os.path.join(args.out_dir, 'running_files', f"{list_idx}.sh")
+    log_file = os.path.join(args.out_dir, 'running_files', f"{list_idx}.log")
+
+    qsub_script = '''#!/bin/bash
+conda activate mpro ''' + '''\ncd ''' + args.out_dir + '''\n\n(('''
+    open(qsub_file, "w").write(qsub_script)
+
+    for n, inhibitor in enumerate(_inhibitor_list):
+
+        inhibitor_dir = inhibitor[7:12]
+        inhibitor_name = inhibitor[:12]
+
+        qsub_script = '''date \n''' + \
+        '''python ''' + args.running_script + \
+        ''' --name_inhibitor ''' + inhibitor_name + \
+        ''' --input_file ''' + args.input_file + prior_infor + shared_params + \
+        map_file + ''' --out_dir ''' + args.out_dir + \
+        fit_E_S + fit_E_I + multi_var + multi_alpha + set_lognormal_dE + ''' --dE %0.5f '''%args.dE + \
+        set_K_S_DS_equal_K_S_D + set_K_S_DI_equal_K_S_DS + \
+        ''' --niters %d '''%args.niters + \
+        ''' --nburn %d '''%args.nburn + \
+        ''' --nthin %d '''%args.nthin + \
+        ''' --nchain %d '''%args.nchain + \
+        ''' --random_key %d '''%args.random_key + \
+        outlier_removal + exclude_first_trace + key_to_check + \
+        ''' --converged_samples %d '''%args.converged_samples +\
+        ''' --enzyme_conc_nM %d '''%args.enzyme_conc_nM + \
+        ''' --substrate_conc_nM %d '''%args.substrate_conc_nM + \
+        '''\n\n'''
+
+        open(qsub_file, "a").write(qsub_script)
+
+    qsub_script = ''') 2>&1) | tee ''' + log_file
+    open(qsub_file, "a").write(qsub_script)

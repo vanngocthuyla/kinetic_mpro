@@ -13,7 +13,7 @@ import numpyro
 from numpyro.infer import MCMC, NUTS, init_to_value
 
 from _plotting import plotting_trace
-from _model import global_fitting, EI_fitting
+from _model import global_fitting
 
 from _kinetics import ReactionRate
 from _prior_distribution import uniform_prior, normal_prior, logsigma_guesses, lognormal_prior
@@ -26,7 +26,7 @@ from _plotting import plotting_trace
 import matplotlib.pyplot as plt
 
 
-def _run_CRC_EI(expts, prior_infor, shared_params, init_values, last_run_dir, out_dir, args):
+def _run_mcmc_CRC(expts, prior_infor, shared_params, init_values, last_run_dir, out_dir, args):
     """
     Parameters:
     ----------
@@ -37,10 +37,14 @@ def _run_CRC_EI(expts, prior_infor, shared_params, init_values, last_run_dir, ou
     prior_infor     : list of dict to assign prior distribution for kinetics parameters
     shared_params   : dict, information for shared parameters
     init_values     : dict, initial value for model fitting
+    last_run_dir    : str, directory of the last running mcmc
+    out_dir         : str, directory of the output 
     args            : dict, other model arguments
     ----------
     Fitting the Bayesian model to estimate the kinetics parameters and noise of all datasets
     Return mcmc.trace
+
+    This function is modified from _model_fitting/_run_mcmc
     """
     rng_key, rng_key_ = random.split(random.PRNGKey(args.random_key))
     os.chdir(out_dir)
@@ -48,9 +52,9 @@ def _run_CRC_EI(expts, prior_infor, shared_params, init_values, last_run_dir, ou
 
     if not os.path.isfile(traces_name+'.pickle'):
         if not init_values is None:
-            kernel = NUTS(model=_CRC_EI_fitting, init_strategy=init_to_value(values=init_values))
+            kernel = NUTS(model=global_fitting, init_strategy=init_to_value(values=init_values))
         else:
-            kernel = NUTS(_CRC_EI_fitting)
+            kernel = NUTS(global_fitting)
 
         if os.path.isfile(os.path.join(last_run_dir, "Last_state.pickle")):
             last_state = pickle.load(open(os.path.join(last_run_dir, "Last_state.pickle"), "rb"))
@@ -85,72 +89,76 @@ def _run_CRC_EI(expts, prior_infor, shared_params, init_values, last_run_dir, ou
     return trace
 
 
-def _CRC_EI_fitting(experiments, prior_infor, shared_params, args):
-    """
-    Parameters:
-    ----------
-    experiments : list of dict of multiple enzymes
-        Each enzymes dataset contains multiple experimental datasets, including data_rate, data_AUC, data_ICE
-        Each data_rate/data_AUC/data_ICE contains response, logMtot, lotStot, logItot
-        Notice that for each data_rate/data_AUC/data_ICE, there may be one more datasets (noise for different dataset).
-    prior_infor : list of dict to assign prior distribution for kinetics parameters
-    init_values     : dict, initial value for model fitting
-    shared_params : dict of information for shared parameters
-    ----------
-    Fitting the Bayesian model to estimate the enzyme-inhibitor parameters and noise of each enzyme
-    """
-    n_enzymes = len(experiments)
+# def _mcmc_CRC_fitting(experiments, prior_infor, shared_params, args):
+#     """
+#     Parameters:
+#     ----------
+#     experiments : list of dict of multiple enzymes
+#         Each enzymes dataset contains multiple experimental datasets, including data_rate, data_AUC, data_ICE
+#         Each data_rate/data_AUC/data_ICE contains response, logMtot, lotStot, logItot
+#         Notice that for each data_rate/data_AUC/data_ICE, there may be one more datasets (noise for different dataset).
+#     prior_infor : list of dict to assign prior distribution for kinetics parameters
+#     init_values     : dict, initial value for model fitting
+#     shared_params : dict of information for shared parameters
+#     ----------
+#     Fitting the Bayesian model to estimate the enzyme-inhibitor parameters and noise of each enzyme
+#     """
+#     n_enzymes = len(experiments)
 
-    params_logK, params_kcat = prior_group_multi_enzyme(prior_infor, n_enzymes, shared_params)
+#     params_logK, params_kcat = prior_group_multi_enzyme(prior_infor, n_enzymes, shared_params)
 
-    # Define priors for normalization factor
-    if not args.multi_alpha:
-        alpha_list = _alpha_priors(experiments, lower=args.alpha_min, upper=args.alpha_max)
-    else:
-        alpha_list = None
+#     # Define priors for normalization factor
+#     if not args.multi_alpha:
+#         alpha_list = _alpha_priors(experiments, lower=args.alpha_min, upper=args.alpha_max)
+#     else:
+#         alpha_list = None
 
-    # Define priors for enzyme concentration uncertainty
-    if args.set_lognormal_dE and args.dE>0:
-        E_list = _dE_priors(experiments, args.dE, 'lognormal')
-    elif args.dE>0:
-        E_list = _dE_priors(experiments, args.dE)
+#     # Define priors for enzyme concentration uncertainty
+#     if args.set_lognormal_dE and args.dE>0:
+#         E_list = _dE_priors(experiments, args.dE, 'lognormal')
+#     elif args.dE>0:
+#         E_list = _dE_priors(experiments, args.dE)
 
-    for idx, expt in enumerate(experiments):
+#     for idx, expt in enumerate(experiments):
 
-        # Extract parameters by index
-        try: idx_expt = expt['index']
-        except: idx_expt = idx
+#         # Extract parameters by index
+#         try: idx_expt = expt['index']
+#         except: idx_expt = idx
 
-        _params_logK = extract_logK_n_idx(params_logK, idx, shared_params, set_K_S_DS_equal_K_S_D=args.set_K_S_DS_equal_K_S_D,
-                                          set_K_S_DI_equal_K_S_DS=args.set_K_S_DI_equal_K_S_DS)
-        _params_kcat = extract_kcat_n_idx(params_kcat, idx, shared_params)
+#         _params_logK = extract_logK_n_idx(params_logK, idx, shared_params, 
+#                                           set_K_I_M_equal_K_S_M=args.set_K_I_M_equal_K_S_M, 
+#                                           set_K_S_DS_equal_K_S_D=args.set_K_S_DS_equal_K_S_D,
+#                                           set_K_S_DI_equal_K_S_DS=args.set_K_S_DI_equal_K_S_DS)
+#         _params_kcat = extract_kcat_n_idx(params_kcat, idx, shared_params,
+#                                           set_kcat_DSS_equal_kcat_DS=args.set_kcat_DSS_equal_kcat_DS,
+#                                           set_kcat_DSI_equal_kcat_DS=args.set_kcat_DSI_equal_kcat_DS,
+#                                           set_kcat_DSI_equal_kcat_DSS=args.set_kcat_DSI_equal_kcat_DSS)
 
-        if type(expt['CRC']) is dict:
+#         if type(expt['CRC']) is dict:
+#             for n in range(len(expt['CRC'])):
+#                 data_rate = expt['CRC'][n]
+#                 plate = expt['plate'][n]
+#                 alpha = _alpha_find_prior(plate, alpha_list)
 
-            for n in range(len(expt['CRC'])):
-                data_rate = expt['CRC'][n]
-                plate = expt['plate'][n]
-                alpha = _alpha_find_prior(plate, alpha_list)
+#                 if args.dE>0: Etot = _dE_find_prior(data_rate, E_list)
+#                 else: Etot = None
 
-                if args.dE>0: Etot = _dE_find_prior(data_rate, E_list)
-                else: Etot = None
+#                 if data_rate is not None:
+#                     fitting_each_dataset(type_expt='CRC', data=data_rate, params=[*_params_logK, *_params_kcat],
+#                                          alpha=alpha, alpha_min=args.alpha_min, alpha_max=args.alpha_max,
+#                                          Etot=Etot, log_sigmas=args.log_sigmas, index=f'{idx_expt}:{n}')
+#         else:
+#             data_rate = expt['CRC']
+#             if data_rate is not None:
+#                 plate = expt['plate']
+#                 alpha = _alpha_find_prior(plate, alpha_list)
 
-                if data_rate is not None:
-                    fitting_each_dataset(type_expt='CRC', data=data_rate, params=[*_params_logK, *_params_kcat],
-                                         alpha=alpha, alpha_min=args.alpha_min, alpha_max=args.alpha_max,
-                                         Etot=Etot, log_sigmas=args.log_sigmas, index=f'{idx_expt}:{n}')
-        else:
-            data_rate = expt['CRC']
-            plate = expt['plate']
-            alpha = _alpha_find_prior(plate, alpha_list)
+#                 if args.dE>0: Etot = _dE_find_prior(data_rate, E_list)
+#                 else: Etot = None
 
-            if args.dE>0: Etot = _dE_find_prior(data_rate, E_list)
-            else: Etot = None
-
-            if data_rate is not None:
-                fitting_each_dataset(type_expt='CRC', data=data_rate, params=[*_params_logK, *_params_kcat],
-                                     alpha=alpha, alpha_min=args.alpha_min, alpha_max=args.alpha_max,
-                                     Etot=Etot, log_sigmas=args.log_sigmas, index=f'{idx_expt}')
+#                 fitting_each_dataset(type_expt='CRC', data=data_rate, params=[*_params_logK, *_params_kcat],
+#                                      alpha=alpha, alpha_min=args.alpha_min, alpha_max=args.alpha_max,
+#                                      Etot=Etot, log_sigmas=args.log_sigmas, index=f'{idx_expt}')
 
 
 def _CRC_check_noise(response, logItot, Z=2.5, plotting=False, scaling_plot=False, OUTFILE=''):

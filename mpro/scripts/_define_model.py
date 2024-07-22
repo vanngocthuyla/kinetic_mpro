@@ -43,18 +43,19 @@ class Model:
         """
         Attributes in input_args:
             
-            traces_name : str, name of mcmc trace
-            last_run_dir: str, last running directory
-            out_dir     : str, output directory
-            nburn       : int, number of burn-in
-            niters      : int, number of samples
-            nthin       : int, number of thinning
-            nchain      : int, number of chains
-            random_key  : int, random key
-            lnKd_min    : float, lower values of uniform distribution for prior of dissociation constants
-            lnKd_max    : float, upper values of uniform distribution for prior of dissociation constants
-            kcat_min    : float, lower values of uniform distribution for prior of kcat
-            kcat_max    : float, upper values of uniform distribution for prior of kcat
+            traces_name     : str, name of mcmc trace
+            initial_values  : dict, initial values for parameters
+            last_run_dir    : str, last running directory
+            out_dir         : str, output directory
+            nburn           : int, number of burn-in
+            niters          : int, number of samples
+            nthin           : int, number of thinning
+            nchain          : int, number of chains
+            random_key      : int, random key
+            lnKd_min        : float, lower values of uniform distribution for prior of dissociation constants
+            lnKd_max        : float, upper values of uniform distribution for prior of dissociation constants
+            kcat_min        : float, lower values of uniform distribution for prior of kcat
+            kcat_max        : float, upper values of uniform distribution for prior of kcat
             multi_alpha     : boolean, normalization factor
                               If True, setting one alpha for each dataset.
                               If False, multiple datasets having the same plate share alpha
@@ -63,6 +64,8 @@ class Model:
             set_lognormal_dE: boolean, using lognormal prior or uniform prior for enzyme concentration uncertainnty
             dE              : float, enzyme concentration uncertainty
             log_sigmas      : dict, measurement error of multiple experiments under log scale
+            fixing_log_sigmas       : boolean, if initial values of log_sigmas are provided, and fixing_log_sigmas=True, 
+                                      the model won't estimate these parameters
         """
         
         # Initial values

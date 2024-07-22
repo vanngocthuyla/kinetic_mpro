@@ -1,3 +1,11 @@
+"""
+This file is used to submit the batch file and run the code in one of the following files:
+- run_mcmc_EI.py
+- run_mcmc_ES.py
+- run_mcmc_ESI_2_curves.py
+- run_mcmc_ESI_4_curves.py
+"""
+
 import os
 import glob
 import argparse
@@ -25,9 +33,6 @@ parser.add_argument( "--multi_var",                     action="store_true",    
 parser.add_argument( "--multi_alpha",                   action="store_true",    default=False)
 parser.add_argument( "--set_lognormal_dE",              action="store_true",    default=False)
 parser.add_argument( "--dE",                            type=float,             default=0.1)
-
-parser.add_argument( "--set_K_S_DS_equal_K_S_D",        action="store_true",    default=False)
-parser.add_argument( "--set_K_S_DI_equal_K_S_DS",       action="store_true",    default=False)
 
 parser.add_argument( "--niters",                        type=int,               default=10000)
 parser.add_argument( "--nburn",                         type=int,               default=2000)
@@ -61,16 +66,6 @@ if args.set_lognormal_dE:
     set_lognormal_dE = " --set_lognormal_dE "
 else:
     set_lognormal_dE = " "
-
-if args.set_K_S_DS_equal_K_S_D:
-    set_K_S_DS_equal_K_S_D = " --set_K_S_DS_equal_K_S_D "
-else:
-    set_K_S_DS_equal_K_S_D = " "
-
-if args.set_K_S_DI_equal_K_S_DS:
-    set_K_S_DI_equal_K_S_DS = " --set_K_S_DI_equal_K_S_DS "
-else:
-    set_K_S_DI_equal_K_S_DS = " "
 
 name_inhibitors = args.name_inhibitor.split()
 if len(name_inhibitors) == 0:
@@ -133,7 +128,6 @@ cd ''' + out_dir + '''\n''' + \
     ''' --name_inhibitor ''' + inhibitor_name + \
     fit_E_S + fit_E_I + multi_var + multi_alpha + \
     set_lognormal_dE + ''' --dE %0.5f '''%args.dE + \
-    set_K_S_DS_equal_K_S_D + set_K_S_DI_equal_K_S_DS + \
     ''' --niters %d '''%args.niters + \
     ''' --nburn %d '''%args.nburn + \
     ''' --nthin %d '''%args.nthin + \

@@ -1,3 +1,8 @@
+"""
+This code is designed to fit the model that involves enzyme - substrate - inhibitors. 
+Data was extracted from the publication of Nash et al. (2022) and Vuong et al (2022). 
+"""
+
 import warnings
 import os
 import argparse
@@ -43,6 +48,13 @@ parser.add_argument( "--fit_E_I",                       action="store_true",    
 
 parser.add_argument( "--multi_var_mut",                 action="store_true",    default=False)
 parser.add_argument( "--multi_var_wt",                  action="store_true",    default=False)
+
+parser.add_argument( "--set_K_I_M_equal_K_S_M",         action="store_true",    default=False)
+parser.add_argument( "--set_K_S_DS_equal_K_S_D",        action="store_true",    default=False)
+parser.add_argument( "--set_K_S_DI_equal_K_S_DS",       action="store_true",    default=False)
+parser.add_argument( "--set_kcat_DSS_equal_kcat_DS",    action="store_true",    default=False)
+parser.add_argument( "--set_kcat_DSI_equal_kcat_DS",    action="store_true",    default=False)
+parser.add_argument( "--set_kcat_DSI_equal_kcat_DSS",   action="store_true",    default=False)
 
 parser.add_argument( "--niters",                        type=int,               default=10000)
 parser.add_argument( "--nburn",                         type=int,               default=2000)

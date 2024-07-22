@@ -11,7 +11,7 @@ import matplotlib.pyplot as plt
 import seaborn as sns
 
 from _chemical_reactions import ChemicalReactions
-from _pIC50 import f_pIC90
+from _pIC50 import f_pIC90, _pd_mean_std_pIC
 
 
 def _wm(x, w):
@@ -273,14 +273,31 @@ def corr_leave_p_out_matrix(data, keys, p=2, method='pearsonr'):
     return table
 
 
-def _pd_mean_std(df, name):
+def _pd_mean_std(df, name_pIC='pIC50', measure='mean'):
+    """
+    Given a dataframe of cellular IC50/hill slope values of multiple experiments, 
+    return mean/std of pIC50 for each inhibitor.
+
+    Parameters:
+    ----------
+    df          : input dataframe
+    name_pIC    : name of column
+    measure     : statistical measure, can be 'mean' or 'median'
+    ----------
+    """
+    assert measure in ['mean', 'median'], print("Please check the statistical measure again.")
+    
     ID = np.unique(df['ID'])
     mean = []
     std = []
     for _ID in ID:
-        mean.append(df[name][df.ID == _ID].mean())
-        std.append(df[name][df.ID == _ID].std())
-    return pd.DataFrame([ID, mean, std], index=['ID', name, name+'_std']).T
+        if measure == 'mean':
+            mean.append(df[name_pIC][df.ID == _ID].mean())
+        else:
+            mean.append(df[name_pIC][df.ID == _ID].median())
+        std.append(df[name_pIC][df.ID == _ID].std())
+    
+    return pd.DataFrame([ID, mean, std], index=['ID', name_pIC, name_pIC+'_std']).T
 
 
 def correlation_table(pIC50, pIC90):
@@ -296,65 +313,105 @@ def correlation_table(pIC50, pIC90):
     return table.replace(np. nan,'',regex=True)
 
 
-def _df_biochem_pIC50_pIC90(df, name=''):
+# def _df_biochem_pIC50_pIC90(df, name=''):
+
+#     df_update = df.copy()
+#     N = len(df)
+#     df_update.insert(len(df_update.columns), name+'pIC50', len(df_update))
+#     df_update.insert(len(df_update.columns), name+'pIC90', len(df_update))
+
+#     for i in range(N):
+#         dat = df_update.iloc[i]
+#         _pIC50 = -np.log10(dat[name+'IC50']*1E-6)
+#         hill = dat['hill']
+#         if hill > 0:
+#             _pIC90 = f_pIC90(_pIC50, hill)
+#         else:
+#             _pIC90 = float('nan')
+#         df_update.at[i, name+'pIC50'] = _pIC50
+#         df_update.at[i, name+'pIC90'] = _pIC90
+
+#     return df_update
+
+
+# def _cell_row_pIC50_pIC90(row, name=''):
+#     if row[name+'IC50_Mod']=='=':
+#         pIC50 = -np.log10(row[name+'IC50']*1E-6)
+#     else:
+#         pIC50 = float('nan')
+#     if row[name+'IC90_Mod']=='=' and row[name+'IC90']>0:
+#         pIC90 = -np.log10(row.IC90*1E-6)
+#     elif pIC50>0 and (row['hill']>0 or row['hill']>0):
+#         pIC90 = f_pIC90(pIC50, row['hill'])
+#     elif pIC50>0 and (row['hill']>0 or row['hill']<0):
+#         pIC90 = f_pIC90(pIC50, -row['hill'])
+#     else:
+#         pIC90 = float('nan')
+#     return pIC50, pIC90
+
+
+def _df_pIC50_pIC90(df, name=''):
+    """
+    Given a dataframe of IC50/hill slope values of multiple experiments, 
+    return pIC50/pIC90 for all inhibitor.
+
+    Parameters:
+    ----------
+    df          : input dataframe
+    name        : name of experiment
+    ----------
+    """
+    assert ('pIC50' in df.columns) or ('IC50_uM' in df.columns), print("At least one of the column is IC50 (uM) or pIC50.")
 
     df_update = df.copy()
     N = len(df)
-    df_update.insert(len(df_update.columns), name+'pIC50', len(df_update))
-    df_update.insert(len(df_update.columns), name+'pIC90', len(df_update))
-
+    
+    pIC50_list = []
+    pIC90_list = []
     for i in range(N):
-        dat = df_update.iloc[i]
-        _pIC50 = -np.log10(dat[name+'IC50']*1E-6)
-        hill = dat['hill']
-        if hill > 0:
-            _pIC90 = f_pIC90(_pIC50, hill)
-        else:
-            _pIC90 = float('nan')
-        df_update.at[i, name+'pIC50'] = _pIC50
-        df_update.at[i, name+'pIC90'] = _pIC90
+        _pIC50, _pIC90 = _pIC50_pIC90(df_update.iloc[i], name=name)
+        pIC50_list.append(_pIC50)
+        pIC90_list.append(_pIC90)
 
-    return df_update
+    if not name+'pIC50' in df_update.columns:
+        df_update.insert(len(df_update.columns), name+'pIC50', pIC50_list)
+    if not name+'pIC90' in df_update.columns:
+        df_update.insert(len(df_update.columns), name+'pIC90', pIC90_list)
+
+    df_pIC50 = _pd_mean_std_pIC(df_update, 'pIC50')
+    df_pIC90 = _pd_mean_std_pIC(df_update, 'pIC90')
+    df_final = pd.merge(df_pIC50, df_pIC90, on='ID', how='outer')
+    
+    return df_final
 
 
-def _cell_row_pIC50_pIC90(row, name=''):
-    if row[name+'IC50_Mod']=='=':
-        pIC50 = -np.log10(row[name+'IC50']*1E-6)
+def _pIC50_pIC90(row, name=''):
+    """
+    Given a row of IC50/hill slope values of one experiment, return pIC50/pIC90.
+
+    Parameters:
+    ----------
+    row         : one row from input dataframe
+    name        : name of experiment
+    ----------
+    """
+    colnames = row.to_frame().T.columns
+    if name+'pIC50' in colnames:
+        pIC50 = row[name+'pIC50']
+    elif name+'IC50_uM' in colnames:
+        pIC50 = -np.log10(row[name+'IC50_uM']*1E-6)
     else:
         pIC50 = float('nan')
-    if row[name+'IC90_Mod']=='=' and row[name+'IC90']>0:
-        pIC90 = -np.log10(row.IC90*1E-6)
-    elif pIC50>0 and (row['hill']>0 or row['hill']>0):
-        pIC90 = f_pIC90(pIC50, row['hill'])
-    elif pIC50>0 and (row['hill']>0 or row['hill']<0):
-        pIC90 = f_pIC90(pIC50, -row['hill'])
-    else:
         pIC90 = float('nan')
-    return pIC50, pIC90
+        return pIC50, pIC90
 
-
-def _df_cell_pIC50_pIC90(df, name=''):
-
-    df_update = df.copy()
-    N = len(df)
-    df_update.insert(len(df_update.columns), name+'pIC50', len(df_update))
-    df_update.insert(len(df_update.columns), name+'pIC90', len(df_update))
-
-    for i in range(N):
-        _pIC50, _pIC90 = _cell_row_pIC50_pIC90(df_update.iloc[i], name=name)
-        df_update.at[i, name+'pIC50'] = _pIC50
-        df_update.at[i, name+'pIC90'] = _pIC90
-
-    return df_update
-
-
-def _biochem_row_pIC50_pIC90(row, name=''):
-
-    pIC50 = -np.log10(row[name+'IC50']*1E-6)
-    if name+'IC90' in row.columns and row.colrow[name+'IC90']>0:
-        pIC90 = -np.log10(row[name+'IC90']*1E-6)
-    elif pIC50>0 and (row['hill']>0 or row['hill']<0):
-        pIC90 = f_pIC90(pIC50, row['hill'])
+    if name+'hill' in colnames:
+        if name+'IC90' in colnames and row[name+'IC90']>0:
+            pIC90 = -np.log10(row[name+'IC90_nM']*1E-6)
+        elif pIC50>0 and row['hill']!=0:
+            pIC90 = f_pIC90(pIC50, row['hill'])
+        else:
+            pIC90 = float('nan')
     else:
         pIC90 = float('nan')
     return pIC50, pIC90

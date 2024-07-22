@@ -1,3 +1,7 @@
+"""
+This code is designed to run MCMC fitting to one concentration-response curve.
+"""
+
 import warnings
 import os
 import numpy as np
@@ -17,7 +21,8 @@ warnings.simplefilter("ignore", RuntimeWarning)
 from _load_data_mers import load_data_one_inhibitor
 
 from _define_model import Model
-from _CRC_fitting import _run_CRC_EI
+from _model_fitting import _run_mcmc
+from _CRC_fitting import _expt_check_noise_trend
 
 from _MAP_mpro import _map_running
 from _params_extraction import extract_logK_n_idx, extract_kcat_n_idx
@@ -36,8 +41,8 @@ parser.add_argument( "--initial_values",                type=str,               
 parser.add_argument( "--last_run_dir",                  type=str,               default="")
 parser.add_argument( "--out_dir",                       type=str,               default="")
 
-parser.add_argument( "--fit_E_S",                       action="store_true",    default=True)
-parser.add_argument( "--fit_E_I",                       action="store_true",    default=True)
+parser.add_argument( "--fit_E_S",                       action="store_true",    default=False)
+parser.add_argument( "--fit_E_I",                       action="store_true",    default=False)
 
 parser.add_argument( "--multi_var",                     action="store_true",    default=False)
 parser.add_argument( "--multi_alpha",                   action="store_true",    default=False)
@@ -52,6 +57,8 @@ parser.add_argument( "--nburn",                         type=int,               
 parser.add_argument( "--nthin",                         type=int,               default=1)
 parser.add_argument( "--nchain",                        type=int,               default=4)
 parser.add_argument( "--random_key",                    type=int,               default=0)
+
+parser.add_argument( "--outlier_removal",               action="store_true",    default=False)
 
 args = parser.parse_args()
 
@@ -68,8 +75,17 @@ df_mers = pd.read_csv(args.input_file)
 
 inhibitor_name = np.array([args.name_inhibitor+'-001'])
 for i, name in enumerate(inhibitor_name):
-    expts, expts_plot = load_data_one_inhibitor(df_mers[(df_mers['Inhibitor_ID']==name)*(df_mers['Drop']!=1.0)],
-                                                multi_var=args.multi_var)
+    expts_init, expts_plot = load_data_one_inhibitor(df_mers[(df_mers['Inhibitor_ID']==name)*(df_mers['Drop']!=1.0)],
+                                                     multi_var=args.multi_var)
+
+## Outlier detection and trend checking
+[expts_outliers, outliers, _, _] = _expt_check_noise_trend(expts_init)
+if args.outlier_removal:
+    print("Checking outlier(s) in the curve...")
+    expts = expts_outliers.copy()
+else:
+    expts = expts_init.copy()
+    outliers = None
 
 if len(expts_plot)>0:
 
@@ -78,7 +94,7 @@ if len(expts_plot)>0:
     model.check_model(args)
 
     ## Fitting model
-    trace = _run_CRC_EI(expts, model.prior_infor, model.shared_params, model.init_values, model.args.last_run_dir, model.args.out_dir, model.args)
+    trace = _run_mcmc(expts, model.prior_infor, model.shared_params, model.init_values, model.args)
 
     ## Finding MAP
     [trace_map, map_index] = _map_running(trace.copy(), expts, model.prior_infor, model.shared_params, model.args)
@@ -97,7 +113,7 @@ if len(expts_plot)>0:
     n = 0
     plot_data_conc_log(expts_plot, extract_logK_n_idx(params_logK, n, model.shared_params),
                        extract_kcat_n_idx(params_kcat, n, model.shared_params),
-                       alpha_list=alpha_list, E_list=E_list,
+                       alpha_list=alpha_list, E_list=E_list, outliers=outliers,
                        OUTFILE=os.path.join(args.out_dir,'EI'))
 else:
     print("There is no data found.")
