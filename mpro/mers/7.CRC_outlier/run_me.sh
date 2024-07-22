@@ -1,10 +1,10 @@
 #!/bin/bash
 
-export SCRIPT="/home/exouser/python/mpro/scripts/submit_CRC_pIC50.py"
+export SCRIPT="/home/exouser/python/mpro/scripts/submit_CRC_mers.py"
 
 export RUNNING_SCRIPT="/home/exouser/python/mpro/scripts/run_CRC_fitting_pIC50_estimating.py"
 
-export INPUT="/home/exouser/python/mpro/mers/input/CDD_20240222_normalized_data.csv"
+export INPUT="/home/exouser/python/mpro/mers/input/CDD_20240406_normalized_data.csv"
 
 export PRIOR='/home/exouser/python/mpro/mers/7.CRC_outlier/Prior.json'
 

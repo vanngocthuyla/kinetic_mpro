@@ -9,28 +9,28 @@
         "name": "logKd",
         "fit": "global",
         "dist": null,
-        "value": -9.761,
+        "value": -9.431,
     },
     "logK_S_M": {
         "type": "logK",
         "name": "logK_S_M",
         "fit": "global",
         "dist": null,
-        "value": -7.579,
+        "value": -8.121,
     },
     "logK_S_D": {
         "type": "logK",
         "name": "logK_S_D",
         "fit": "global",
         "dist": null,
-        "value": -16.626,
+        "value": -15.333,
     },
     "logK_S_DS": {
         "type": "logK",
         "name": "logK_S_DS",
         "fit": "global",
         "dist": null,
-        "value": -15.801,
+        "value": -16.967,
     },
     "logK_I_M": {
         "type": "logK",
@@ -70,7 +70,7 @@
         "name": "kcat_DS",
         "fit": "global",
         "dist": null,
-        "value": 0.676,
+        "value": 4.227,
     },
     "kcat_DSI": {
         "type": "kcat",
@@ -85,6 +85,6 @@
         "name": "kcat_DSS",
         "fit": "global",
         "dist": null,
-        "value": 0.151,
+        "value": 0.165,
     }
 }
