@@ -14,7 +14,7 @@ All datasets share the same conditions, allowing us to utilize the Maximum A Pos
 
 ## Run_me.sh
 
-You can run the model fitting directly by: 
+You can run the model fitting directly by executing:
 
     python /mpro/scripts/run_CRC_fitting.py --name_inhibitor $ID --input_file $INPUT --prior_infor /mpro/CRC/input/Prior.json --fit_E_S  --fit_E_I --initial_values /mpro/CRC/input/map_sampling.pickle --out_dir /mpro/CRC/output --multi_var  --set_lognormal_dE  --dE 0.10 --niters 1000 --nburn 200  --nchain 4 --outlier_removal
 
