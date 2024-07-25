@@ -1,0 +1,11 @@
+MAP index:1075
+
+Kinetics parameters:
+alpha:19701-MERS2 : 0.502
+dE:50 : 50.428
+kcat_DSI : 0.773
+logK_I_D : -19.119
+logK_I_DI : -18.017
+logK_I_M : -4.982
+logK_S_DI : -14.866
+log_sigma_CRC:14973:0 : -24.822

@@ -1,0 +1,12 @@
+type,name,fit,dist,value,lower,upper
+logKd,logKd,global,,-9.431,,
+logK,logK_S_M,global,,-8.121,,
+logK,logK_S_D,global,,-15.333,,
+logK,logK_S_DS,global,,-16.967,,
+logK,logK_I_M,global,uniform,,-20.73,0.0
+logK,logK_I_D,global,uniform,,-27.63,0.0
+logK,logK_I_DI,global,uniform,,-27.63,0.0
+logK,logK_S_DI,global,uniform,,-27.63,0.0
+kcat,kcat_DS,global,,4.227,,
+kcat,kcat_DSS,global,,0.165,,
+kcat,kcat_DSI,global,uniform,,0.0,20.0
