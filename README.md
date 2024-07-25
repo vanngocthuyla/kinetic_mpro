@@ -10,12 +10,12 @@ We used Bayesian regression to fit the datasets. Knowledge about kinetic variabl
 
 ## Global Fitting
 
-The global fitting of SARS-CoV-2 MPro or MERS-CoV MPro can be found in mpro/sars or mpro/mers, respectively.
+The global fitting of SARS-CoV-2 MPro or MERS-CoV MPro can be found in /mpro/sars or /mpro/mers, respectively.
 
 ## CRC Fitting
 
-Using information on shared parameters estimated from the global fitting, each CRC can be estimated, including the binding affinities between the enzyme and the inhibitor. This can be found in mpro/CRC.
+Using information on shared parameters estimated from the global fitting, each CRC can be estimated, including the binding affinities between the enzyme and the inhibitor. An example can be found in /mpro/CRC.
 
 ## CRC Fitting and pIC50 estimation
 
-The code will automatically generate samples until the number of converged samples is sufficient to estimate the pIC50. This can be found in mpro/CRC_pIC50.
+The code will automatically generate samples until the number of converged samples is sufficient to estimate the pIC50. An example can be found in /mpro/CRC_pIC50.
