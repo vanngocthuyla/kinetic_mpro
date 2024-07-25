@@ -6,9 +6,9 @@ All datasets are shared the same conditions to we can utilize the MAP of posteri
 
 - The input data should be under .csv format and contain the information about the plate of experiment, the concentration of the species (nM), ID of the inhibitor, response of the CRC. The final column ("Drop") to let the code know if we keep or drop a specific data point. 
 
-- Prior.json: this file provides information about the prior distribution of the parameters.
+- *Prior.json*: this file provides information about the prior distribution of the parameters.
 
-- map_sampling.pickle: this file is copied from the global fitting and contains the MAP of posterior distributions of the enzyme-substrate parameters.
+- *map_sampling.pickle*: this file is copied from the global fitting and contains the MAP of posterior distributions of the enzyme-substrate parameters.
 
 ## Run_me.sh
 
