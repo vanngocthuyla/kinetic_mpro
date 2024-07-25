@@ -2,23 +2,23 @@
 
 ## Assumption
 
-All datasets are shared the same conditions to we can utilize the MAP of posterior distributions of the enzyme-substrate parameters from the global fitting of MERS-CoV MPro as fixed values and estimate the enzyme-inhibitor parameters, along with the enzyme concentration uncertainty and the normalization factor.
+All datasets share the same conditions, allowing us to utilize the Maximum A Posteriori (MAP) of posterior distributions of the enzyme-substrate parameters from the global fitting of MERS-CoV MPro as fixed values. This enables the estimation of enzyme-inhibitor parameters, along with the enzyme concentration uncertainty and the normalization factor.
 
 ## Input
 
-- The input data should be under .csv format and contain the information about the plate of experiment, the concentration of the species (nM), ID of the inhibitor, response of the CRC. The final column ("Drop") to let the code know if we keep or drop a specific data point. 
+- The input data should be in .csv format and contain information about the experiment plate, the concentration of the species (nM), the ID of the inhibitor, and the response of the CRC. The final column ("Drop") indicates whether a specific data point should be kept or dropped.
 
-- *Prior.json*: this file provides information about the prior distribution of the parameters.
+- *Prior.json*: provides information about the prior distribution of the parameters.
 
-- *map_sampling.pickle*: this file is copied from the global fitting and contains the MAP of posterior distributions of the enzyme-substrate parameters.
+- *map_sampling.pickle*: this file, copied from the global fitting, contains the MAP of posterior distributions of the enzyme-substrate parameters.
 
 ## Run_me.sh
 
 You can run the model fitting directly by: 
 
-*python mpro/scripts/run_CRC_fitting.py --name_inhibitor $ID --input_file $INPUT --prior_infor mpro/CRC/input/Prior.json --fit_E_S  --fit_E_I --initial_values mpro/CRC/input/map_sampling.pickle --out_dir /mpro/CRC/output --multi_var  --set_lognormal_dE  --dE 0.10 --niters 1000 --nburn 200  --nchain 4 --outlier_removal*
+    python /mpro/scripts/run_CRC_fitting.py --name_inhibitor $ID --input_file $INPUT --prior_infor /mpro/CRC/input/Prior.json --fit_E_S  --fit_E_I --initial_values /mpro/CRC/input/map_sampling.pickle --out_dir /mpro/CRC/output --multi_var  --set_lognormal_dE  --dE 0.10 --niters 1000 --nburn 200  --nchain 4 --outlier_removal
 
-Or you can submit job by adjusting the code in **mpro/scripts/submit_CRC.py**. There are some arguments for this model fitting: 
+Alternatively, you can submit a job by adjusting the code in /mpro/scripts/submit_CRC.py. The arguments for this model fitting are: 
 
 - **args.input_file**: specifies the input file, which should be a CSV file containing the kinetic data. In the last column, the value drop=1 indicates that the corresponding data points will be excluded from the fitting process.
 
