@@ -23,7 +23,9 @@ You can run the model fitting directly by executing:
     export ID='Inhibitor_1'
     python /home/mpro/scripts/run_CRC_fitting.py --name_inhibitor $ID --input_file $INPUT --prior_infor $PRIOR --fit_E_S  --fit_E_I --initial_values $INIT --out_dir $OUT_DIR --multi_var  --set_lognormal_dE  --dE 0.10 --niters 1000 --nburn 200  --nchain 4 --outlier_removal
 
-Alternatively, you can submit a job by adjusting the code in /mpro/scripts/submit_CRC.py. The arguments for this model fitting are: 
+Alternatively, you can submit a job by adjusting the code in /mpro/scripts/submit_CRC.py. 
+
+The arguments for this model fitting are: 
 
 - **args.input_file**: Specifies the input file, a CSV file containing the kinetic data. In the last column, the value *1* indicates that the corresponding data points will be excluded from the fitting process.
 
