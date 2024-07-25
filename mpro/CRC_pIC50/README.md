@@ -1,3 +1,5 @@
+# CRC fitting and pIC50 estimation
+
 ## Assumption:
 
 All datasets are shared the same conditions to we can utilize the MAP of posterior distributions of the enzyme-substrate parameters from the global fitting of MERS-CoV MPro as fixed values and estimate the enzyme-inhibitor parameters, along with the enzyme concentration uncertainty and the normalization factor.
@@ -6,17 +8,17 @@ All datasets are shared the same conditions to we can utilize the MAP of posteri
 
 - The input data should be under .csv format and contain the information about the plate of experiment, the concentration of the species (nM), ID of the inhibitor, response of the CRC. The final column ("Drop") to let the code know if we keep or drop a specific data point. 
 
-- Prior.json: this file provides information about the prior distribution of the parameters.
+- *Prior.json*: this file provides information about the prior distribution of the parameters.
 
-- map_sampling.pickle: this file is copied from the global fitting and contains the MAP of posterior distributions of the enzyme-substrate parameters.
+- *map_sampling.pickle*: this file is copied from the global fitting and contains the MAP of posterior distributions of the enzyme-substrate parameters.
 
 ## Run_me.sh
 
-You can run the model fitting directly by: 
+You can run the model fitting directly by:
 
-python mpro/scripts/run_CRC_fitting.py --name_inhibitor $ID --input_file $INPUT --prior_infor mpro/CRC/input/Prior.json --fit_E_S  --fit_E_I --initial_values mpro/CRC/input/map_sampling.pickle --out_dir /mpro/CRC/output --multi_var  --set_lognormal_dE  --dE 0.10 --niters 1000 --nburn 200  --nchain 4 --outlier_removal
+*python /mpro/scripts/run_CRC_fitting_pIC50_estimating.py --name_inhibitor $ID --input_file $INPUT --prior_infor /mpro/CRC_pIC50/input/Prior.json --fit_E_S --fit_E_I --initial_values /mpro/CRC_pIC50/input/map_sampling.pickle --out_dir /mpro/CRC_pIC50/output --multi_var   --set_lognormal_dE --dE 0.1 --niters 1000 --nburn 200 --nthin 1 --nchain 4 --random_key 0  --outlier_removal --exclude_first_trace --converged_samples 500 --enzyme_conc_nM 100  --substrate_conc_nM 1350*
 
-Or you can submit job by adjusting the code in "mpro/scripts/submit_CRC.py". There are some arguments for this model fitting: 
+Or you can submit job by adjusting the code in **mpro/scripts/submit_CRC_pIC50.py**. There are some arguments for this model fitting: 
 
 - **args.input_file**: specifies the input file, which should be a CSV file containing the kinetic data. In the last column, the value drop=1 indicates that the corresponding data points will be excluded from the fitting process.
 
@@ -32,15 +34,15 @@ Or you can submit job by adjusting the code in "mpro/scripts/submit_CRC.py". The
 
 - **args.out_dir**: specifies the directory where the results will be saved.
 
-- **args.fit_E_S**: if set to True, the model will estimate all enzyme-substrate parameters.
+- **args.fit_E_S**: if set to *True*, the model will estimate all enzyme-substrate parameters.
 
-- **args.fit_E_I**: if set to True, the model will estimate all enzyme-inhibitor parameters.
+- **args.fit_E_I**: if set to *True*, the model will estimate all enzyme-inhibitor parameters.
 
-- **args.multi_var**: if set to True, each dataset will have a measurement error estimated from the model. Otherwise, datasets from the same experiment or plate will share the measurement error.
+- **args.multi_var**: if set to *True*, each dataset will have a measurement error estimated from the model. Otherwise, datasets from the same experiment or plate will share the measurement error.
 
-- **args.multi_alpha**: if set to True, each dataset will have a normalization factor estimated from the model. Otherwise, datasets from the same plate will share the normalization factor. The **args.multi_var** and **args.multi_alpha** are only useful when we fit more than one CRC. 
+- **args.multi_alpha**: if set to *True*, each dataset will have a normalization factor estimated from the model. Otherwise, datasets from the same plate will share the normalization factor. The **args.multi_var** and **args.multi_alpha** are only useful when we fit more than one CRC. 
 
-- **args.set_lognormal_dE**: If set to True, a lognormal prior will be assigned for the enzyme concentration uncertainty. Otherwise, a uniform prior will be used.
+- **args.set_lognormal_dE**: If set to *True*, a lognormal prior will be assigned for the enzyme concentration uncertainty. Otherwise, a uniform prior will be used.
 
 - **args.dE**: This parameter specifies the uncertainty for the enzyme concentration.
 
@@ -52,7 +54,4 @@ Or you can submit job by adjusting the code in "mpro/scripts/submit_CRC.py". The
 
 - **args.random_key**: sets the random key for Bayesian regression.
 
-- **args.outlier_removal**: if set to True, the code will check for any outliers in the CRC and remove them before parameter estimation.
-
-
-For example, if we aim to estimate kinetic parameters for a multiple CRCs, we would set **args.fit_E_S** = True and **args.fit_E_I** = True. Each dataset will have a measurement error, so **args.multi_var** = True, while some datasets from the same plate will share the alpha, hence **args.multi_alpha** = False. For the enzyme concentration uncertainty, we will assign a lognormal prior with an uncertainty of 10%, thus **args.set_lognormal_dE** = True and **args.dE** = 0.1.
+- **args.outlier_removal**: if set to *True*, the code will check for any outliers in the CRC and remove them before parameter estimation.
