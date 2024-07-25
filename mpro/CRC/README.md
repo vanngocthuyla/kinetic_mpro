@@ -14,7 +14,7 @@ All datasets are shared the same conditions to we can utilize the MAP of posteri
 
 You can run the model fitting directly by: 
 
-* python mpro/scripts/run_CRC_fitting.py --name_inhibitor $ID --input_file $INPUT --prior_infor mpro/CRC/input/Prior.json --fit_E_S  --fit_E_I --initial_values mpro/CRC/input/map_sampling.pickle --out_dir /mpro/CRC/output --multi_var  --set_lognormal_dE  --dE 0.10 --niters 1000 --nburn 200  --nchain 4 --outlier_removal *
+*python mpro/scripts/run_CRC_fitting.py --name_inhibitor $ID --input_file $INPUT --prior_infor mpro/CRC/input/Prior.json --fit_E_S  --fit_E_I --initial_values mpro/CRC/input/map_sampling.pickle --out_dir /mpro/CRC/output --multi_var  --set_lognormal_dE  --dE 0.10 --niters 1000 --nburn 200  --nchain 4 --outlier_removal*
 
 Or you can submit job by adjusting the code in **mpro/scripts/submit_CRC.py**. There are some arguments for this model fitting: 
 
