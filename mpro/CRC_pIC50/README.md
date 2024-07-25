@@ -77,13 +77,13 @@ Other arguments in this analysis:
 
 ## Different fitting scenarios
 
-1) We want to collect 500 converged samples and estimate the pIC50, so we set `args.nburn = 200`, `args.niters = 1000`, `args.converged_samples = 500`. The model will undergo multiple fittings:
+1) We want to collect 500 converged samples and estimate the pIC50, so we set `nburn = 200`, `niters = 1000`, `converged_samples = 500`. The model will undergo multiple fittings:
 
     * First fitting: This involves running 1200 MCMC samples, excluding the first 200 samples. The convergence of the remaining 1000 samples is checked. If there are at least 500 samples in the equilibration region, the pIC50 can be estimated and reported. Otherwise, a second fitting is performed.
 
     * Second fitting: This time, 1000 MCMC samples are run using the last state from the first fitting. The convergence of the combined 2000 samples from the first and second fittings is then checked. If there are at least 500 samples in the equilibration region, the pIC50 can be estimated and reported. Otherwise, additional fittings will be performed until enough converged samples are obtained or until the maximum number of fittings (10) is reached.
 
-2) We want to collect 500 converged samples and estimate the pIC50, but we don't want to collect the samples from the first fitting, so we will have additional setting `args.exclude_first_trace = True`. 
+2) We want to collect 500 converged samples and estimate the pIC50, but we don't want to collect the samples from the first fitting, so we will have additional setting `exclude_first_trace = True`. 
 
     * First fitting: This involves running 1200 MCMC samples, excluding the first 200 samples. The convergence of the remaining 1000 samples is checked. If there are at least 500 samples in the equilibration region, the pIC50 can be estimated and reported. Otherwise, a second fitting is performed.
     
@@ -95,4 +95,4 @@ Other arguments in this analysis:
 
 The results can be found in the *Convergence* folder. In this folder, all the MCMC samples from multiple fittings are combined, and samples in the equilibration region are extracted. Useful metrics, such as autocorrelation plots, trace plots, and summaries of MCMC convergence, are provided to assess the convergence.
 
-Additionally, the log file contains important information: the number of fittings performed; the estimated pIC50 and its standard deviation if a sufficient number of samples are available. If `args.outlier_removal = True` and the curve exhibits any specific characteristics, such as being downward or upward, or if it is noisy, this information will also be reported in the log file.
+Additionally, the log file contains important information: the number of fittings performed; the estimated pIC50 and its standard deviation if a sufficient number of samples are available. If `outlier_removal = True` and the curve exhibits any specific characteristics, such as being downward or upward, or if it is noisy, this information will also be reported in the log file.
