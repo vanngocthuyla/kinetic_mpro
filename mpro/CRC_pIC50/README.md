@@ -86,6 +86,6 @@ Other arguments in this analysis:
 
 ## Output
 
-The results can be found in the “Convergence” folder. In this folder, all the MCMC samples from multiple fittings are combined, and samples in the equilibration region are extracted. Useful metrics, such as autocorrelation plots, trace plots, and summaries of MCMC convergence, are provided to assess the convergence.
+The results can be found in the *Convergence* folder. In this folder, all the MCMC samples from multiple fittings are combined, and samples in the equilibration region are extracted. Useful metrics, such as autocorrelation plots, trace plots, and summaries of MCMC convergence, are provided to assess the convergence.
 
 Additionally, the log file contains important information: the number of fittings performed; the estimated pIC50 and its standard deviation if a sufficient number of samples are available. If `args.outlier_removal = True` and the curve exhibits any specific characteristics, such as being downward or upward, or if it is noisy, this information will also be reported in the log file.
