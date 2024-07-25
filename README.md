@@ -5,7 +5,7 @@ The entire procedure comprises two main steps:
 -	Global Fitting: This step utilizes a subset of the data to estimate shared parameters across all datasets. The shared parameters include the binding affinities between the enzyme and the substrate.
 -	CRC Fitting and pIC50 Estimation: The shared parameters estimated from the global fitting are used to estimate local parameters for each CRC.
 
-We used Bayesian regression to fit the datasets. Knowledge about kinetic variables is used to assign the prior information to estimate the parameters.
+We used Bayesian regression to fit the datasets. Knowledge about kinetic variables is used to assign the prior information to estimate the parameters. Otherwise, uninformative priors can be used instead.
 
 
 ## Global Fitting
