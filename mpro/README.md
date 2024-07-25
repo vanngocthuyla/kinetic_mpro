@@ -19,3 +19,18 @@ Using information on shared parameters estimated from the global fitting, each C
 ## CRC Fitting and pIC50 estimation
 
 The code will automatically generate samples until the number of converged samples is sufficient to estimate the pIC50. An example can be found in /mpro/CRC_pIC50.
+
+# Set up the running environment
+
+To run the Bayesian regression, we need some python packages. 
+
+  * jax v0.4.13
+  * jaxlib v0.4.13
+  * numpyro v0.4.13
+  * pickle-mixin >=v1.0.2
+  * arviz >=0.15.1
+
+If a higher version of JAX and JAXlib is installed, we need to check whether x64 `jax.numpy` can be used by executing the following code without any errors:
+
+    from jax.config import config
+    config.update("jax_enable_x64", True)
