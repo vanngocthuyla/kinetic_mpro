@@ -64,4 +64,4 @@ The arguments for this model fitting are:
 - **args.outlier_removal**: if set to *True*, the code will check for any outliers in the CRC and remove them before parameter estimation.
 
 
-For example, if we aim to estimate kinetic parameters for multiple CRCs, we would set `args.fit_E_S = True` and `args.fit_E_I = True`. Each dataset will have a measurement error, so `args.multi_var = True`, while some datasets from the same plate will share the normalization factor, hence `args.multi_alpha = False`. For the enzyme concentration uncertainty, we will assign a lognormal prior with an uncertainty of 10%, thus `args.set_lognormal_dE = True` and `args.dE = 0.1`.
+For example, if we aim to estimate kinetic parameters for multiple CRCs, we would set `fit_E_S = True` and `fit_E_I = True`. Each dataset will have a measurement error, so `multi_var = True`, while some datasets from the same plate will share the normalization factor, hence `multi_alpha = False`. For the enzyme concentration uncertainty, we will assign a lognormal prior with an uncertainty of 10%, thus `set_lognormal_dE = True` and `dE = 0.1`.
