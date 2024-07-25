@@ -1,0 +1,205 @@
+Warning on use of the timeseries module: If the inherent timescales of the system are long compared to those being analyzed, this statistical inefficiency may be an underestimate.  The estimate presumes the use of many statistically independent samples.  Tests should be performed to assess whether this condition is satisfied.   Be cautious in the interpretation of the data.
+
+****** PyMBAR will use 64-bit JAX! *******
+* JAX is currently set to 32-bit bitsize *
+* which is its default.                  *
+*                                        *
+* PyMBAR requires 64-bit mode and WILL   *
+* enable JAX's 64-bit mode when called.  *
+*                                        *
+* This MAY cause problems with other     *
+* Uses of JAX in the same code.          *
+******************************************
+
+No GPU/TPU found, falling back to CPU. (Set TF_CPP_MIN_LOG_LEVEL=0 and rerun for more info.)
+ninter: 1000
+nburn: 200
+nchain: 4
+nthin: 1
+
+Initial values: {'logKd': Array(-9.43087123, dtype=float64), 'logK_S_M': Array(-8.12143055, dtype=float64), 'logK_S_D': Array(-15.33251296, dtype=float64), 'logK_S_DS': Array(-16.9665317, dtype=float64), 'alpha:E100_S1350': Array(0.85258059, dtype=float64), 'alpha:E100_S50': Array(1.28420218, dtype=float64), 'alpha:E100_S750': Array(1.02669548, dtype=float64), 'alpha:E50_S150': Array(1.17831995, dtype=float64), 'kcat_DS': Array(4.22712365, dtype=float64), 'kcat_DSS': Array(0.16479852, dtype=float64), 'dE:100': Array(53.90397913, dtype=float64), 'dE:50': Array(50.14100072, dtype=float64), 'dE:25': Array(30.39126154, dtype=float64), 'logK_I_M': Array(-6.03490699, dtype=float64), 'logK_I_D': Array(-14.43049447, dtype=float64), 'logK_I_DI': Array(-24.82007071, dtype=float64), 'logK_S_DI': Array(-20.63799912, dtype=float64), 'kcat_DSI': Array(1.32109532, dtype=float64), 'log_sigma:00272:0': Array(-25.28192408, dtype=float64), 'log_sigma:00272:1': Array(-26.52457804, dtype=float64), 'log_sigma:00272:2': Array(-23.07673679, dtype=float64), 'log_sigma:00272:3': Array(-24.19488659, dtype=float64)} 
+
+
+Prior information: 
+      type       name     fit     dist   value  lower  upper
+0   logKd      logKd  global     None  -9.431    NaN    NaN
+1    logK   logK_S_M  global     None  -8.121    NaN    NaN
+2    logK   logK_S_D  global     None -15.333    NaN    NaN
+3    logK  logK_S_DS  global     None -16.967    NaN    NaN
+4    logK   logK_I_M  global  uniform     NaN -20.73    0.0
+5    logK   logK_I_D  global  uniform     NaN -27.63    0.0
+6    logK  logK_I_DI  global  uniform     NaN -27.63    0.0
+7    logK  logK_S_DI  global  uniform     NaN -27.63    0.0
+8    kcat    kcat_DS  global     None   4.227    NaN    NaN
+9    kcat   kcat_DSS  global     None   0.165    NaN    NaN
+10   kcat   kcat_DSI  global  uniform     NaN   0.00   20.0
+
+No shared parameter.
+
+Analyzing ASAP-0014973
+
+Fitting sampling_1/14973:
+  0%|          | 0/1200 [00:00<?, ?it/s]Compiling.. :   0%|          | 0/1200 [00:00<?, ?it/s]
+  0%|          | 0/1200 [00:00<?, ?it/s][A
+Compiling.. :   0%|          | 0/1200 [00:00<?, ?it/s][A
+
+  0%|          | 0/1200 [00:00<?, ?it/s][A[A
+
+Compiling.. :   0%|          | 0/1200 [00:00<?, ?it/s][A[A
+
+
+  0%|          | 0/1200 [00:00<?, ?it/s][A[A[A
+
+
+Compiling.. :   0%|          | 0/1200 [00:00<?, ?it/s][A[A[A
+
+Running chain 2:   0%|          | 0/1200 [00:10<?, ?it/s][A[A
+
+
+Running chain 3:   0%|          | 0/1200 [00:10<?, ?it/s][A[A[ARunning chain 0:   0%|          | 0/1200 [00:10<?, ?it/s]
+Running chain 1:   0%|          | 0/1200 [00:10<?, ?it/s][ARunning chain 0:   5%|▌         | 60/1200 [00:23<03:56,  4.83it/s]
+
+
+Running chain 3:   5%|▌         | 60/1200 [00:23<03:59,  4.76it/s][A[A[A
+
+Running chain 2:   5%|▌         | 60/1200 [00:34<07:27,  2.55it/s][A[A
+Running chain 1:   5%|▌         | 60/1200 [00:43<10:19,  1.84it/s][ARunning chain 0:  10%|█         | 120/1200 [00:48<05:58,  3.02it/s]
+
+
+Running chain 3:  10%|█         | 120/1200 [01:17<11:06,  1.62it/s][A[A[A
+
+Running chain 2:  10%|█         | 120/1200 [01:28<12:29,  1.44it/s][A[A
+Running chain 1:  10%|█         | 120/1200 [01:55<16:44,  1.08it/s][ARunning chain 0:  15%|█▌        | 180/1200 [01:56<11:51,  1.43it/s]
+
+Running chain 2:  15%|█▌        | 180/1200 [02:23<13:30,  1.26it/s][A[A
+
+
+Running chain 3:  15%|█▌        | 180/1200 [02:27<14:44,  1.15it/s][A[A[A
+Running chain 1:  15%|█▌        | 180/1200 [03:00<16:59,  1.00it/s][ARunning chain 0:  20%|██        | 240/1200 [03:11<14:40,  1.09it/s]
+
+Running chain 2:  20%|██        | 240/1200 [03:34<15:11,  1.05it/s][A[A
+
+
+Running chain 3:  20%|██        | 240/1200 [03:50<17:11,  1.07s/it][A[A[A
+Running chain 1:  20%|██        | 240/1200 [04:17<17:51,  1.12s/it][ARunning chain 0:  25%|██▌       | 300/1200 [04:36<16:29,  1.10s/it]
+
+Running chain 2:  25%|██▌       | 300/1200 [04:45<15:32,  1.04s/it][A[A
+
+
+Running chain 3:  25%|██▌       | 300/1200 [05:20<18:25,  1.23s/it][A[A[A
+Running chain 1:  25%|██▌       | 300/1200 [05:46<18:41,  1.25s/it][A
+
+Running chain 2:  30%|███       | 360/1200 [05:57<15:16,  1.09s/it][A[ARunning chain 0:  30%|███       | 360/1200 [06:08<17:25,  1.24s/it]
+
+
+Running chain 3:  30%|███       | 360/1200 [06:46<18:08,  1.30s/it][A[A[A
+Running chain 1:  30%|███       | 360/1200 [07:08<18:00,  1.29s/it][A
+
+Running chain 2:  35%|███▌      | 420/1200 [07:14<14:58,  1.15s/it][A[ARunning chain 0:  35%|███▌      | 420/1200 [07:28<16:35,  1.28s/it]
+
+
+Running chain 3:  35%|███▌      | 420/1200 [08:12<17:27,  1.34s/it][A[A[A
+
+Running chain 2:  40%|████      | 480/1200 [08:34<14:29,  1.21s/it][A[A
+Running chain 1:  35%|███▌      | 420/1200 [08:37<17:34,  1.35s/it][ARunning chain 0:  40%|████      | 480/1200 [08:52<15:45,  1.31s/it]
+
+Running chain 2:  45%|████▌     | 540/1200 [09:30<12:23,  1.13s/it][A[A
+
+
+Running chain 3:  40%|████      | 480/1200 [09:46<16:56,  1.41s/it][A[A[A
+Running chain 1:  40%|████      | 480/1200 [10:02<16:29,  1.37s/it][ARunning chain 0:  45%|████▌     | 540/1200 [10:14<14:37,  1.33s/it]
+
+Running chain 2:  50%|█████     | 600/1200 [10:48<11:48,  1.18s/it][A[A
+Running chain 1:  45%|████▌     | 540/1200 [11:15<14:31,  1.32s/it][A
+
+
+Running chain 3:  45%|████▌     | 540/1200 [11:20<16:03,  1.46s/it][A[A[ARunning chain 0:  50%|█████     | 600/1200 [11:44<13:48,  1.38s/it]
+
+Running chain 2:  55%|█████▌    | 660/1200 [12:02<10:44,  1.19s/it][A[A
+Running chain 1:  50%|█████     | 600/1200 [12:35<13:16,  1.33s/it][A
+
+
+Running chain 3:  50%|█████     | 600/1200 [12:53<14:54,  1.49s/it][A[A[ARunning chain 0:  55%|█████▌    | 660/1200 [13:16<12:51,  1.43s/it]
+
+Running chain 2:  60%|██████    | 720/1200 [13:17<09:41,  1.21s/it][A[A
+Running chain 1:  55%|█████▌    | 660/1200 [14:03<12:18,  1.37s/it][A
+
+
+Running chain 3:  55%|█████▌    | 660/1200 [14:22<13:23,  1.49s/it][A[A[A
+
+Running chain 2:  65%|██████▌   | 780/1200 [14:26<08:20,  1.19s/it][A[ARunning chain 0:  60%|██████    | 720/1200 [14:37<11:16,  1.41s/it]
+
+Running chain 2:  70%|███████   | 840/1200 [15:31<06:57,  1.16s/it][A[A
+Running chain 1:  60%|██████    | 720/1200 [15:33<11:17,  1.41s/it][A
+
+
+Running chain 3:  60%|██████    | 720/1200 [15:50<11:50,  1.48s/it][A[A[ARunning chain 0:  65%|██████▌   | 780/1200 [16:01<09:49,  1.40s/it]
+
+Running chain 2:  75%|███████▌  | 900/1200 [16:47<05:58,  1.19s/it][A[A
+Running chain 1:  65%|██████▌   | 780/1200 [16:50<09:35,  1.37s/it][A
+
+
+Running chain 3:  65%|██████▌   | 780/1200 [17:21<10:25,  1.49s/it][A[A[ARunning chain 0:  70%|███████   | 840/1200 [17:32<08:38,  1.44s/it]
+
+Running chain 2:  80%|████████  | 960/1200 [18:03<04:51,  1.21s/it][A[A
+Running chain 1:  70%|███████   | 840/1200 [18:08<08:06,  1.35s/it][A
+
+
+Running chain 3:  70%|███████   | 840/1200 [18:43<08:43,  1.46s/it][A[A[ARunning chain 0:  75%|███████▌  | 900/1200 [18:59<07:11,  1.44s/it]
+
+Running chain 2:  85%|████████▌ | 1020/1200 [19:21<03:43,  1.24s/it][A[A
+Running chain 1:  75%|███████▌  | 900/1200 [19:31<06:47,  1.36s/it][A
+
+
+Running chain 3:  75%|███████▌  | 900/1200 [20:17<07:25,  1.48s/it][A[A[ARunning chain 0:  80%|████████  | 960/1200 [20:31<05:52,  1.47s/it]
+
+Running chain 2:  90%|█████████ | 1080/1200 [20:31<02:26,  1.22s/it][A[A
+Running chain 1:  80%|████████  | 960/1200 [20:53<05:27,  1.36s/it][A
+
+
+Running chain 3:  80%|████████  | 960/1200 [21:46<05:56,  1.49s/it][A[A[A
+
+Running chain 2:  95%|█████████▌| 1140/1200 [21:47<01:13,  1.23s/it][A[ARunning chain 0:  85%|████████▌ | 1020/1200 [21:54<04:20,  1.45s/it]
+Running chain 1:  85%|████████▌ | 1020/1200 [22:17<04:06,  1.37s/it][A
+
+Running chain 2: 100%|██████████| 1200/1200 [23:06<00:00,  1.26s/it][A[A
+
+
+Running chain 3:  85%|████████▌ | 1020/1200 [23:12<04:24,  1.47s/it][A[A[ARunning chain 0:  90%|█████████ | 1080/1200 [23:23<02:54,  1.45s/it]
+Running chain 1:  90%|█████████ | 1080/1200 [23:41<02:45,  1.38s/it][A
+
+
+Running chain 3:  90%|█████████ | 1080/1200 [24:38<02:55,  1.46s/it][A[A[ARunning chain 0:  95%|█████████▌| 1140/1200 [24:50<01:27,  1.46s/it]
+Running chain 1:  95%|█████████▌| 1140/1200 [25:03<01:22,  1.38s/it][A
+
+
+Running chain 3:  95%|█████████▌| 1140/1200 [26:15<01:30,  1.51s/it][A[A[ARunning chain 0: 100%|██████████| 1200/1200 [26:16<00:00,  1.45s/it]
+Running chain 1: 100%|██████████| 1200/1200 [26:29<00:00,  1.39s/it][A
+
+
+Running chain 3: 100%|██████████| 1200/1200 [27:42<00:00,  1.49s/it][A[A[ARunning chain 0: 100%|██████████| 1200/1200 [27:42<00:00,  1.39s/it]
+Running chain 1: 100%|██████████| 1200/1200 [27:42<00:00,  1.39s/it]
+Running chain 2: 100%|██████████| 1200/1200 [27:42<00:00,  1.39s/it]
+Running chain 3: 100%|██████████| 1200/1200 [27:42<00:00,  1.39s/it]
+
+                             mean       std    median      5.0%     95.0%     n_eff     r_hat
+      alpha:19701-MERS2      0.54      0.11      0.53      0.36      0.70   1382.20      1.00
+                  dE:50     49.18      5.00     48.86     40.99     57.14   1399.18      1.00
+               kcat_DSI      9.70      5.69      9.30      0.64     18.15   1421.33      1.00
+               logK_I_D    -14.98      3.45    -14.73    -20.18     -9.63    633.75      1.01
+              logK_I_DI    -21.94      3.56    -22.22    -27.63    -17.03    641.66      1.00
+               logK_I_M     -7.11      4.55     -6.40    -14.22     -0.02    704.61      1.01
+              logK_S_DI    -16.71      3.58    -16.89    -21.86    -10.67    620.51      1.01
+  log_sigma_CRC:14973:0    -25.24      0.17    -25.25    -25.51    -24.98   2019.29      1.00
+
+Number of divergences: 15
+Saving last state.
+Calculing log of priors.
+Calculing log likelihoods:
+Adjusted trace with keys:  dict_keys(['alpha:19701-MERS2', 'dE:50', 'kcat_DSI', 'logK_I_D', 'logK_I_DI', 'logK_I_M', 'logK_S_DI', 'log_sigma_CRC:14973:0', 'logKd', 'logK_S_M', 'logK_S_D', 'logK_S_DS', 'kcat_DS', 'kcat_DSS'])
+CRC experiment 14973 : 0
+Map index: 1960
+Loading /home/exouser/python/mpro/CRC_pIC50/output/sampling_1/14973/traces.pickle
+There are 500 samples available.
+pIC50: 6.384 +- 0.096
+
