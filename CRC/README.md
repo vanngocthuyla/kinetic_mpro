@@ -16,12 +16,7 @@ All datasets share the same conditions, allowing us to utilize the Maximum A Pos
 
 You can run the model fitting directly by executing:
 
-    export INPUT='/home/mpro/CRC/input/input_data.csv'
-    export PRIOR='/home/mpro/CRC_pIC50/input/Prior.json'
-    export INIT='/home/mpro/CRC_pIC50/input/map_sampling.pickle'
-    export OUT_DIR='/home/mpro/CRC_pIC50/output'
-    export ID='Inhibitor_1'
-    python /home/mpro/scripts/run_CRC_fitting.py --name_inhibitor $ID --input_file $INPUT --prior_infor $PRIOR --fit_E_S  --fit_E_I --initial_values $INIT --out_dir $OUT_DIR --multi_var  --set_lognormal_dE  --dE 0.10 --niters 1000 --nburn 200  --nchain 4 --outlier_removal
+    python /home/mpro/scripts/run_CRC_fitting.py --name_inhibitor "ASAP-0014973" --input_file /home/mpro/CRC/input/input_data.csv --prior_infor /home/mpro/CRC_pIC50/input/Prior.json --fit_E_S  --fit_E_I --initial_values /home/mpro/CRC_pIC50/input/map_sampling.pickle --out_dir /home/mpro/CRC_pIC50/output --multi_var  --set_lognormal_dE  --dE 0.10 --niters 1000 --nburn 200  --nchain 4 --outlier_removal
 
 Alternatively, you can submit a job by adjusting the code in /mpro/scripts/submit_CRC.py. 
 
