@@ -16,7 +16,12 @@ All datasets share the same conditions, allowing us to utilize the Maximum A Pos
 
 You can run the model fitting directly by executing:
 
-      python /mpro/scripts/run_CRC_fitting_pIC50_estimating.py --name_inhibitor $ID --input_file $INPUT --prior_infor /mpro/CRC_pIC50/input/Prior.json --fit_E_S --fit_E_I --initial_values /mpro/CRC_pIC50/input/map_sampling.pickle --out_dir /mpro/CRC_pIC50/output --multi_var   --set_lognormal_dE --dE 0.1 --niters 1000 --nburn 200 --nthin 1 --nchain 4 --random_key 0  --outlier_removal --exclude_first_trace --converged_samples 500 --enzyme_conc_nM 100  --substrate_conc_nM 1350
+      export INPUT='/home/mpro/CRC/input/input_data.csv'
+      export PRIOR='/home/mpro/CRC_pIC50/input/Prior.json'
+      export INIT='/home/mpro/CRC_pIC50/input/map_sampling.pickle'
+      export OUT_DIR='/home/mpro/CRC_pIC50/output'
+      export ID='Inhibitor_1'
+      python /home/mpro/scripts/run_CRC_fitting_pIC50_estimating.py --name_inhibitor $ID --input_file $INPUT --prior_infor $PRIOR --fit_E_S --fit_E_I --initial_values $INIT --out_dir $OUT_DIR --multi_var   --set_lognormal_dE --dE 0.1 --niters 1000 --nburn 200 --nchain 4 --random_key 0  --outlier_removal --exclude_first_trace --converged_samples 500 --enzyme_conc_nM 100 --substrate_conc_nM 1350
 
 Alternatively, you can submit a job by adjusting the code in **mpro/scripts/submit_CRC_pIC50.py**. There are same arguments to CRC fitting:
 
