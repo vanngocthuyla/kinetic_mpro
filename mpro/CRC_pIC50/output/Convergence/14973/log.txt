@@ -1,0 +1,4 @@
+Loading /home/exouser/python/mpro/CRC_pIC50/output/sampling_1/14973/traces.pickle
+There are 500 samples available.
+pIC50: 6.384 +- 0.096
+
