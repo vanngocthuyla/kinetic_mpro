@@ -4,7 +4,7 @@ export SCRIPT="/home/exouser/python/mpro/scripts/submit_CRC.py"
 
 export RUNNING_SCRIPT="/home/exouser/python/mpro/scripts/run_CRC_fitting.py"
 
-export INPUT="/home/exouser/python/mpro/CRC/input/CDD_20240222_normalized_data.csv"
+export INPUT="/home/exouser/python/mpro/CRC/input/CDD_20240406_normalized_data.csv"
 
 export PRIOR='/home/exouser/python/mpro/CRC/input/Prior.json'
 
