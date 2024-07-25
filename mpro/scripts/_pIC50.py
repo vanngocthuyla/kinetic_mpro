@@ -186,7 +186,7 @@ def _pIC_hill(df, logDtot, logStot, logItot):
 
 
 def table_pIC_hill_one_inhibitor(inhibitor, mcmc_dir, logDtot, logStot, logItot, 
-                                 logK_dE_alpha=None, OUTDIR=None):
+                                 logK_dE_alpha=None, trace_name='traces.pickle', OUTDIR=None):
     """
     For one inhibitor, dimer-only pIC50s can be simulated given the specified values of 
     dimer/substrate concentrations and kinetic parameters from mcmc trace. 
@@ -206,10 +206,10 @@ def table_pIC_hill_one_inhibitor(inhibitor, mcmc_dir, logDtot, logStot, logItot,
     inhibitor_dir = inhibitor[7:12]
     inhibitor_name = inhibitor[:12]
 
-    if not os.path.isfile(os.path.join(mcmc_dir, inhibitor_dir, 'traces.pickle')):
+    if not os.path.isfile(os.path.join(mcmc_dir, inhibitor_dir, trace_name)):
         return None
 
-    trace = pickle.load(open(os.path.join(mcmc_dir, inhibitor_dir, 'traces.pickle'), "rb"))
+    trace = pickle.load(open(os.path.join(mcmc_dir, inhibitor_dir, trace_name), "rb"))
     data = az.InferenceData.to_dataframe(az.convert_to_inference_data(trace))
 
     nthin = int(len(data)/100)
@@ -230,6 +230,11 @@ def table_pIC_hill_one_inhibitor(inhibitor, mcmc_dir, logDtot, logStot, logItot,
     df.insert(len(df.columns), 'pIC90', pIC90_list)
 
     if OUTDIR is not None:
+        if not os.path.exists(os.path.join(OUTDIR, 'Parameters')):
+            os.makedirs(os.path.join(OUTDIR, 'Parameters'))
+        if not os.path.exists(os.path.join(OUTDIR, 'Plot')):
+            os.makedirs(os.path.join(OUTDIR, 'Plot'))
+
         plt.figure()
         for i in range(len(pIC50_list)):
             if hill_list[i]>0:
@@ -242,14 +247,15 @@ def table_pIC_hill_one_inhibitor(inhibitor, mcmc_dir, logDtot, logStot, logItot,
         sns.kdeplot(data=df[df.hill>0], x='pIC50', shade=True, alpha=0.1);
         plt.savefig(os.path.join(OUTDIR, 'Plot', inhibitor_name))
 
-    df_inhibitor = df[['logK_I_D', 'logK_I_DI', 'logK_S_DI', 'pIC50', 'hill', 'pIC90']]
-    df_inhibitor = df_inhibitor[df_inhibitor.hill>0]
+    # df_inhibitor = df[['logK_I_D', 'logK_I_DI', 'logK_S_DI', 'pIC50', 'hill', 'pIC90']]
+    # df_inhibitor = df_inhibitor[df_inhibitor.hill>0]
+    df_inhibitor = df[df.hill>0.]
     
     return df_inhibitor
 
 
-def _pIC_hill_one_inhibitor(inhibitor, mcmc_dir, logDtot, logStot, logItot, 
-                            measure='mean', logK_dE_alpha=None, OUTDIR=None):
+def _pIC_hill_one_inhibitor(inhibitor, mcmc_dir, logDtot, logStot, logItot, measure='mean',
+                            logK_dE_alpha=None, trace_name='traces.pickle', OUTDIR=None):
     """
     For one inhibitor, dimer-only pIC50s can be simulated given the specified values of 
     dimer/substrate concentrations and kinetic parameters from mcmc trace. 
@@ -269,15 +275,15 @@ def _pIC_hill_one_inhibitor(inhibitor, mcmc_dir, logDtot, logStot, logItot,
     assert measure in ['mean', 'median'], print("Please check the statistical measure again.")
         
     df = table_pIC_hill_one_inhibitor(inhibitor, mcmc_dir, logDtot, logStot, logItot, 
-                                      logK_dE_alpha, OUTDIR)
+                                      logK_dE_alpha, trace_name, OUTDIR)
     if measure == 'mean':
         return np.mean(df.pIC50), np.std(df.pIC50), np.mean(df.hill), np.std(df.hill), np.mean(df.pIC90), np.std(df.pIC90), 
     else:
         return np.median(df.pIC50), np.std(df.pIC50), np.median(df.hill), np.std(df.hill), np.median(df.pIC90), np.std(df.pIC90), 
 
 
-def table_pIC_hill_multi_inhibitor(inhibitor_list, mcmc_dir, logDtot, logStot, logItot, 
-                                   measure='mean', logK_dE_alpha=None, OUTDIR=None):
+def table_pIC_hill_multi_inhibitor(inhibitor_list, mcmc_dir, logDtot, logStot, logItot, measure='mean', 
+                                   logK_dE_alpha=None, trace_name='traces.pickle', OUTDIR=None):
     """
     For a set of inhibitors, dimer-only pIC50s can be simulated given the specified values of 
     dimer/substrate concentrations and kinetic parameters from mcmc trace. 
@@ -289,6 +295,7 @@ def table_pIC_hill_multi_inhibitor(inhibitor_list, mcmc_dir, logDtot, logStot, l
     logDtot         : vector of dimer concentration
     logStot         : vector of substrate concentration
     logItot         : vector of inhibitor concentration
+    measure         : statistical measure, can be 'mean' or 'median'
     logK_dE_alpha   : dict, information of fixed logK, dE and alpha
     ----------
     return table of kinetic parameters, pIC50, and hill slope for the whole dataset of multiple inhibitors
@@ -300,7 +307,7 @@ def table_pIC_hill_multi_inhibitor(inhibitor_list, mcmc_dir, logDtot, logStot, l
             os.makedirs(os.path.join(OUTDIR, 'Plot'))
 
     f_table = _pIC_hill_one_inhibitor
-    args = [mcmc_dir, logDtot, logStot, logItot, measure, logK_dE_alpha, OUTDIR]
+    args = [mcmc_dir, logDtot, logStot, logItot, measure, logK_dE_alpha, trace_name, OUTDIR]
     list_median_std = np.array(list(map(lambda i: f_table(i, *args), inhibitor_list)))
     
     pIC50_median = list_median_std.T[0]

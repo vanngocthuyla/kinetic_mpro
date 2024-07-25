@@ -129,7 +129,7 @@ qsub_script = '''#!/bin/bash
     ''' --nburn %d '''%args.nburn + \
     ''' --nthin %d '''%args.nthin + \
     ''' --nchain %d '''%args.nchain + \
-    ''' --random_key %d '''%args.random_key + outlier_removal + \
+    ''' --random_key %d '''%args.random_key + \
     outlier_removal + exclude_first_trace + key_to_check + \
     ''' --converged_samples %d '''%args.converged_samples +\
     ''' --enzyme_conc_nM %d '''%args.enzyme_conc_nM + \

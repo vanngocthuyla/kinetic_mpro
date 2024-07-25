@@ -109,8 +109,8 @@ def f_find_conc(init_logconc, inhibitor_list, mcmc_dir, n_points = 50, min_conc_
         return RMSD
 
 
-res = minimize(f_find_conc, x0=np.log(1*1E-6), method='COBYLA',
-               bounds=((-21, 0),), args=(inhibitor_list, args.mcmc_dir))
+res = minimize(f_find_conc, x0=np.log(1*1E-6), method='COBYLA', tol=1E-6,
+               bounds=((-21, -3),), args=(inhibitor_list, args.mcmc_dir))
 init_logconc = res.x[0]
 
 init_logDtot = init_logconc-np.log(2)

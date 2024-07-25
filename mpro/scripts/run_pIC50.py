@@ -9,6 +9,7 @@ import numpy as np
 import sys
 import os
 import argparse
+import glob
 
 import pickle
 import arviz as az
@@ -62,6 +63,12 @@ if len(include_experiments)>0:
 else:
     inhibitor_list = [name for name in _inhibitor_list if name[:12] not in exclude_experiments]
 
+os.chdir(args.mcmc_dir)
+subfolders = glob.glob(os.path.join('**/'), recursive=False)
+subfolders = np.unique(['ASAP-00'+f[:-1] for f in subfolders])
+
+inhibitor_list = [name for name in inhibitor_list if name[:12] in subfolders]
+
 if len(args.logK_dE_alpha_file)>0 and os.path.isfile(args.logK_dE_alpha_file):
     logK_dE_alpha = pickle.load(open(args.logK_dE_alpha_file, "rb"))
     
@@ -88,42 +95,86 @@ logD = np.ones(n_points)*init_logDtot
 logStot = np.ones(n_points)*init_logStot
 logItot = np.linspace(np.log(min_conc), np.log(max_conc), n_points)
 
+os.chdir(args.out_dir)
+
 if not os.path.exists('Plot'):
     os.makedirs('Plot')
 if not os.path.exists('Parameters'):
     os.makedirs('Parameters')
 
-os.chdir(args.out_dir)
-table_mean = pd.DataFrame()
-table_std = pd.DataFrame()
-table_mes = pd.DataFrame(index=['Noise', 'Trend'])
+# table_mean = pd.DataFrame()
+# table_std = pd.DataFrame()
+# table_mes = pd.DataFrame(index=['Noise', 'Trend'])
 
+# for n, inhibitor in enumerate(inhibitor_list):
+
+#     inhibitor_dir = inhibitor[7:12]
+#     inhibitor_name = inhibitor[:12]
+
+#     # pIC50, hill slope, and pIC90 estimation
+#     df = table_pIC_hill_one_inhibitor(inhibitor, args.mcmc_dir, logD, logStot, logItot,
+#                                       logK_dE_alpha, args.out_dir)
+#     if df is not None:
+#         print(f"Analyzing {inhibitor_name}")
+#         table_mean.insert(len(table_mean.columns), inhibitor_name, df.median())
+#         table_std.insert(len(table_std.columns), inhibitor_name, df.std())
+#         del df
+
+#         expts, expts_plot = load_data_one_inhibitor(df_mers[(df_mers['Inhibitor_ID']==inhibitor)*(df_mers['Drop']!=1.0)],
+#                                                 multi_var=args.multi_var)
+
+#         ## Outlier detection and trend checking
+#         [_, _, mes_noise, mes_trend] = _expt_check_noise_trend(expts)
+
+#         ## Report if curve is increasing or decreasing
+#         table_mes.insert(len(table_mes.columns), inhibitor_name, [mes_noise, mes_trend])
+
+kinetic_params_name = ['logKd', 'logK_S_D', 'logK_S_DS', 'logK_I_D', 'logK_I_DI', 'logK_S_DI', 'pIC50', 'hill', 'pIC90']
+params_name = []
+for name in kinetic_params_name:
+    params_name.append(name)
+    params_name.append(name+'_std')
+other_params_name = ['Noise', 'Trend']
+params_name = params_name + other_params_name
+
+N = len(inhibitor_list)
+table = pd.DataFrame([np.zeros(N)], params_name).T
+
+ID_list = []
 for n, inhibitor in enumerate(inhibitor_list):
 
     inhibitor_dir = inhibitor[7:12]
     inhibitor_name = inhibitor[:12]
 
+    ID_list.append(inhibitor_name)
+
     # pIC50, hill slope, and pIC90 estimation
     df = table_pIC_hill_one_inhibitor(inhibitor, args.mcmc_dir, logD, logStot, logItot,
-                                      logK_dE_alpha, args.out_dir)
+                                      logK_dE_alpha, 'traces.pickle', args.out_dir)
     if df is not None:
         print(f"Analyzing {inhibitor_name}")
-        table_mean.insert(len(table_mean.columns), inhibitor_name, df.median())
-        table_std.insert(len(table_std.columns), inhibitor_name, df.std())
+        for name in kinetic_params_name:
+            if name in df.columns:
+                table.at[n, name] = df[name].median()
+                table.at[n, name+'_std'] = df[name].std()
         del df
 
         expts, expts_plot = load_data_one_inhibitor(df_mers[(df_mers['Inhibitor_ID']==inhibitor)*(df_mers['Drop']!=1.0)],
-                                                multi_var=args.multi_var)
+                                                    multi_var=args.multi_var)
 
         ## Outlier detection and trend checking
         [_, _, mes_noise, mes_trend] = _expt_check_noise_trend(expts)
 
         ## Report if curve is increasing or decreasing
-        table_mes.insert(len(table_mes.columns), inhibitor_name, [mes_noise, mes_trend])
+        table.at[n, 'Noise'] = mes_noise
+        table.at[n, 'Trend'] = mes_trend
+        
+table.insert(0, 'ID', ID_list)
 
-table_mean = table_mean.T
-table_std = table_std.T.rename(columns={'logK_I_D': 'logK_I_D_std', 'logK_I_DI': 'logK_I_DI_std', 'logK_S_DI': 'logK_S_DI_std', 
-                                        'pIC50': 'pIC50_std', 'pIC90': 'pIC90_std', 'hill': 'hill_std'})
-table_mes = table_mes.T
-table = pd.concat([table_mean, table_std, table_mes], axis=1)
-table.to_csv("pIC50_table.csv", index=True)
+# table_mean = table_mean.T
+# table_std = table_std.T.rename(columns={'logK_I_D': 'logK_I_D_std', 'logK_I_DI': 'logK_I_DI_std', 'logK_S_DI': 'logK_S_DI_std', 
+#                                         'pIC50': 'pIC50_std', 'pIC90': 'pIC90_std', 'hill': 'hill_std'})
+# table_mes = table_mes.T
+# table = pd.concat([table_mean, table_std, table_mes], axis=1)
+
+table.to_csv("pIC50_table.csv", index=False)

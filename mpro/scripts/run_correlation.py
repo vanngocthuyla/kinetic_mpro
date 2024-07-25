@@ -69,7 +69,7 @@ df_inhib = df_inhib.rename(columns={'pIC50': 'inhibit_pIC50', 'pIC90': 'inhibit_
 ## Extracting dimer-only pIC50 --------------------------------------------------------------------------------------
 print(f"Extracting dimer-only pIC values from {args.dimer_pIC50_file}")
 _df_dimer = pd.read_csv(args.dimer_pIC50_file)
-_df_dimer = _df_dimer.rename({"Unnamed: 0": "ID"}, axis=1)
+# _df_dimer = _df_dimer.rename({"Unnamed: 0": "ID"}, axis=1)
 _df_dimer = _df_dimer[['ID', 'pIC50', 'pIC50_std', 'pIC90', 'pIC90_std', 'hill']]
 df_dimer = _correct_ID(_df_dimer, 'drop')
 df_dimer = df_dimer.rename(columns={'pIC50': 'dimer_pIC50', 'pIC90': 'dimer_pIC90'})
