@@ -16,7 +16,7 @@ All datasets share the same conditions, allowing us to utilize the Maximum A Pos
 
 Assuming `DIR` is your working directory, you can run the model fitting directly by executing:
 
-      python $DIR/kinetic_mpro/scripts/run_CRC_fitting.py --name_inhibitor "ASAP-0014973" --input_file $DIR/kinetic_mpro/CRC_pIC50/input/input_data.csv --prior_infor $DIR/kinetic_mpro/CRC_pIC50/input/Prior.json --fit_E_S  --fit_E_I --initial_values $DIR/kinetic_mpro/CRC_pIC50/input/map_sampling.pickle --out_dir $DIR/kinetic_mpro/CRC_pIC50/output --multi_var --set_lognormal_dE --dE 0.10 --niters 1000 --nburn 200 --nchain 4 --outlier_removal --exclude_first_trace --converged_samples 500 --enzyme_conc_nM 100 --substrate_conc_nM 1350
+      python $DIR/kinetic_mpro/scripts/run_CRC_fitting_pIC50_estimating.py --name_inhibitor "ASAP-0014973" --input_file $DIR/kinetic_mpro/CRC_pIC50/input/input_data.csv --prior_infor $DIR/kinetic_mpro/CRC_pIC50/input/Prior.json --fit_E_S  --fit_E_I --initial_values $DIR/kinetic_mpro/CRC_pIC50/input/map_sampling.pickle --out_dir $DIR/kinetic_mpro/CRC_pIC50/output --multi_var --set_lognormal_dE --dE 0.10 --niters 1000 --nburn 200 --nchain 4 --outlier_removal --exclude_first_trace --converged_samples 500 --enzyme_conc_nM 100 --substrate_conc_nM 1350
 
 Alternatively, you can submit a job by adjusting the code in **mpro/scripts/submit_CRC_pIC50.py**. 
 
