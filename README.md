@@ -52,6 +52,7 @@ Create a folder `test` to test the example:
     
     cd kinetic_mpro
     mkdir test
+    cd test
 
 Now we can try to fit one CRC:
 
