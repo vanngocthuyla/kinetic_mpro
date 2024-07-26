@@ -33,7 +33,7 @@ To run the Bayesian regression, we need some python packages.
   * arviz >=0.15.1
   * json5
 
-If a higher version of JAX and JAXlib is installed, we need to check whether x64 `jax.numpy` can be used by executing the following code without any errors:
+If higher versions of JAX, JAXlib, and numpyro are installed, we need to check whether x64 `jax.numpy` can be used by executing the following code without any errors:
 
     import jax
     jax.config.update("jax_enable_x64", True)
