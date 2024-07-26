@@ -35,8 +35,8 @@ To run the Bayesian regression, we need some python packages.
 
 If a higher version of JAX and JAXlib is installed, we need to check whether x64 `jax.numpy` can be used by executing the following code without any errors:
 
-    from jax.config import config
-    config.update("jax_enable_x64", True)
+    import jax
+    jax.config.update("jax_enable_x64", True)
 
 # Running test
 
