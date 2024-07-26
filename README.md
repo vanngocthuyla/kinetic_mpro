@@ -56,8 +56,8 @@ Create a folder `test` to test the example:
 
 Now we can try to fit one CRC:
 
-    python $DIR/kinetic_mpro/scripts/run_CRC_fitting.py --name_inhibitor "ASAP-0014973" --input_file $DIR/kinetic_mpro/CRC/input/input_data.csv --prior_infor $DIR/kinetic_mpro/CRC_pIC50/input/Prior.json --fit_E_S  --fit_E_I --initial_values $DIR/kinetic_mpro/CRC_pIC50/input/map_sampling.pickle --out_dir $DIR/kinetic_mpro/test --multi_var  --set_lognormal_dE  --dE 0.10 --niters 1000 --nburn 200  --nchain 4 --outlier_removal
+    python $DIR/kinetic_mpro/scripts/run_CRC_fitting.py --name_inhibitor "ASAP-0014973" --input_file $DIR/kinetic_mpro/CRC/input/input_data.csv --prior_infor $DIR/kinetic_mpro/CRC/input/Prior.json --fit_E_S  --fit_E_I --initial_values $DIR/kinetic_mpro/CRC/input/map_sampling.pickle --out_dir $DIR/kinetic_mpro/test --multi_var  --set_lognormal_dE  --dE 0.10 --niters 1000 --nburn 200  --nchain 4 --outlier_removal
 
 Or fitting CRC and estimating pIC50:
 
-    python $DIR/kinetic_mpro/scripts/run_CRC_fitting.py --name_inhibitor "ASAP-0014973" --input_file $DIR/kinetic_mpro/CRC/input/input_data.csv --prior_infor $DIR/kinetic_mpro/CRC_pIC50/input/Prior.json --fit_E_S  --fit_E_I --initial_values $DIR/kinetic_mpro/CRC_pIC50/input/map_sampling.pickle --out_dir $DIR/kinetic_mpro/test --multi_var  --set_lognormal_dE  --dE 0.10 --niters 1000 --nburn 200  --nchain 4 --outlier_removal --exclude_first_trace --converged_samples 500 --enzyme_conc_nM 100 --substrate_conc_nM 1350
+    python $DIR/kinetic_mpro/scripts/run_CRC_fitting.py --name_inhibitor "ASAP-0014973" --input_file $DIR/kinetic_mpro/CRC/input/input_data.csv --prior_infor $DIR/kinetic_mpro/CRC/input/Prior.json --fit_E_S  --fit_E_I --initial_values $DIR/kinetic_mpro/CRC/input/map_sampling.pickle --out_dir $DIR/kinetic_mpro/test --multi_var  --set_lognormal_dE  --dE 0.10 --niters 1000 --nburn 200  --nchain 4 --outlier_removal --exclude_first_trace --converged_samples 500 --enzyme_conc_nM 100 --substrate_conc_nM 1350
