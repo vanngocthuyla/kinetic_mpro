@@ -120,12 +120,12 @@ if len(expts_plot)>0:
     else:
         logK_dE_alpha = None
 
+    os.chdir(args.out_dir)
+
     ## Create a model to run
     model = Model(len(expts))
     model.check_model(args)
     traces_name = model.args.traces_name
-
-    os.chdir(args.out_dir)
 
     ### Concentration for the estimation of dimer-only pIC50
     init_logMtot = np.log(args.enzyme_conc_nM*1E-9)
