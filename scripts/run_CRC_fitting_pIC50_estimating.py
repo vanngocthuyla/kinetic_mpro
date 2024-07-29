@@ -93,7 +93,7 @@ df_mers = pd.read_csv(args.input_file)
 
 inhibitor_name = args.name_inhibitor.split()
 for i, name in enumerate(inhibitor_name):
-    expts_init, expts_plot = load_data_one_inhibitor(df_mers[(df_mers['Inhibitor_ID']==name+'-001')*(df_mers['Drop']!=1.0)],
+    expts_init, expts_plot = load_data_one_inhibitor(df_mers[(df_mers['Inhibitor_ID']==name)*(df_mers['Drop']!=1.0)],
                                                      multi_var=args.multi_var)
 
 if len(expts_plot)>0:
