@@ -94,7 +94,7 @@ if len(expts_plot)>0:
     model.check_model(args)
 
     ## Fitting model
-    trace = _run_mcmc_CRC(expts, model.prior_infor, model.shared_params, model.init_values, model.args)
+    trace = _run_mcmc(expts, model.prior_infor, model.shared_params, model.init_values, model.args)
 
     ## Finding MAP
     [trace_map, map_index] = _map_running(trace.copy(), expts, model.prior_infor, model.shared_params, model.args)
