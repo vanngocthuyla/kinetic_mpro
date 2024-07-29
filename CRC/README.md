@@ -14,14 +14,9 @@ All datasets share the same conditions, allowing us to utilize the Maximum A Pos
 
 ## Run_me.sh
 
-You can run the model fitting directly by executing:
+Assuming `DIR` is your working directory, you can run the model fitting directly by executing:
 
-    export INPUT='/home/mpro/CRC/input/input_data.csv'
-    export PRIOR='/home/mpro/CRC_pIC50/input/Prior.json'
-    export INIT='/home/mpro/CRC_pIC50/input/map_sampling.pickle'
-    export OUT_DIR='/home/mpro/CRC_pIC50/output'
-    export ID='Inhibitor_1'
-    python /home/mpro/scripts/run_CRC_fitting.py --name_inhibitor $ID --input_file $INPUT --prior_infor $PRIOR --fit_E_S  --fit_E_I --initial_values $INIT --out_dir $OUT_DIR --multi_var  --set_lognormal_dE  --dE 0.10 --niters 1000 --nburn 200  --nchain 4 --outlier_removal
+      python $DIR/kinetic_mpro/scripts/run_CRC_fitting.py --name_inhibitor "ASAP-0014973" --input_file $DIR/kinetic_mpro/CRC/input/input_data.csv --prior_infor $DIR/kinetic_mpro/CRC/input/Prior.json --fit_E_S  --fit_E_I --initial_values $DIR/kinetic_mpro/CRC/input/map_sampling.pickle --out_dir $DIR/kinetic_mpro/CRC/output --multi_var --set_lognormal_dE --dE 0.10 --niters 1000 --nburn 200 --nchain 4 --outlier_removal
 
 Alternatively, you can submit a job by adjusting the code in /mpro/scripts/submit_CRC.py. 
 
