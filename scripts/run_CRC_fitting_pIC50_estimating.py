@@ -32,8 +32,7 @@ warnings.filterwarnings("ignore")
 from _load_data import load_data_one_inhibitor
 
 from _define_model import Model
-from _model_fitting import _run_mcmc
-from _CRC_fitting import _expt_check_noise_trend
+from _CRC_fitting import _run_mcmc_CRC, _expt_check_noise_trend
 
 from _MAP_mpro import _map_running
 from _params_extraction import extract_logK_n_idx, extract_kcat_n_idx
@@ -181,7 +180,7 @@ if len(expts_plot)>0:
                     with open(os.path.join(expt_dir, "log.txt"), "a") as f:
                         print(mes, file=f)
 
-                    trace = _run_mcmc(expts, model.prior_infor, model.shared_params, init_values, '', expt_dir, model.args)
+                    trace = _run_mcmc_CRC(expts, model.prior_infor, model.shared_params, init_values, '', expt_dir, model.args)
 
                 else:
                     last_state = pickle.load(open(os.path.join(last_dir, "Last_state.pickle"), "rb"))
@@ -190,9 +189,9 @@ if len(expts_plot)>0:
                     with open(os.path.join(expt_dir, "log.txt"), "a") as f:
                         print(mes, file=f)
 
-                    trace = _run_mcmc(expts, model.prior_infor, model.shared_params, None, last_dir, expt_dir, model.args)
+                    trace = _run_mcmc_CRC(expts, model.prior_infor, model.shared_params, None, last_dir, expt_dir, model.args)
             else:
-                trace = _run_mcmc(expts, model.prior_infor, model.shared_params, None, last_dir, expt_dir, model.args)
+                trace = _run_mcmc_CRC(expts, model.prior_infor, model.shared_params, None, last_dir, expt_dir, model.args)
 
             ## Finding MAP
             [trace_map, map_index] = _map_running(trace.copy(), expts, model.prior_infor, model.shared_params, model.args)
