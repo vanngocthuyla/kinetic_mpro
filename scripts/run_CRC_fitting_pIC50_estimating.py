@@ -9,6 +9,7 @@ import numpy as np
 import sys
 import os
 import shutil
+from glob import glob
 import argparse
 
 import pickle
@@ -261,7 +262,9 @@ if no_running > no_limit:
     with open(os.path.join(args.out_dir, 'Convergence', name_expt, "log.txt"), "a") as f:
         print(mes, file=f)
 else:
-    shutil.copy(os.path.join(expt_dir,'EI.png'), os.path.join(args.out_dir, 'Convergence', name_expt, 'EI.png'))
+    MAP_figs = glob(os.path.join(expt_dir,'EI*'), recursive=False)
+    for fig in MAP_figs:
+        shutil.copy(os.path.join(expt_dir, fig), os.path.join(args.out_dir, 'Convergence', name_expt, fig))
 
 [expts_outliers, _, mes_noise, mes_trend] = _expt_check_noise_trend(expts_init, OUT_DIR=os.path.join(args.out_dir, 'Convergence', name_expt))
 

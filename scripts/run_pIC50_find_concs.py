@@ -9,7 +9,6 @@ import numpy as np
 import sys
 import os
 import itertools
-from glob import glob
 import argparse
 
 import pickle
