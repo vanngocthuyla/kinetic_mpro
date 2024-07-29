@@ -78,16 +78,16 @@ for i, name in enumerate(inhibitor_name):
     expts_init, expts_plot = load_data_one_inhibitor(df_mers[(df_mers['Inhibitor_ID']==name)*(df_mers['Drop']!=1.0)],
                                                      multi_var=args.multi_var)
 
-## Outlier detection and trend checking
-[expts_outliers, outliers, _, _] = _expt_check_noise_trend(expts_init)
-if args.outlier_removal:
-    print("Checking outlier(s) in the curve...")
-    expts = expts_outliers.copy()
-else:
-    expts = expts_init.copy()
-    outliers = None
-
 if len(expts_plot)>0:
+
+    ## Outlier detection and trend checking
+    [expts_outliers, outliers, _, _] = _expt_check_noise_trend(expts_init)
+    if args.outlier_removal:
+        print("Checking outlier(s) in the curve...")
+        expts = expts_outliers.copy()
+    else:
+        expts = expts_init.copy()
+        outliers = None
 
     ## Create a model to run
     model = Model(len(expts))
@@ -117,4 +117,3 @@ if len(expts_plot)>0:
                        OUTFILE=os.path.join(args.out_dir,'EI'))
 else:
     print("There is no data found.")
-    os.rmdir(args.out_dir)
