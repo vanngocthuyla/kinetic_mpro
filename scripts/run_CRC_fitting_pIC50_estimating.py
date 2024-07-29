@@ -262,7 +262,8 @@ if no_running > no_limit:
     with open(os.path.join(args.out_dir, 'Convergence', name_expt, "log.txt"), "a") as f:
         print(mes, file=f)
 else:
-    MAP_figs = glob(os.path.join(expt_dir,'EI*'), recursive=False)
+    os.chdir(expt_dir)
+    MAP_figs = glob('EI*', recursive=False)
     for fig in MAP_figs:
         shutil.copy(os.path.join(expt_dir, fig), os.path.join(args.out_dir, 'Convergence', name_expt, fig))
 
