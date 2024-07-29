@@ -29,10 +29,11 @@ warnings.simplefilter("ignore", UserWarning)
 warnings.simplefilter("ignore", RuntimeWarning)
 warnings.filterwarnings("ignore")
 
-from _load_data_mers import load_data_one_inhibitor
+from _load_data import load_data_one_inhibitor
 
 from _define_model import Model
-from _CRC_fitting import _run_mcmc_CRC, _expt_check_noise_trend
+from _model_fitting import _run_mcmc
+from _CRC_fitting import _expt_check_noise_trend
 
 from _MAP_mpro import _map_running
 from _params_extraction import extract_logK_n_idx, extract_kcat_n_idx
