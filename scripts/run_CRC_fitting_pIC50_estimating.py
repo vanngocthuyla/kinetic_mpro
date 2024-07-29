@@ -157,7 +157,7 @@ while no_running<=no_limit:
     if not os.path.isdir(os.path.join(args.out_dir, f'sampling_{no_running}')):
         os.mkdir(os.path.join(args.out_dir, f'sampling_{no_running}'))
 
-    name_expt = inhibitor_name[0][7:12]
+    name_expt = inhibitor_name[0]
     expt_dir = os.path.join(args.out_dir, f'sampling_{no_running}', name_expt)
     last_dir = os.path.join(args.out_dir, f'sampling_{no_running-1}', name_expt)
     

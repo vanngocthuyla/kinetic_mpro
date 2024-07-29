@@ -149,8 +149,8 @@ conda activate mpro ''' + '''\ncd ''' + args.out_dir + '''\n\n(('''
 
     for n, inhibitor in enumerate(_inhibitor_list):
 
-        inhibitor_dir = inhibitor[7:12]
-        inhibitor_name = inhibitor[:12]
+        inhibitor_dir = inhibitor
+        inhibitor_name = inhibitor
 
         qsub_script = '''date \n''' + \
         '''python ''' + args.running_script + \

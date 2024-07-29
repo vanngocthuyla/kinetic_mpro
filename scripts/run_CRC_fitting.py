@@ -73,7 +73,7 @@ print("nthin:", args.nthin)
 
 df_mers = pd.read_csv(args.input_file)
 
-inhibitor_name = np.array([args.name_inhibitor+'-001'])
+inhibitor_name = np.array([args.name_inhibitor])
 for i, name in enumerate(inhibitor_name):
     expts_init, expts_plot = load_data_one_inhibitor(df_mers[(df_mers['Inhibitor_ID']==name)*(df_mers['Drop']!=1.0)],
                                                      multi_var=args.multi_var)
