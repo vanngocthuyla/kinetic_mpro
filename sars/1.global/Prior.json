@@ -11,8 +11,8 @@
         "dist": ["uniform", "normal"],
         "lower": [-20.73, null],
         "upper": [0.0, null],
-        "loc": [null, -14],
-        "scale": [null, 2]
+        "loc": [null, -13.82],
+        "scale": [null, 1.52]
     },
     "logK_S_M": {
         "type": "logK",
@@ -51,16 +51,16 @@
         "name": "logK_I_D",
         "fit": "global",
         "dist": "normal",
-        "loc": -15,
-        "scale": 2,
+        "loc": -14.97,
+        "scale": 1.52,
     },
     "logK_I_DI": {
         "type": "logK",
         "name": "logK_I_DI",
         "fit": "global",
         "dist": "normal",
-        "loc": -15,
-        "scale": 2,
+        "loc": -14.97,
+        "scale": 1.52,
     },
     "logK_S_DI": {
         "type": "logK",
@@ -77,7 +77,7 @@
         "fit": "local",
         "dist": "uniform",
         "lower": 0.0,
-        "upper": [1.0, 200.0]
+        "upper": [10.0, 200.0]
     },
     "kcat_DSI": {
         "type": "kcat",
@@ -85,7 +85,7 @@
         "fit": "local",
         "dist": "uniform",
         "lower": 0.0,
-        "upper": [1.0, 200.0]
+        "upper": [10.0, 200.0]
     },
     "kcat_DSS": {
         "type": "kcat",
@@ -93,6 +93,6 @@
         "fit": "local",
         "dist": "uniform",
         "lower": 0.0,
-        "upper": [1.0, 200.0]
+        "upper": [10.0, 200.0]
     }
 }
