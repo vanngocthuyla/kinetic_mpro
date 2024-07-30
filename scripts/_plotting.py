@@ -48,17 +48,20 @@ def plot_data_conc_log(experiments, params_logK, params_kcat, alpha_list=None, E
     for i, experiment in enumerate(experiments):
         if not combined_plots:
             plt.figure(figsize=fig_size, dpi=dpi)
+            _color = line_colors[0]
+        else:
+            _color = line_colors[i]
         
         # Plot data
         x = experiment[experiment['x']]
         if experiment['type']=='kinetics':
-            plt.plot(np.log10(np.exp(x)), experiment['v']*1E9, '.', color=line_colors[i])
+            plt.plot(np.log10(np.exp(x)), experiment['v']*1E9, '.', color=_color)
         elif experiment['type']=='AUC':
-            plt.plot(np.log10(np.exp(x)), experiment['M'], '.', color=line_colors[i])
+            plt.plot(np.log10(np.exp(x)), experiment['M'], '.', color=_color)
         elif experiment['type']=='catalytic_efficiency':
-            plt.plot(np.log10(np.exp(x)), experiment['Km_over_kcat'], '.', color=line_colors[i])
+            plt.plot(np.log10(np.exp(x)), experiment['Km_over_kcat'], '.', color=_color)
         elif experiment['type']=='CRC' : 
-            plt.plot(np.log10(np.exp(x)), experiment['v']*1E9, '.', color=line_colors[i])
+            plt.plot(np.log10(np.exp(x)), experiment['v']*1E9, '.', color=_color)
             if outliers is not None and np.sum(outliers)>0:
                 outlier = outliers[i]
                 plt.plot(np.log10(np.exp(x[outlier])), experiment['v'][outlier]*1E9, color='r', ls=' ', marker='x', label='Outlier')
@@ -85,19 +88,19 @@ def plot_data_conc_log(experiments, params_logK, params_kcat, alpha_list=None, E
 
         if experiment['type']=='kinetics':
             y_model = ReactionRate(logMtot, logStot, logItot, *params_logK, *params_kcat)
-            plt.plot(np.log10(np.exp(x)), y_model*1E9, ls=ls, color=line_colors[i], label=experiment['figure'])
+            plt.plot(np.log10(np.exp(x)), y_model*1E9, ls=ls, color=_color, label=experiment['figure'])
             plt.xlabel(experiment['x'], fontsize=fontsize_label)
             plt.ylabel('Rate (nM min$^{-1}$)', fontsize=fontsize_label)
 
         elif experiment['type']=='AUC':
             y_model = MonomerConcentration(logMtot, logStot, logItot, *params_logK)
-            plt.plot(np.log10(np.exp(x)), y_model, ls=ls, color=line_colors[i], label=experiment['figure'])
+            plt.plot(np.log10(np.exp(x)), y_model, ls=ls, color=_color, label=experiment['figure'])
             plt.xlabel(experiment['x'], fontsize=fontsize_label)
             plt.ylabel('Monomer concentration (M)', fontsize=fontsize_label)
 
         elif experiment['type']=='catalytic_efficiency':
             y_model = 1./CatalyticEfficiency(logMtot, logItot, *params_logK, *params_kcat)
-            plt.plot(np.log10(np.exp(x)), y_model, ls=ls, color=line_colors[i], label=experiment['figure'])
+            plt.plot(np.log10(np.exp(x)), y_model, ls=ls, color=_color, label=experiment['figure'])
             plt.xlabel(experiment['x'], fontsize=fontsize_label)
             plt.ylabel('K$_m$/k$_{cat}$', fontsize=fontsize_label)
 
@@ -115,7 +118,7 @@ def plot_data_conc_log(experiments, params_logK, params_kcat, alpha_list=None, E
 
             y_model = ReactionRate(logE, logStot, logItot, *params_logK, *params_kcat)*alpha
 
-            plt.plot(np.log10(np.exp(x)), y_model*1E9, ls=ls, color=line_colors[i],
+            plt.plot(np.log10(np.exp(x)), y_model*1E9, ls=ls, color=_color,
                      label=experiment['sub_figure'])
 
             if logItot is None:
