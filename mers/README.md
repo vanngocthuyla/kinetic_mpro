@@ -30,4 +30,4 @@ Using information on shared parameters estimated from the global fitting, each C
 
 # Set up directory
 
-To repeat the whole procedure, simply edit the directory in `main_dir.txt`. This will update the directory for steps 1 to 9.
+To repeat the whole procedure, simply edit the root directory in `main_dir.txt`. This will update the directory for steps 1 to 9.
