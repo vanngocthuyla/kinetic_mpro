@@ -1,6 +1,6 @@
 #!/bin/bash
 
-export DIR='/ocean/projects/mcb160011p/sophie92/python'
+export DIR='/home/exouser/python'
 
 export SCRIPT='/kinetic_mpro/scripts/run_mcmc_sars.py'
 
