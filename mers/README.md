@@ -27,3 +27,7 @@ Using information on shared parameters estimated from the global fitting, each C
 7. Outlier detection and fitting each CRC
 8. pIC50 estimation for each CRC
 9. Additional analysis
+
+# Set up directory
+
+To repeat the whole procedure, edit the directory in the 'main_dir.txt'.
