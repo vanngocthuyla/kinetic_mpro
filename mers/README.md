@@ -14,7 +14,7 @@ Due to the computational expense of global fitting, fitting each ES/ESI dataset 
 
 This part comprises fitting from step 1 to step 6. 
 
-- 1. Fitting of ES datasets
+1. Fitting of ES datasets
 - 2. Fitting 2 curves of each ESI datasets
 - 3. Fitting 4 curves of each ESI datasets
 - 4. Global fitting and analysis
