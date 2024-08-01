@@ -8,6 +8,7 @@ import numpyro.distributions as dist
 from numpyro.distributions import LogNormal, Normal, Uniform
 
 from _kinetics import ReactionRate, MonomerConcentration, CatalyticEfficiency
+from _kinetics import adjust_ReactionRate, adjust_MonomerConcentration, adjust_CatalyticEfficiency
 from _prior_distribution import uniform_prior, normal_prior, logsigma_guesses, lognormal_prior
 from _params_extraction import extract_logK_n_idx, extract_kcat_n_idx
 from _prior_check import prior_group_multi_enzyme
@@ -134,7 +135,7 @@ def _alpha_find_prior(plate, alpha_list):
 
 
 def fitting_each_dataset(type_expt, data, params, alpha=None, alpha_min=0., alpha_max=2.,
-                         Etot=None, log_sigmas=None, index=''):
+                         Etot=None, log_sigmas=None, index='', adjust_fit=False):
     """
     Parameters:
     ----------
@@ -147,14 +148,20 @@ def fitting_each_dataset(type_expt, data, params, alpha=None, alpha_min=0., alph
     Etot            : float, enzyme concentration in nM
     log_sigma       : dict, measurement error of multiple experiments under log scale
     index           : str, index of fitting dataset
+    adjust_fit      : boolean, if the number of 'None' parameter larger than 0, use adjustable fitting
     ----------
     Return likelihood from data and run the Bayesian model using given prior information of parameters
+    
     """
     assert type_expt in ['CRC', 'kinetics', 'AUC', 'ICE'], "Experiments type should be kinetics, AUC, ICE, or CRC."
 
     if type_expt == 'kinetics':
         [rate, kinetics_logMtot, kinetics_logStot, kinetics_logItot] = data
-        rate_model = ReactionRate(kinetics_logMtot, kinetics_logStot, kinetics_logItot, *params)
+        if adjust_fit:
+            func = adjust_ReactionRate 
+        else:
+            func = ReactionRate 
+        rate_model = func(kinetics_logMtot, kinetics_logStot, kinetics_logItot, *params)
         log_sigma_rate_min, log_sigma_rate_max = logsigma_guesses(rate)
         log_sigma_rate = uniform_prior(f'log_sigma_rate:{index}', lower=log_sigma_rate_min, upper=log_sigma_rate_max)
         sigma_rate = jnp.exp(log_sigma_rate)
@@ -162,7 +169,11 @@ def fitting_each_dataset(type_expt, data, params, alpha=None, alpha_min=0., alph
 
     if type_expt == 'AUC':
         [auc, AUC_logMtot, AUC_logStot, AUC_logItot] = data
-        auc_model = MonomerConcentration(AUC_logMtot, AUC_logStot, AUC_logItot, *params)
+        if adjust_fit:
+            func = adjust_MonomerConcentration 
+        else:
+            func = MonomerConcentration
+        auc_model = func(AUC_logMtot, AUC_logStot, AUC_logItot, *params)
         log_sigma_auc_min, log_sigma_auc_max = logsigma_guesses(auc)
         log_sigma_auc = uniform_prior(f'log_sigma_AUC:{index}', lower=log_sigma_auc_min, upper=log_sigma_auc_max)
         sigma_auc = jnp.exp(log_sigma_auc)
@@ -170,7 +181,11 @@ def fitting_each_dataset(type_expt, data, params, alpha=None, alpha_min=0., alph
 
     if type_expt == 'ICE':
         [ice, ice_logMtot, ice_logStot, ice_logItot] = data
-        ice_model = 1./CatalyticEfficiency(ice_logMtot, ice_logItot, *params)
+        if adjust_fit:
+            func = adjust_CatalyticEfficiency
+        else:
+            func = CatalyticEfficiency
+        ice_model = 1./func(ice_logMtot, ice_logItot, *params)
         log_sigma_ice_min, log_sigma_ice_max = logsigma_guesses(ice)
         log_sigma_ice = uniform_prior(f'log_sigma_ICE:{index}', lower=log_sigma_ice_min, upper=log_sigma_ice_max)
         sigma_ice = jnp.exp(log_sigma_ice)
@@ -184,7 +199,11 @@ def fitting_each_dataset(type_expt, data, params, alpha=None, alpha_min=0., alph
         else:
             logE = jnp.log(Etot*1E-9)
 
-        CRC_model = ReactionRate(logE, logStot, logItot, *params)
+        if adjust_fit:
+            func = adjust_ReactionRate 
+        else:
+            func = ReactionRate
+        CRC_model = func(logE, logStot, logItot, *params)
 
         if alpha is None:
             alpha = uniform_prior(f'alpha:{index}', lower=alpha_min, upper=alpha_max)
@@ -199,15 +218,16 @@ def fitting_each_dataset(type_expt, data, params, alpha=None, alpha_min=0., alph
         numpyro.sample(f'CRC:{index}', dist.Normal(loc=CRC_model*alpha, scale=sigma_CRC), obs=crc)
 
 
-def _fitting_each_expt(type_expt, expt, idx_expt, params):
+def _fitting_each_expt(type_expt, expt, idx_expt, params, adjust_fit=False):
     """
     Parameters:
     ----------
     type_expt       : str, 'kinetics', 'AUC', 'ICE'
     expt            : dict contains the information of all dataset within experiment
                       Each dataset contains response, logMtot, lotStot, logItot
-    params          : list of kinetics parameters
     idx_expt        : str, index of each experiment
+    params          : list of kinetics parameters
+    adjust_fit      : boolean, if the number of 'None' parameter larger than 0, use adjustable fitting
     ----------
     Run the Bayesian model for each experiment
     """
@@ -216,12 +236,12 @@ def _fitting_each_expt(type_expt, expt, idx_expt, params):
             data = expt[type_expt][n]
             if data is not None:
                 fitting_each_dataset(type_expt=type_expt, data=data, params=params,
-                                     index=f'{idx_expt}:{n}')
+                                     index=f'{idx_expt}:{n}', adjust_fit=adjust_fit)
     else:
         data = expt[type_expt]
         if data is not None:
             fitting_each_dataset(type_expt=type_expt, data=data, params=params,
-                                 index=f'{idx_expt}')
+                                 index=f'{idx_expt}', adjust_fit=adjust_fit)
 
 
 def global_fitting(experiments, prior_infor, shared_params, args):
@@ -234,13 +254,18 @@ def global_fitting(experiments, prior_infor, shared_params, args):
         Notice that for each data_rate/data_AUC/data_ICE, there may be one more datasets (noise for different dataset).
     prior_infor     : list of dict to assign prior distribution for kinetics parameters
     shared_params   : dict of information for shared parameters
-    args            : class holding model arguments. For more information, check _define_model.py
+    args            : class comprises other model arguments. For more information, check _define_model.py
     ----------
     Fitting the Bayesian model to estimate the kinetics parameters and noise of each enzyme
     """
     n_enzymes = len(experiments)
 
-    params_logK, params_kcat = prior_group_multi_enzyme(prior_infor, n_enzymes, shared_params)
+    params_logK, params_kcat, count_None = prior_group_multi_enzyme(prior_infor, n_enzymes, shared_params)
+    if count_None>0:
+        adjust_fit = True
+        print("Fitting by adjustable model!")
+    else:
+        adjust_fit = False
 
     # Define priors for normalization factor
     if not args.multi_alpha:
@@ -269,15 +294,18 @@ def global_fitting(experiments, prior_infor, shared_params, args):
                                           set_kcat_DSI_equal_kcat_DS=args.set_kcat_DSI_equal_kcat_DS,
                                           set_kcat_DSI_equal_kcat_DSS=args.set_kcat_DSI_equal_kcat_DSS)
 
-        # Fitting each dataset
+        # Fitting each experiment
         if 'kinetics' in expt.keys():
-            _fitting_each_expt(type_expt='kinetics', expt=expt, idx_expt=idx_expt, params=[*_params_logK, *_params_kcat])
+            _fitting_each_expt(type_expt='kinetics', expt=expt, idx_expt=idx_expt, 
+                               params=[*_params_logK, *_params_kcat], adjust_fit=adjust_fit)
 
         if 'AUC' in expt.keys():
-            _fitting_each_expt(type_expt='AUC', expt=expt, idx_expt=idx_expt, params=_params_logK)
+            _fitting_each_expt(type_expt='AUC', expt=expt, idx_expt=idx_expt, 
+                               params=_params_logK, adjust_fit=adjust_fit)
 
         if 'ICE' in expt.keys():
-            _fitting_each_expt(type_expt='ICE', expt=expt, idx_expt=idx_expt, params=[*_params_logK, *_params_kcat])
+            _fitting_each_expt(type_expt='ICE', expt=expt, idx_expt=idx_expt, 
+                               params=[*_params_logK, *_params_kcat], adjust_fit=adjust_fit)
             
         if 'CRC' in expt.keys():
             if type(expt['CRC']) is dict:
@@ -292,7 +320,8 @@ def global_fitting(experiments, prior_infor, shared_params, args):
                     if data_rate is not None:
                         fitting_each_dataset(type_expt='CRC', data=data_rate, params=[*_params_logK, *_params_kcat],
                                              alpha=alpha, alpha_min=args.alpha_min, alpha_max=args.alpha_max,
-                                             Etot=Etot, log_sigmas=args.log_sigmas, index=f'{idx_expt}:{n}')
+                                             Etot=Etot, log_sigmas=args.log_sigmas, index=f'{idx_expt}:{n}',
+                                             adjust_fit=adjust_fit)
             else:
                 data_rate = expt['CRC']
                 if data_rate is not None:
@@ -304,7 +333,8 @@ def global_fitting(experiments, prior_infor, shared_params, args):
 
                     fitting_each_dataset(type_expt='CRC', data=data_rate, params=[*_params_logK, *_params_kcat],
                                          alpha=alpha, alpha_min=args.alpha_min, alpha_max=args.alpha_max,
-                                         Etot=Etot, log_sigmas=args.log_sigmas, index=f'{idx_expt}')
+                                         Etot=Etot, log_sigmas=args.log_sigmas, index=f'{idx_expt}',
+                                         adjust_fit=adjust_fit)
 
 
 def EI_fitting(experiments, prior_infor, shared_params, args):
@@ -316,16 +346,8 @@ def EI_fitting(experiments, prior_infor, shared_params, args):
         Each data_rate/data_AUC/data_ICE contains response, logMtot, lotStot, logItot
         Notice that for each data_rate/data_AUC/data_ICE, there may be one more datasets (noise for different dataset).
     prior_infor : list of dict to assign prior distribution for kinetics parameters
-    logKd_min   : float, lower values of uniform distribution for prior of dissociation constants
-    logKd_max   : float, upper values of uniform distribution for prior of dissociation constants
-    kcat_min    : float, lower values of uniform distribution for prior of kcat
-    kcat_max    : float, upper values of uniform distribution for prior of kcat
     shared_params   : dict of information for shared parameters
-    multi_alpha     : boolean, normalization factor
-                      If True, setting one alpha for each dataset.
-                      If False, multiple datasets having the same plate share alpha
-    alpha_min       : float, lower values of uniform distribution for prior of alpha
-    alpha_max       : float, upper values of uniform distribution for prior of alpha
+    args            : class comprises other model arguments. For more information, check _define_model.py
     ----------
     Fitting the Bayesian model to estimate the kinetics parameters and noise of each enzyme
     """
@@ -333,7 +355,11 @@ def EI_fitting(experiments, prior_infor, shared_params, args):
     E_list = args.E_list
     alpha_list = args.alpha_list
     
-    params_logK, params_kcat = prior_group_multi_enzyme(prior_infor, n_enzymes, shared_params)
+    params_logK, params_kcat, count_None = prior_group_multi_enzyme(prior_infor, n_enzymes, shared_params)
+    if count_None>0:
+        adjust_fit = True
+    else:
+        adjust_fit = False
 
     # Define priors for normalization factor
     if not args.multi_alpha:
@@ -371,7 +397,8 @@ def EI_fitting(experiments, prior_infor, shared_params, args):
                 if data_rate is not None:
                     fitting_each_dataset(type_expt='CRC', data=data_rate, params=[*_params_logK, *_params_kcat],
                                          alpha=alpha, alpha_min=args.alpha_min, alpha_max=args.alpha_max,
-                                         Etot=Etot, log_sigmas=None, index=f'{idx_expt}:{n}')
+                                         Etot=Etot, log_sigmas=None, index=f'{idx_expt}:{n}',
+                                         adjust_fit=adjust_fit)
         else:
             data_rate = expt['CRC']
             
@@ -388,4 +415,5 @@ def EI_fitting(experiments, prior_infor, shared_params, args):
                 
                 fitting_each_dataset(type_expt='CRC', data=data_rate, params=[*_params_logK, *_params_kcat],
                                      alpha=alpha, alpha_min=args.alpha_min, alpha_max=args.alpha_max,
-                                     Etot=Etot, log_sigmas=None, index=f'{idx_expt}')
+                                     Etot=Etot, log_sigmas=None, index=f'{idx_expt}',
+                                     adjust_fit=adjust_fit)

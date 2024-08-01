@@ -9,6 +9,7 @@ from scipy import stats
 import arviz as az
 
 from _kinetics import ReactionRate, MonomerConcentration, CatalyticEfficiency
+from _kinetics import adjust_ReactionRate, adjust_MonomerConcentration, adjust_CatalyticEfficiency
 from _model import _dE_find_prior
 
 
@@ -87,19 +88,22 @@ def plot_data_conc_log(experiments, params_logK, params_kcat, alpha_list=None, E
             x = logItot
 
         if experiment['type']=='kinetics':
-            y_model = ReactionRate(logMtot, logStot, logItot, *params_logK, *params_kcat)
+            func = adjust_ReactionRate
+            y_model = func(logMtot, logStot, logItot, *params_logK, *params_kcat)
             plt.plot(np.log10(np.exp(x)), y_model*1E9, ls=ls, color=_color, label=experiment['figure'])
             plt.xlabel(experiment['x'], fontsize=fontsize_label)
             plt.ylabel('Rate (nM min$^{-1}$)', fontsize=fontsize_label)
 
         elif experiment['type']=='AUC':
-            y_model = MonomerConcentration(logMtot, logStot, logItot, *params_logK)
+            func = adjust_MonomerConcentration
+            y_model = func(logMtot, logStot, logItot, *params_logK)
             plt.plot(np.log10(np.exp(x)), y_model, ls=ls, color=_color, label=experiment['figure'])
             plt.xlabel(experiment['x'], fontsize=fontsize_label)
             plt.ylabel('Monomer concentration (M)', fontsize=fontsize_label)
 
         elif experiment['type']=='catalytic_efficiency':
-            y_model = 1./CatalyticEfficiency(logMtot, logItot, *params_logK, *params_kcat)
+            func = adjust_CatalyticEfficiency
+            y_model = 1./func(logMtot, logItot, *params_logK, *params_kcat)
             plt.plot(np.log10(np.exp(x)), y_model, ls=ls, color=_color, label=experiment['figure'])
             plt.xlabel(experiment['x'], fontsize=fontsize_label)
             plt.ylabel('K$_m$/k$_{cat}$', fontsize=fontsize_label)

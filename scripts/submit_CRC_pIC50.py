@@ -118,7 +118,7 @@ qsub_file = os.path.join(args.out_dir, f"CRC_pIC50.sh")
 log_file = os.path.join(args.out_dir, f"CRC_pIC50.log")
 
 qsub_script = '''#!/bin/bash
-    conda activate mpro ''' + '''\ncd ''' + args.out_dir + '''\n date \n((''' + \
+conda activate mpro ''' + '''\ncd ''' + args.out_dir + '''\n date \n((''' + \
     '''python ''' + args.running_script + \
     ''' --name_inhibitor ''' + args.name_inhibitor + \
     ''' --input_file ''' + args.input_file + prior_infor + shared_params + \

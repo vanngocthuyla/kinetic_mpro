@@ -27,23 +27,7 @@ def _log_prior_sigma(mcmc_trace, data, sigma_name, nsamples):
     return jnp.log(f_log_prior_sigma(param_trace))
 
 
-def _log_likelihood_normal(response_actual, response_model, sigma):
-    """ 
-    PDF of log likelihood of normal distribution
-    
-    Parameters
-    ----------
-    response_actual : jnp.array, response of data
-    response_model  : jnp.array, predicted data
-    sigma           : standard deviation
-    ----------
-    Return: 
-        Sum of log PDF of response_actual given normal distribution N(response_model, sigma^2)
-    """
-    return jnp.nansum(dist.Normal(0, 1).log_prob((response_model - response_actual)/sigma))
-
-
-def _extract_logK_kcat(mcmc_trace, idx, nsamples, all_params_logK_name=None, all_params_kcat_name=None):
+def _extract_logK_kcat_trace(mcmc_trace, idx, nsamples, all_params_logK_name=None, all_params_kcat_name=None):
     """
     Parameters:
     ----------
@@ -91,89 +75,6 @@ def _extract_logK_kcat(mcmc_trace, idx, nsamples, all_params_logK_name=None, all
             in_axis_nth.append(0)
 
     return trace_nth, in_axis_nth
-
-
-def _map_adjust_trace(mcmc_trace, experiments, prior_infor, set_K_I_M_equal_K_S_M=False,
-                      set_K_S_DS_equal_K_S_D=False, set_K_S_DI_equal_K_S_DS=False,
-                      set_kcat_DSS_equal_kcat_DS=False, set_kcat_DSI_equal_kcat_DS=False, 
-                      set_kcat_DSI_equal_kcat_DSS=False, show_progress=True):
-
-    """
-    Adjusting mcmc_trace based on constrains and prior information
-
-    Parameters:
-    ----------
-    mcmc_trace      : list of dict, trace of Bayesian sampling trace (group_by_chain=False)
-    experiments     : list of dict
-        Each dataset contains response, logMtot, lotStot, logItot
-    prior_infor     : list of dict to assign prior distribution for kinetics parameters
-    ----------
-    Return          : adjusted mccm_trace
-    """
-
-    mcmc_trace_update = mcmc_trace.copy()
-    n_enzymes = len(experiments)
-
-    keys = list(mcmc_trace_update.keys())
-    for prior in prior_infor:
-        if prior['dist'] is None and not prior['name'] in keys:
-            mcmc_trace_update[prior['name']] = jnp.repeat(prior['value'], len(mcmc_trace_update[keys[0]]))
-    
-    prior_infor_pd = pd.DataFrame(prior_infor)
-    if set_K_I_M_equal_K_S_M:
-        idx = np.where(prior_infor_pd.name=='logK_S_M')[0][0]
-        if prior_infor[idx]['fit'] == 'global':
-            mcmc_trace_update['logK_I_M'] = mcmc_trace_update['logK_S_M']
-        elif prior_infor[idx]['fit'] == 'local':
-            for n in range(n_enzymes):
-                mcmc_trace_update[f'logK_I_M:{n}'] = mcmc_trace_update[f'logK_S_M:{n}']
-    if set_K_S_DS_equal_K_S_D:
-        idx = np.where(prior_infor_pd.name=='logK_S_D')[0][0]
-        if prior_infor[idx]['fit'] == 'global':
-            mcmc_trace_update['logK_S_DS'] = mcmc_trace_update['logK_S_D']
-        elif prior_infor[idx]['fit'] == 'local':
-            for n in range(n_enzymes):
-                mcmc_trace_update[f'logK_S_DS:{n}'] = mcmc_trace_update[f'logK_S_D:{n}']
-    if set_K_S_DS_equal_K_S_D and set_K_S_DI_equal_K_S_DS:
-        idx = np.where(prior_infor_pd.name=='logK_S_D')[0][0]
-        if prior_infor[idx]['fit'] == 'global':
-            mcmc_trace_update['logK_S_DI'] = mcmc_trace_update['logK_S_D']
-        elif prior_infor[idx]['fit'] == 'local':
-            for n in range(n_enzymes):
-                mcmc_trace_update[f'logK_S_DI:{n}'] = mcmc_trace_update[f'logK_S_D:{n}']
-    elif set_K_S_DI_equal_K_S_DS:
-        idx = np.where(prior_infor_pd.name=='logK_S_DS')[0][0]
-        if prior_infor[idx]['fit'] == 'global':
-            mcmc_trace_update['logK_S_DI'] = mcmc_trace_update['logK_S_DS']
-        elif prior_infor[idx]['fit'] == 'local':
-            for n in range(n_enzymes):
-                mcmc_trace_update[f'logK_S_DI:{n}'] = mcmc_trace_update[f'logK_S_DS:{n}']
-    if set_kcat_DSS_equal_kcat_DS:
-        idx = np.where(prior_infor_pd.name=='kcat_DS')[0][0]
-        if prior_infor[idx]['fit'] == 'global':
-            mcmc_trace_update['kcat_DSS'] = mcmc_trace_update['kcat_DS']
-        elif prior_infor[idx]['fit'] == 'local':
-            for n in range(n_enzymes):
-                mcmc_trace_update[f'kcat_DSS:{n}'] = mcmc_trace_update[f'kcat_DS:{n}']
-    if set_kcat_DSI_equal_kcat_DS:
-        idx = np.where(prior_infor_pd.name=='kcat_DS')[0][0]
-        if prior_infor[idx]['fit'] == 'global':
-            mcmc_trace_update['kcat_DSI'] = mcmc_trace_update['kcat_DS']
-        elif prior_infor[idx]['fit'] == 'local':
-            for n in range(n_enzymes):
-                mcmc_trace_update[f'kcat_DSI:{n}'] = mcmc_trace_update[f'kcat_DS:{n}']
-    elif set_kcat_DSI_equal_kcat_DSS:
-        idx = np.where(prior_infor_pd.name=='kcat_DSS')[0][0]
-        if prior_infor[idx]['fit'] == 'global':
-            mcmc_trace_update['kcat_DSI'] = mcmc_trace_update['kcat_DSS']
-        elif prior_infor[idx]['fit'] == 'local':
-            for n in range(n_enzymes):
-                mcmc_trace_update[f'kcat_DSI:{n}'] = mcmc_trace_update[f'kcat_DSS:{n}']
-    
-    if len(mcmc_trace_update.keys())>len(keys) and show_progress:
-        print("Adjusted trace with keys: ", mcmc_trace_update.keys())
-
-    return mcmc_trace_update
 
 
 def _uniform_pdf(x, lower, upper):
@@ -238,7 +139,7 @@ def _lognormal_pdf(x, stated_center, uncertainty):
     return 1 / x / jnp.sqrt(2 * jnp.pi * sigma_2) * jnp.exp(-0.5 / sigma_2 * (jnp.log(x) - mu)**2)
 
 
-def _log_normal_likelihood(response_actual, response_model, sigma):
+def _log_likelihood_normal(response_actual, response_model, sigma):
     """
     PDF of log likelihood of normal distribution
 
@@ -252,3 +153,91 @@ def _log_normal_likelihood(response_actual, response_model, sigma):
         Sum of log PDF of response_actual given normal distribution N(response_model, sigma^2)
     """
     return jnp.nansum(dist.Normal(0, 1).log_prob((response_model - response_actual)/sigma))
+
+
+def _map_adjust_trace(mcmc_trace, experiments, prior_infor, set_K_I_M_equal_K_S_M=False,
+                      set_K_S_DS_equal_K_S_D=False, set_K_S_DI_equal_K_S_DS=False,
+                      set_kcat_DSS_equal_kcat_DS=False, set_kcat_DSI_equal_kcat_DS=False, 
+                      set_kcat_DSI_equal_kcat_DSS=False, show_progress=True):
+    """
+    Adjusting mcmc_trace based on constrains and prior information
+
+    Parameters:
+    ----------
+    mcmc_trace      : list of dict, trace of Bayesian sampling trace (group_by_chain=False)
+    experiments     : list of dict
+        Each dataset contains response, logMtot, lotStot, logItot
+    prior_infor     : list of dict to assign prior distribution for kinetics parameters
+    ----------
+    Return          : adjusted mcmc_trace
+    """
+
+    mcmc_trace_update = mcmc_trace.copy()
+    n_enzymes = len(experiments)
+
+    keys = list(mcmc_trace_update.keys())
+    for prior in prior_infor:
+        if prior['dist'] is None and not prior['name'] in keys:
+            mcmc_trace_update[prior['name']] = jnp.repeat(prior['value'], len(mcmc_trace_update[keys[0]]))
+    
+    prior_infor_pd = pd.DataFrame(prior_infor)
+    if set_K_I_M_equal_K_S_M:
+        idx = np.where(prior_infor_pd.name=='logK_S_M')[0][0]
+        if prior_infor[idx]['fit'] == 'global':
+            mcmc_trace_update['logK_I_M'] = mcmc_trace_update['logK_S_M']
+        elif prior_infor[idx]['fit'] == 'local':
+            for n in range(n_enzymes):
+                mcmc_trace_update[f'logK_I_M:{n}'] = mcmc_trace_update[f'logK_S_M:{n}']
+    
+    if set_K_S_DS_equal_K_S_D:
+        idx = np.where(prior_infor_pd.name=='logK_S_D')[0][0]
+        if prior_infor[idx]['fit'] == 'global':
+            mcmc_trace_update['logK_S_DS'] = mcmc_trace_update['logK_S_D']
+        elif prior_infor[idx]['fit'] == 'local':
+            for n in range(n_enzymes):
+                mcmc_trace_update[f'logK_S_DS:{n}'] = mcmc_trace_update[f'logK_S_D:{n}']
+    
+    if set_K_S_DS_equal_K_S_D and set_K_S_DI_equal_K_S_DS:
+        idx = np.where(prior_infor_pd.name=='logK_S_D')[0][0]
+        if prior_infor[idx]['fit'] == 'global':
+            mcmc_trace_update['logK_S_DI'] = mcmc_trace_update['logK_S_D']
+        elif prior_infor[idx]['fit'] == 'local':
+            for n in range(n_enzymes):
+                mcmc_trace_update[f'logK_S_DI:{n}'] = mcmc_trace_update[f'logK_S_D:{n}']
+    
+    elif set_K_S_DI_equal_K_S_DS:
+        idx = np.where(prior_infor_pd.name=='logK_S_DS')[0][0]
+        if prior_infor[idx]['fit'] == 'global':
+            mcmc_trace_update['logK_S_DI'] = mcmc_trace_update['logK_S_DS']
+        elif prior_infor[idx]['fit'] == 'local':
+            for n in range(n_enzymes):
+                mcmc_trace_update[f'logK_S_DI:{n}'] = mcmc_trace_update[f'logK_S_DS:{n}']
+    
+    if set_kcat_DSS_equal_kcat_DS:
+        idx = np.where(prior_infor_pd.name=='kcat_DS')[0][0]
+        if prior_infor[idx]['fit'] == 'global':
+            mcmc_trace_update['kcat_DSS'] = mcmc_trace_update['kcat_DS']
+        elif prior_infor[idx]['fit'] == 'local':
+            for n in range(n_enzymes):
+                mcmc_trace_update[f'kcat_DSS:{n}'] = mcmc_trace_update[f'kcat_DS:{n}']
+    
+    if set_kcat_DSI_equal_kcat_DS:
+        idx = np.where(prior_infor_pd.name=='kcat_DS')[0][0]
+        if prior_infor[idx]['fit'] == 'global':
+            mcmc_trace_update['kcat_DSI'] = mcmc_trace_update['kcat_DS']
+        elif prior_infor[idx]['fit'] == 'local':
+            for n in range(n_enzymes):
+                mcmc_trace_update[f'kcat_DSI:{n}'] = mcmc_trace_update[f'kcat_DS:{n}']
+    
+    elif set_kcat_DSI_equal_kcat_DSS:
+        idx = np.where(prior_infor_pd.name=='kcat_DSS')[0][0]
+        if prior_infor[idx]['fit'] == 'global':
+            mcmc_trace_update['kcat_DSI'] = mcmc_trace_update['kcat_DSS']
+        elif prior_infor[idx]['fit'] == 'local':
+            for n in range(n_enzymes):
+                mcmc_trace_update[f'kcat_DSI:{n}'] = mcmc_trace_update[f'kcat_DSS:{n}']
+    
+    if len(mcmc_trace_update.keys())>len(keys) and show_progress:
+        print("Adjusted trace with keys: ", mcmc_trace_update.keys())
+
+    return mcmc_trace_update

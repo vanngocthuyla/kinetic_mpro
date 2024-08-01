@@ -17,7 +17,7 @@ class ModelArgs:
         if attr in self.__dict__:
             return self.__dict__[attr]
         else:
-            raise AttributeError(f"'ModelArgs' object has no attribute '{attr}'")
+            raise AttributeError(f"'ModelArgs' has no attribute '{attr}'")
 
 
 class Model:
@@ -66,6 +66,8 @@ class Model:
             log_sigmas      : dict, measurement error of multiple experiments under log scale
             fixing_log_sigmas       : boolean, if initial values of log_sigmas are provided, and fixing_log_sigmas=True, 
                                       the model won't estimate these parameters
+            nsamples_MAP    : int, number of checked samples when finding MAP
+            set_equal_      : boolean, different model constraints
         """
         
         # Initial values

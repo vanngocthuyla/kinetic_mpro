@@ -3,7 +3,7 @@ import jax
 import jax.numpy as jnp
 import pandas as pd
 
-def load_data_one_inhibitor(df, multi_var=False, name=None, min_points=8):
+def load_data_one_inhibitor(df, multi_var=False, name=None):
     """
     Parameters:
     ----------
@@ -39,11 +39,6 @@ def load_data_one_inhibitor(df, multi_var=False, name=None, min_points=8):
         unique_enzyme = np.unique(df['Enzyme (nM)'])
         for n, conc_enzyme in enumerate(unique_enzyme):
             dat = df[(df['Enzyme (nM)']==conc_enzyme)*df['Plate']==plate_i]
-            
-            # if len(dat)<min_points:
-            #     print(f"There was only {len(dat)} data points.")
-            #     data_CRC[i] = [None, None, None, None]
-            #     break
             
             Mtot = np.array(dat['Enzyme (nM)'])*1E-9
             Stot = np.array(dat['Substrate (nM)'])*1E-9

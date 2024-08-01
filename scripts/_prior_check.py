@@ -276,12 +276,13 @@ def _prior_group_multi_enzyme(prior_information, n_enzymes, shared_params, param
             kcat_MS:1 = 0.
         These variables will be saved into two lists, which is params_logK or params_kcat
     ----------
-    return two lists of prior distribution for kinetics parameters
+    return lists of prior information for kinetics parameters and the number of excluded parameter
     """
     params = {}
+    count_None_params = 0
     for prior in prior_information:
         if prior['type'] in params_name:
-            assert prior['type'] in ['logKd', 'logK', 'kcat'], "Paramter type should be logKd, logK or kcat."
+            assert prior['type'] in ['logKd', 'logK', 'kcat'], "Parameter type should be logKd, logK or kcat."
             assert prior['fit'] in ['global', 'local'], "Please declare correctly if the parameter(s) would be fit local/global."
         
             name = prior['name']
@@ -295,8 +296,6 @@ def _prior_group_multi_enzyme(prior_information, n_enzymes, shared_params, param
                     if shared_params is not None:
                         if name in shared_params.keys() and shared_params[name]['assigned_idx'] == n:
                             params[f'{name}:{n}'] = None
-                            # shared_idx = shared_params[name]['shared_idx']
-                            # print(f'{name}:{n} will not be estimated. Shared params: {name}:{shared_idx}')
                             continue
 
                     if dist == 'normal':
@@ -308,6 +307,7 @@ def _prior_group_multi_enzyme(prior_information, n_enzymes, shared_params, param
                             params[f'{name}:{n}'] = prior['value'][n]
                         else:
                             params[f'{name}:{n}'] = None
+                            count_None_params += 1
 
             elif prior['fit'] == 'global': 
                 if prior['dist'] == 'normal':
@@ -319,7 +319,9 @@ def _prior_group_multi_enzyme(prior_information, n_enzymes, shared_params, param
                         params[name] = prior['value']
                     else:
                         params[name] = None
-    return params
+                        count_None_params += 1
+
+    return params, count_None_params
 
 
 def prior_group_multi_enzyme(prior_information, n_enzymes, shared_params):
@@ -330,12 +332,12 @@ def prior_group_multi_enzyme(prior_information, n_enzymes, shared_params):
     n_enzymes         : number of enzymes
     shared_params   : dict of information for shared parameters
     ----------
-    return two lists of prior distribution for kinetics parameters
+    return two lists of prior distribution for kinetics parameters and the number of excluded parameters
     """
-    params_logK = _prior_group_multi_enzyme(prior_information, n_enzymes, shared_params, ['logKd', 'logK'])
-    params_kcat = _prior_group_multi_enzyme(prior_information, n_enzymes, shared_params, ['kcat'])
+    params_logK, count_logK = _prior_group_multi_enzyme(prior_information, n_enzymes, shared_params, ['logKd', 'logK'])
+    params_kcat, count_kcat = _prior_group_multi_enzyme(prior_information, n_enzymes, shared_params, ['kcat'])
 
-    return params_logK, params_kcat
+    return params_logK, params_kcat, count_logK + count_kcat
 
 
 def define_uniform_prior_group(logKd_min=-20, logKd_max=0, kcat_min=0, kcat_max=1):

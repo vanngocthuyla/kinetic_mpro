@@ -118,13 +118,15 @@ model = Model(len(expts), prior)
 model.check_model(args)
 
 ## Fitting model
-trace = _run_mcmc(expts, model.prior_infor, model.shared_params, model.init_values, model.args)
+trace = _run_mcmc(expts=expts, prior_infor=model.prior_infor, shared_params=model.shared_params, 
+                  init_values=model.init_values, args=model.args)
 
 ## Trace and autocorrelation plots
 plotting_trace_global(trace=trace, out_dir=os.path.join(args.out_dir, 'Trace_plot'), nchain=args.nchain)
 
 ## Finding MAP
-[trace_map, map_index] = _map_running(trace.copy(), expts, model.prior_infor, model.shared_params, model.args)
+[trace_map, map_index] = _map_running(trace=trace.copy(), expts=expts, prior_infor=model.prior_infor, 
+                                      shared_params=model.shared_params, args=model.args)
 
 ## Fitting plot
 params_logK, params_kcat = extract_params_from_map_and_prior(trace_map, map_index, model.prior_infor)

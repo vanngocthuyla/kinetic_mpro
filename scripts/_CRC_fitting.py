@@ -15,11 +15,6 @@ from numpyro.infer import MCMC, NUTS, init_to_value
 from _plotting import plotting_trace
 from _model import global_fitting
 
-from _kinetics import ReactionRate
-from _prior_distribution import uniform_prior, normal_prior, logsigma_guesses, lognormal_prior
-from _params_extraction import extract_logK_n_idx, extract_kcat_n_idx
-from _prior_check import check_prior_group, prior_group_multi_enzyme, define_uniform_prior_group
-from _model import _dE_priors, _dE_find_prior, _alpha_priors, _alpha_find_prior, fitting_each_dataset
 from _pIC50 import scaling_data
 from _plotting import plotting_trace 
 

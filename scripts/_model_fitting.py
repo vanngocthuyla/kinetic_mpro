@@ -26,9 +26,10 @@ def _run_mcmc(expts, prior_infor, shared_params, init_values, args):
     prior_infor     : list of dict to assign prior distribution for kinetics parameters
     shared_params   : dict, information for shared parameters
     init_values     : dict, initial value for model fitting
-    args            : dict, other model arguments
+    args            : class comprises other model arguments. For more information, check _define_model.py
     ----------
     Fitting the Bayesian model to estimate the kinetics parameters and noise of all datasets
+    
     Return mcmc.trace
     """
     rng_key, rng_key_ = random.split(random.PRNGKey(args.random_key))
@@ -88,9 +89,10 @@ def _run_mcmc_EI(expts, prior_infor, shared_params, init_values, args):
     prior_infor     : list of dict to assign prior distribution for kinetics parameters
     shared_params   : dict, information for shared parameters
     init_values     : dict, initial value for model fitting
-    args            : dict, other model arguments
+    args            : class comprises other model arguments. For more information, check _define_model.py
     ----------
     Fitting the Bayesian model to estimate the kinetics parameters and noise of all datasets
+    
     Return mcmc.trace
     """
     rng_key, rng_key_ = random.split(random.PRNGKey(args.random_key))

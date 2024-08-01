@@ -180,7 +180,8 @@ if len(expts_plot)>0:
                     with open(os.path.join(expt_dir, "log.txt"), "a") as f:
                         print(mes, file=f)
 
-                    trace = _run_mcmc_CRC(expts, model.prior_infor, model.shared_params, init_values, '', expt_dir, model.args)
+                    trace = _run_mcmc_CRC(expts=expts, prior_infor=model.prior_infor, shared_params=model.shared_params, 
+                                          init_values=init_values, last_run_dir='', out_dir=expt_dir, args=model.args)
 
                 else:
                     last_state = pickle.load(open(os.path.join(last_dir, "Last_state.pickle"), "rb"))
@@ -189,12 +190,15 @@ if len(expts_plot)>0:
                     with open(os.path.join(expt_dir, "log.txt"), "a") as f:
                         print(mes, file=f)
 
-                    trace = _run_mcmc_CRC(expts, model.prior_infor, model.shared_params, None, last_dir, expt_dir, model.args)
+                    trace = _run_mcmc_CRC(expts=expts, prior_infor=model.prior_infor, shared_params=model.shared_params, 
+                                          init_values=None, last_run_dir=last_dir, out_dir=expt_dir, args=model.args)
             else:
-                trace = _run_mcmc_CRC(expts, model.prior_infor, model.shared_params, None, last_dir, expt_dir, model.args)
+                trace = _run_mcmc_CRC(expts=expts, prior_infor=model.prior_infor, shared_params=model.shared_params, 
+                                      init_values=None, last_run_dir=last_dir, out_dir=expt_dir, args=model.args)
 
             ## Finding MAP
-            [trace_map, map_index] = _map_running(trace.copy(), expts, model.prior_infor, model.shared_params, model.args)
+            [trace_map, map_index] = _map_running(trace=trace.copy(), expts=expts, prior_infor=model.prior_infor, 
+                                                  shared_params=model.shared_params, args=model.args)
 
             ## Fitting plot
             params_logK, params_kcat = extract_params_from_map_and_prior(trace, map_index, model.prior_infor)

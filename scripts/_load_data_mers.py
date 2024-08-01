@@ -1,6 +1,10 @@
-import numpy as np
+"""
+Loading data of MERS-CoV Mpro
+"""
+
 import jax
 import jax.numpy as jnp
+import numpy as np
 import pandas as pd
 
 
@@ -45,7 +49,7 @@ def load_data_no_inhibitor(df, multi_var=False):
                                    'figure': plate_i[:-5], 'sub_figure': f'E:{conc_enzyme}nM',
                                    'logMtot': logMtot, # M
                                    'logStot': logStot, # M
-                                   'logItot': None, #np.array([np.log(1E-20)]*len(Mtot))
+                                   'logItot': None, #np.array([np.log(1E-20)]*len(Mtot)),
                                    'v': v, # M min^{-1}
                                    'x':'logStot'})
 
@@ -163,7 +167,7 @@ def load_data_one_inhibitor(df, multi_var=False, name=None, min_points=8):
                                    'figure': plate_i[:-5], 'sub_figure': f'E:{conc_enzyme}nM',
                                    'logMtot': logMtot, # M
                                    'logStot': logStot, # M
-                                   'logItot': logItot, #None
+                                   'logItot': logItot, # M
                                    'v': v, # M min^{-1}
                                    'x':'logStot'})
                 CRC_logMtot.append(logMtot)

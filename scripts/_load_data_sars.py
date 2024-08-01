@@ -1,3 +1,7 @@
+"""
+Loading data of SARS-CoV-2 Mpro from papers of Nashed et al. (2022) and Vuong et al. (2022)
+"""
+
 import numpy as np
 import jax
 import jax.numpy as jnp
