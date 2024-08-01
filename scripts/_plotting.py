@@ -148,11 +148,7 @@ def plot_data_conc_log(experiments, params_logK, params_kcat, alpha_list=None, E
         if plot_legend:
             plt.legend()
         plt.tight_layout()
-        
-        if len(experiments)>1:
-            plt.savefig(f'{OUTFILE}_{i}')
-        else:
-            plt.savefig(f'{OUTFILE}')
+        plt.savefig(f'{OUTFILE}')
 
 
 def plotting_trace_global(trace, out_dir, nchain=4, nsample=None, name_expts=None):
