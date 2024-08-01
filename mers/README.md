@@ -30,4 +30,6 @@ Using information on shared parameters estimated from the global fitting, each C
 
 # Set up directory
 
-To repeat the whole procedure, simply edit the root directory in `main_dir.txt`. This will update the directory for steps 1 to 9.
+To repeat the whole procedure, simply edit the root directory in `main_dir.txt`. This will update the directory for steps 1 to 9. For example, if you download this GitHub repository and store it at `/home/user/python`, set the directory in main_dir.txt to `/home/user/python`.
+
+Please note that if you change the name of the GitHub repository from `kinetic_mpro` to a different name, such as `mpro`, you will need to update all `run_me.sh` files accordingly.
