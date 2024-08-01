@@ -1,9 +1,12 @@
 #!/bin/bash
 
-export SCRIPT="/home/exouser/python/mpro/scripts/run_MAP_combining.py"
+FILE=$(cd ../ && pwd)/'main_dir.txt'
+DIR=$(<$FILE)
 
-export MCMC_DIR="/home/exouser/python/mpro/mers/3.ESI"
+export SCRIPT='/kinetic_mpro/scripts/run_MAP_combining.py'
 
-export OUT_DIR="/home/exouser/python/mpro/mers/4.Global/sampling_1"
+export MCMC_DIR='/kinetic_mpro/mers/3.ESI'
 
-python $SCRIPT --mcmc_dir $MCMC_DIR --out_dir $OUT_DIR 
+export OUT_DIR='/kinetic_mpro/mers/4.Global/sampling_1'
+
+python $DIR$SCRIPT --mcmc_dir $DIR$MCMC_DIR --out_dir $DIR$OUT_DIR 

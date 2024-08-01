@@ -1,13 +1,16 @@
 #!/bin/bash
 
-export SCRIPT="/home/exouser/python/mpro/scripts/run_analysis_global.py"
+FILE=$(cd ../../ && pwd)/'main_dir.txt'
+DIR=$(<$FILE)
 
-export INPUT_FILE="/home/exouser/python/mpro/mers/input/ESI_Full.csv"
+export SCRIPT='/kinetic_mpro/scripts/run_analysis_global.py'
 
-export MCMC_FILE="/home/exouser/python/mpro/mers/4.Global_Analysis/2.Converged_trace/Converged_trace.pickle"
+export INPUT_FILE='/kinetic_mpro/mers/input/ESI_Full.csv'
 
-export MAP_DIR='/home/exouser/python/mpro/mers/4.Global_Analysis/3.MAP_finding'
+export MCMC_FILE='/kinetic_mpro/mers/4.Global_Analysis/2.Converged_trace/Converged_trace.pickle'
 
-export OUT_DIR="/home/exouser/python/mpro/mers/4.Global_Analysis/4.Correlation"
+export MAP_DIR='/kinetic_mpro/mers/4.Global_Analysis/3.MAP_finding'
 
-python $SCRIPT --kinetic_file $INPUT_FILE --mcmc_file $MCMC_FILE --map_dir $MAP_DIR --out_dir $OUT_DIR --multi_var --set_lognormal_dE --dE 0.1
+export OUT_DIR='/kinetic_mpro/mers/4.Global_Analysis/4.Correlation'
+
+python $DIR$SCRIPT --kinetic_file $DIR$INPUT_FILE --mcmc_file $DIR$MCMC_FILE --map_dir $DIR$MAP_DIR --out_dir $DIR$OUT_DIR --multi_var --set_lognormal_dE --dE 0.1

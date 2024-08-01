@@ -1,15 +1,18 @@
 #!/bin/bash
 
-export SCRIPT="/home/exouser/python/mpro/scripts/run_MAP_finding.py"
+FILE=$(cd ../../ && pwd)/'main_dir.txt'
+DIR=$(<$FILE)
 
-export INPUT="/home/exouser/python/mpro/mers/input/ESI_Full.csv"
+export SCRIPT='/kinetic_mpro/scripts/run_MAP_finding.py'
 
-export MCMC_FILE="/home/exouser/python/mpro/mers/4.Global_Analysis/2.Converged_trace/Converged_trace.pickle"
+export INPUT='/kinetic_mpro/mers/input/ESI_Full.csv'
 
-export OUT_DIR="/home/exouser/python/mpro/mers/4.Global_Analysis/3.MAP_finding"
+export MCMC_FILE='/kinetic_mpro/mers/4.Global_Analysis/2.Converged_trace/Converged_trace.pickle'
 
-export PRIOR='/home/exouser/python/mpro/mers/4.Global/Prior.json'
+export OUT_DIR='/kinetic_mpro/mers/4.Global_Analysis/3.MAP_finding'
 
-export INIT='/home/exouser/python/mpro/mers/4.Global/sampling_1/map_sampling.pickle'
+export PRIOR='/kinetic_mpro/mers/4.Global/Prior.json'
 
-python $SCRIPT --input_file $INPUT --mcmc_file $MCMC_FILE --out_dir $OUT_DIR --prior_infor $PRIOR --initial_values $INIT --fit_E_S --fit_E_I --multi_var --set_lognormal_dE --dE 0.1
+export INIT='/kinetic_mpro/mers/4.Global/sampling_1/map_sampling.pickle'
+
+python $DIR$SCRIPT --input_file $DIR$INPUT --mcmc_file $DIR$MCMC_FILE --out_dir $DIR$OUT_DIR --prior_infor $DIR$PRIOR --initial_values $DIR$INIT --fit_E_S --fit_E_I --multi_var --set_lognormal_dE --dE 0.1
