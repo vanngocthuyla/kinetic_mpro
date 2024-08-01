@@ -28,7 +28,7 @@ Using information on shared parameters estimated from the global fitting, each C
 8. pIC50 estimation for each CRC
 9. Additional analysis
 
-# Set up directory
+# Setting up directory
 
 To repeat the whole procedure, simply edit the root directory in `main_dir.txt`. This will update the directory for steps 1 to 9. For example, if you download this GitHub repository and store it at `/home/user/python`, set the directory in `main_dir.txt` to `/home/user/python`.
 
