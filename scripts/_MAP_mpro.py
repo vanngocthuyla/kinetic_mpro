@@ -14,6 +14,7 @@ from _kinetics import adjust_DimerBindingModel, adjust_ReactionRate, adjust_Mono
 
 from _MAP import _extract_logK_kcat_trace, _uniform_pdf, _gaussian_pdf, _lognormal_pdf, _log_likelihood_normal, _map_adjust_trace, _log_prior_sigma
 from _model import _dE_find_prior, _alpha_find_prior
+from _trace_analysis import TraceAdjustment
 
 
 def _map_finding(mcmc_trace, experiments, prior_infor, args, nsamples=None, 
@@ -90,16 +91,10 @@ def _map_running(trace, expts, prior_infor, shared_params, args, adjust_fit=True
     ----------
     Return          : adjusted trace and map index
     """
-    trace_map   = trace.copy()
     traces_name = args.traces_name
 
-    if shared_params is not None and len(shared_params)>0:
-        for name in shared_params.keys():
-            param = shared_params[name]
-            assigned_idx = param['assigned_idx']
-            shared_idx = param['shared_idx']
-            trace_map[f'{name}:{assigned_idx}'] = trace_map[f'{name}:{shared_idx}']
-        pickle.dump(trace_map, open(os.path.join('MAP_'+traces_name+'.pickle'), "wb"))
+    trace_map = TraceAdjustment(trace, shared_params).adjust_by_shared_params()
+    pickle.dump(trace_map, open(os.path.join('MAP_'+traces_name+'.pickle'), "wb"))
 
     if not args.log_sigmas is None: 
         log_sigmas = args.log_sigmas
