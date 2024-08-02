@@ -21,7 +21,7 @@ from _MAP_finding_mpro import map_finding
 
 from _prior_check import convert_prior_from_dict_to_list, check_prior_group
 from _params_extraction import extract_logK_n_idx, extract_kcat_n_idx
-from _trace_analysis import extract_params_from_map_and_prior
+from _trace_analysis import TraceExtraction
 
 from _save_setting import save_model_setting
 
@@ -122,7 +122,7 @@ plotting_trace_global(trace=trace, out_dir=os.path.join(args.out_dir, 'Trace_plo
                                       shared_params=model.shared_params, args=model.args)
 
 ## Fitting plot
-params_logK, params_kcat = extract_params_from_map_and_prior(trace_map, map_index, model.prior_infor)
+params_logK, params_kcat = TraceExtraction(trace=trace_map).extract_params_from_map_and_prior(map_index, model.prior_infor)
 
 if args.set_lognormal_dE and args.dE>0:
     E_list = {key: trace[key][map_index] for key in trace.keys() if key.startswith('dE')}

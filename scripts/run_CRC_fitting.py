@@ -26,7 +26,7 @@ from _CRC_fitting import _expt_check_noise_trend
 
 from _MAP_mpro import _map_running
 from _params_extraction import extract_logK_n_idx, extract_kcat_n_idx
-from _trace_analysis import extract_params_from_map_and_prior
+from _trace_analysis import TraceExtraction
 from _plotting import plot_data_conc_log
 
 from _save_setting import save_model_setting
@@ -104,7 +104,7 @@ if len(expts_plot)>0:
                                           shared_params=model.shared_params, args=model.args)
     
     ## Fitting plot
-    params_logK, params_kcat = extract_params_from_map_and_prior(trace_map, map_index, model.prior_infor)
+    params_logK, params_kcat = TraceExtraction(trace=trace_map).extract_params_from_map_and_prior(map_index, model.prior_infor)
 
     if args.set_lognormal_dE and args.dE>0:
         E_list = {key: trace[key][map_index] for key in trace.keys() if key.startswith('dE')}

@@ -25,7 +25,7 @@ from _model_fitting import _run_mcmc_EI
 
 from _MAP_mpro import _map_running
 from _params_extraction import extract_logK_n_idx, extract_kcat_n_idx
-from _trace_analysis import extract_params_from_map_and_prior, _trace_one_to_nchain
+from _trace_analysis import TraceExtraction
 from _plotting import plot_data_conc_log
 
 from _save_setting import save_model_setting
@@ -88,7 +88,7 @@ trace = _run_mcmc_EI(expts=expts, prior_infor=model.prior_infor, shared_params=m
                                       shared_params=model.shared_params, args=model.args)
 
 ## Fitting plot
-params_logK, params_kcat = extract_params_from_map_and_prior(trace_map, map_index, model.prior_infor)
+params_logK, params_kcat = TraceExtraction(trace=trace_map).extract_params_from_map_and_prior(map_index, model.prior_infor)
 
 n = 0
 plot_data_conc_log(expts_plot, extract_logK_n_idx(params_logK, n, model.shared_params),
