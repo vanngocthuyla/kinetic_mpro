@@ -118,7 +118,11 @@ def plot_data_conc_log(experiments, params_logK, params_kcat, alpha_list=None, E
                 alpha = 1
             else:
                 plate = experiment['plate']
-                alpha = alpha_list[f'alpha:{plate}']
+                if f'alpha:{plate}' in alpha_list.keys():
+                    alpha = alpha_list[f'alpha:{plate}']
+                else:
+                    name = experiment['figure']
+                    alpha = alpha_list[f'alpha:{name}']
 
             y_model = ReactionRate(logE, logStot, logItot, *params_logK, *params_kcat)*alpha
 
