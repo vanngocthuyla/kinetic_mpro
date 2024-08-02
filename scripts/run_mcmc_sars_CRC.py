@@ -10,6 +10,7 @@ import numpy as np
 import os
 import argparse
 
+import pandas as pd
 import pickle
 import matplotlib.pyplot as plt
 
@@ -21,6 +22,7 @@ warnings.simplefilter("ignore", UserWarning)
 warnings.simplefilter("ignore", RuntimeWarning)
 
 from _load_data_sars import load_data_mut_wt
+from _load_data import load_data_one_inhibitor
 
 from _define_model import Model
 from _model_fitting import _run_mcmc
@@ -79,28 +81,12 @@ expts_combine, expts_mut, expts_wt, expts_wt_Vuong = load_data_mut_wt(args.fit_m
                                                                       args.fit_wildtype_Nashed, args.fit_wildtype_Vuong,
                                                                       args.fit_E_S, args.fit_E_I, args.multi_var_mut, args.multi_var_wt)
 
-inhibitor_name = 'CVD-0020650'
+# Load CRC
+df_sars = pd.read_csv(args.input_file)
 
-Itot = np.array([99.5, 99.5, 49.75, 49.75, 24.8799991607666, 24.8799991607666, 12.4399995803833, 12.4399995803833, 7.4629998207092285, 7.4629998207092285, 2.48799991607666, 2.48799991607666, 1.559000015258789, 1.559000015258789, 0.7789999842643738, 0.7789999842643738, 0.38999998569488525, 0.38999998569488525, 0.19499999284744263, 0.19499999284744263, 0.10000000149011612, 0.10000000149011612, 0.05000000074505806, 0.05000000074505806])*1E-6
-logItot = np.log(Itot)
-logMtot = np.log(40*1E-9)*np.ones(len(logItot))
-logStot = np.log(3*1E-6)*np.ones(len(logItot))
-inhibition = 100-np.array([100, 99.1, 99.1, 99.0, 99.5, 98.9, 98.5, 98.5, 97.3, 96.9, 76.6, 77.7, 61.2, 60.4, 37.4, 36.1, 28.0, 25.3, 12.4, 11.7, 13.1, 9.04, 2.70, 1.44])
-v = inhibition/100*1E-9 #Convert to the same scale of velocity
-
-expts_CRC = []
-expts_plot_CRC = []
-data_rate_CRC = {}
-expts_plot_CRC.append({'type':'CRC', 'enzyme': 'wild_type', 'plate': '20650',
-                       'index': '20650', 'figure': 'CVD-0020650', 'sub_figure': '0',
-                       'logMtot': logMtot, # M
-                       'logStot': logStot, # M
-                       'logItot': logItot, # M
-                       'v': v, 'x':'logItot'})
-data_rate_CRC = [v, logMtot, logStot, logItot]
-expts_CRC.append({'enzyme': 'wild_type', 'figure': inhibitor_name, 'index': '20650',
-                  'plate' : '20650', 'kinetics': None, 'AUC': None, 'ICE': None,
-                  'CRC': data_rate_CRC})
+inhibitor_name = np.array([args.name_inhibitor])
+for i, name in enumerate(inhibitor_name):
+    expts_CRC, expts_plot_CRC = load_data_one_inhibitor(df_sars[(df_sars['Inhibitor_ID']==name)*(df_sars['Drop']!=1.0)])
 
 expts = expts_combine + expts_CRC
 
