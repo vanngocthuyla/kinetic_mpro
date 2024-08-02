@@ -315,94 +315,120 @@ def plotting_trace(trace, out_dir, nchain=4, nsample=None):
         plt.savefig(os.path.join(out_dir, 'Plot_trace'))
 
 
-# 1D Histogram
-def _plot_1D_histogram(trace, param_list, outfile=None, hdi_prob=0.95, text_size=14, dpi=800):
-
-    if len(param_list)<=4:
-        ncol = len(param_list)
-        fig, axs = plt.subplots(nrows=1, ncols=ncol, figsize=(ncol*2.5, 2.5))
-        axs = axs.flatten()
-    elif len(param_list)<=6:
-        fig, axs = plt.subplots(nrows=2, ncols=3, figsize=(7.5, 5))
-        axs = axs.flatten()
-        if len(param_list)==5:
-            axs[5].axis("off")
-    elif len(param_list)<=8:
-        fig, axs = plt.subplots(nrows=2, ncols=4, figsize=(10, 5))
-        axs = axs.flatten()
-        if len(param_list)==7:
-            axs[7].axis("off")
-
-    for i, key in enumerate(param_list):
-        trace_plot = {}
-        trace_plot[key] = trace[key]
-        az.plot_posterior(trace_plot, textsize=text_size, ax=axs[i], round_to=2, hdi_prob=hdi_prob)
-
-    plt.tight_layout();
-    if outfile is not None:
-        plt.savefig(outfile, dpi=dpi, bbox_inches='tight');
-
-
-def _plot_2D_histogram(data, param_list, dpi=800, label_size=20, tick_size=14, rotation_x=0, rotation_y=0,
-                       outfile=None):
-
-    N = len(param_list)-1
-
-    fig, axis = plt.subplots(N, N, figsize=(N*2, N*2), constrained_layout=True,sharex=False, sharey=False)
-
-    for i in range(len(param_list)-1): #col
-        for j in range(1, len(param_list)): #row
-            if i < j:
-                az.plot_pair(data, var_names=[param_list[i], param_list[j]], ax=axis[j-1, i], divergences=False,
-                            kind='kde', textsize=label_size)
-                axis[j-1, i].tick_params(axis='x', labelrotation=rotation_x, labelsize=tick_size)
-                axis[j-1, i].tick_params(axis='y', labelrotation=rotation_y, labelsize=tick_size)
-                if j<N:
-                    axis[j-1, i].xaxis.set_visible(False)
-                if i>0:
-                    axis[j-1, i].yaxis.set_visible(False)
-            else:
-                axis[j-1, i].set_visible(False)
-    plt.tight_layout();
-
-    if outfile is not None:
-        plt.savefig(outfile, dpi=dpi);
-
-
-def _heat_map(trace, params_list, outfile=None, fig_size=(6.4,4.8), dpi=800, 
-              fontsize_tick=16, fontsize_text=12, nchain=4, niters=1000):
+class AnalysisPlot:
     
-    plt.figure(figsize=fig_size)
-    traces = {}
-    for key in params_list:
-        traces[key] = np.reshape(trace[key], (nchain, niters))
-    data = az.convert_to_inference_data(traces)
-    data_plot = az.InferenceData.to_dataframe(data)
-    data_plot = data_plot.drop(['chain', 'draw'], axis=1)
-    sns.heatmap(data_plot.corr(), annot=True, fmt="0.2f", linewidth=.5, annot_kws={"size": fontsize_text})
-    plt.tick_params(labelsize=fontsize_tick)
-    plt.tight_layout()
-    if outfile is not None:
-        plt.savefig(outfile, dpi=dpi, bbox_inches='tight');
+    def __init__(self, trace, param_list=None, dpi=800):
+        """
+        Parameters:
+        ----------
+        trace           : mcmc trace
+        param_list      : dict of parameters
+        out_dir         : optional, string, directory for saving plot
+        """
+        self.trace = trace
+        self.param_list = param_list if param_list is not None else trace.keys()
+        self.dpi = dpi
 
+    def _create_1D_histogram_ax(self, key, text_size=14, hdi_prob=0.95, ax=None, outfile=None):
+        """Create a single 1D histogram subplot and return the axis."""
+        if ax is None:
+            fig, ax = plt.subplots(figsize=(2.5, 2.5))
+        trace_plot = {key: self.trace[key]}
+        az.plot_posterior(trace_plot, textsize=text_size, ax=ax, round_to=2, hdi_prob=hdi_prob)
+        if outfile is not None:
+            plt.savefig(outfile, dpi=self.dpi, bbox_inches='tight')
+        else:
+            return ax
 
-#Linear correlation
-def _linear_corr(xdata, ydata, xlabel, ylabel, outfile=None, fig_size=(4.25,3), dpi=800,
-                 fontsize_label=20, fontsize_tick=16, fontsize_text=12, legend=False):
-    
-    plt.figure(figsize=fig_size)
-    ax = plt.axes()
-    res = stats.linregress(xdata, ydata)
-    ax.plot(xdata, ydata, 'o', label='data')
-    ax.plot(xdata, res.intercept + res.slope*xdata, 'k', label='Fitted line')
-    ax.set_xlabel(xlabel, fontsize=fontsize_label)
-    ax.set_ylabel(ylabel, fontsize=fontsize_label)
-    if legend:
-        plt.legend()
-        ax.text(0.2, 0.9, ylabel+'='+str(round(res.slope, 2))+'*'+xlabel+'+'+str(round(res.intercept, 2)),
-                fontsize=fontsize_text, transform=ax.transAxes);
-    plt.xticks(fontsize=fontsize_tick)
-    plt.yticks(fontsize=fontsize_tick)
-    plt.tight_layout()
-    if outfile is not None:
-        plt.savefig(outfile, dpi=dpi, bbox_inches='tight');
+    def _combine_1D_histogram_axes(self, axs, text_size=14, hdi_prob=0.95, outfile=None):
+        """Combine multiple 1D histogram axes into a single figure."""
+        for i, key in enumerate(self.param_list):
+            az.plot_posterior({key: self.trace[key]}, textsize=text_size, ax=axs[i], round_to=2, hdi_prob=hdi_prob)
+        plt.tight_layout()
+        if outfile is not None:
+            plt.savefig(outfile, dpi=self.dpi, bbox_inches='tight')
+        else:
+            return axs
+
+    def plot_1D_histogram(self, text_size=14, hdi_prob=0.95, outfile=None):
+        """Create 1D histograms based on the number of parameters and save the plot."""
+        n_params = len(self.param_list)
+        if n_params <= 4:
+            ncol = n_params
+            fig, axs = plt.subplots(nrows=1, ncols=ncol, figsize=(ncol*2.5, 2.5))
+            axs = axs.flatten()
+        elif n_params <= 6:
+            fig, axs = plt.subplots(nrows=2, ncols=3, figsize=(7.5, 5))
+            axs = axs.flatten()
+            if n_params == 5:
+                axs[5].axis("off")
+        elif n_params <= 8:
+            fig, axs = plt.subplots(nrows=2, ncols=4, figsize=(10, 5))
+            axs = axs.flatten()
+            if n_params == 7:
+                axs[7].axis("off")
+        else:
+            for i, key in enumerate(self.param_list):
+                self. _create_1D_histogram_ax(key, text_size, hdi_prob, outfile=f"{outfile}_{i}")
+            return
+
+        self._combine_1D_histogram_axes(axs, text_size, hdi_prob, outfile)
+
+    def plot_2D_histogram(self, label_size=20, tick_size=14, rotation_x=0, rotation_y=0, outfile=None):
+        
+        param_list = list(self.trace.keys())
+        N = len(param_list) - 1
+        fig, axis = plt.subplots(N, N, figsize=(N*2, N*2), constrained_layout=True, sharex=False, sharey=False)
+
+        for i in range(len(param_list) - 1):  # col
+            for j in range(1, len(param_list)):  # row
+                if i < j:
+                    az.plot_pair(self.trace, var_names=[param_list[i], param_list[j]], ax=axis[j-1, i], divergences=False,
+                                 kind='kde', textsize=label_size)
+                    axis[j-1, i].tick_params(axis='x', labelrotation=rotation_x, labelsize=tick_size)
+                    axis[j-1, i].tick_params(axis='y', labelrotation=rotation_y, labelsize=tick_size)
+                    if j < N:
+                        axis[j-1, i].xaxis.set_visible(False)
+                    if i > 0:
+                        axis[j-1, i].yaxis.set_visible(False)
+                else:
+                    axis[j-1, i].set_visible(False)
+        plt.tight_layout()
+        if outfile is not None:
+            plt.savefig(outfile, dpi=self.dpi)
+
+    def heat_map(self, fig_size=(6.4, 4.8), fontsize_tick=16, fontsize_text=12, nchain=4, niters=1000, outfile=None):
+        
+        plt.figure(figsize=fig_size)
+        traces = {key: np.reshape(self.trace[key], (nchain, niters)) for key in self.param_list}
+        data = az.convert_to_inference_data(traces)
+        data_plot = az.InferenceData.to_dataframe(data)
+        data_plot = data_plot.drop(['chain', 'draw'], axis=1)
+        sns.heatmap(data_plot.corr(), annot=True, fmt="0.2f", linewidth=.5, annot_kws={"size": fontsize_text})
+        plt.tick_params(labelsize=fontsize_tick)
+        plt.tight_layout()
+        if outfile is not None:
+            plt.savefig(outfile, dpi=self.dpi, bbox_inches='tight')
+
+    def linear_corr(self, xkey, ykey, xlabel=None, ylabel=None, fig_size=(4.25, 3), 
+                    fontsize_label=20, fontsize_tick=16, fontsize_text=12, legend=False, 
+                    outfile=None):
+        
+        if xlabel is None: xlabel = xkey
+        if ylabel is None: ylabel = ykey
+        plt.figure(figsize=fig_size)
+        ax = plt.axes()
+        res = stats.linregress(self.trace[xkey], self.trace[ykey])
+        ax.plot(self.trace[xkey], self.trace[ykey], 'o', label='data')
+        ax.plot(self.trace[xkey], res.intercept + res.slope * self.trace[xkey], 'k', label='Fitted line')
+        ax.set_xlabel(xlabel, fontsize=fontsize_label)
+        ax.set_ylabel(ylabel, fontsize=fontsize_label)
+        if legend:
+            plt.legend()
+            ax.text(0.2, 0.9, f'{ylabel}={round(res.slope, 2)}*{xlabel}+{round(res.intercept, 2)}',
+                    fontsize=fontsize_text, transform=ax.transAxes)
+        plt.xticks(fontsize=fontsize_tick)
+        plt.yticks(fontsize=fontsize_tick)
+        plt.tight_layout()
+        if outfile is not None:
+            plt.savefig(outfile, dpi=self.dpi, bbox_inches='tight')
