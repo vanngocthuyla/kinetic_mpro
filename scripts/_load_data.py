@@ -50,7 +50,7 @@ def load_data_one_inhibitor(df, multi_var=False, name=None):
             logItot = np.array([np.log(conc) if conc > 0 else np.log(1E-30) for conc in Itot])
 
             if len(np.unique(Itot))>1:
-                experiment.append({'type':'CRC', 'enzyme': 'mers', 'plate': plate_i,
+                experiment.append({'type':'CRC', 'enzyme': 'mpro', 'plate': plate_i,
                                    'figure': name, 'sub_figure': f'E:{conc_enzyme}nM, S:{int(np.unique(Stot)[0]*1E9)}nM',
                                    'logMtot': logMtot, # M
                                    'logStot': logStot, # M
@@ -64,7 +64,7 @@ def load_data_one_inhibitor(df, multi_var=False, name=None):
 
             elif len(np.unique(Itot))==1 and len(np.unique(Stot))>1: # Fixed inhibitor (or no inhbitor)
                 experiment.append({'type':'CRC', 'enzyme':'mers', 'plate': plate_i,
-                                   'figure': plate_i[:-5], 'sub_figure': f'E:{conc_enzyme}nM',
+                                   'figure': name, 'sub_figure': f'E:{conc_enzyme}nM',
                                    'logMtot': logMtot, # M
                                    'logStot': logStot, # M
                                    'logItot': logItot, #None
@@ -88,7 +88,7 @@ def load_data_one_inhibitor(df, multi_var=False, name=None):
 
         data_CRC[i] = [response, CRC_logMtot, CRC_logStot, CRC_logItot]
 
-    multi_experiments.append({'enzyme': 'mers', 'figure': name,
+    multi_experiments.append({'enzyme': 'mpro', 'figure': name,
                               'plate' : plate_list, 
                               'CRC': data_CRC, 'kinetics': None, 'AUC': None, 'ICE': None
                               })
@@ -107,7 +107,7 @@ def load_data_one_inhibitor(df, multi_var=False, name=None):
 
         data_CRC = [response, logMtot, logStot, logItot]
         one_experiment = []
-        one_experiment.append({'enzyme': 'mers',
+        one_experiment.append({'enzyme': 'mpro',
                                'figure': name, 'plate' : name,
                                'CRC': data_CRC, 'kinetics': None, 'AUC': None, 'ICE': None
                                })
