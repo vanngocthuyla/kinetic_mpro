@@ -92,9 +92,9 @@ class Model:
         if init_values is not None:
             for key in init_values.keys():
                 if key.startswith('alpha'):
-                    alpha_list[key] = init_values[key]
+                    alpha_list[key] = init_values.get(key, None)
             for key in ['dE:100', 'dE:50', 'dE:25']:
-                E_list[key] = init_values[key]
+                E_list[key] = init_values.get(key, None)
   
         self.args = ModelArgs({
             'fit_E_S'    :      getattr(input_args, 'fit_E_S', True),
