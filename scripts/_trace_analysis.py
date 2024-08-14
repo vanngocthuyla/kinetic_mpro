@@ -143,6 +143,8 @@ class TraceConverter:
         trace_DeltaG : dict, kinetic parameters in kcal/mol
         """
         trace_DeltaG = {}
+        # R = 8.314E-3 #J/(K mol)
+        # T = 300 #K
         RT = 8.314E-3 * 300 / 4.184  # 1 calorie = 4.184 Joules
         
         for key in self.trace.keys():
@@ -151,7 +153,7 @@ class TraceConverter:
                     new_key = 'DeltaG_' + key[4:]
                 else:
                     new_key = 'DeltaG_' + key[5:]
-                trace_DeltaG[new_key] = RT * self.trace[key]
+                trace_DeltaG[new_key] = -(RT * self.trace[key])
             else:
                 trace_DeltaG[key] = self.trace[key]
         return trace_DeltaG
@@ -428,13 +430,13 @@ def _rhat(trace, nchain=4):
     trace_group = {}
     if type(trace) is dict:
         for key in trace.keys():
-            trace_group = _trace_one_to_nchain(trace, nchain=nchain)
+            trace_group = TraceConverter(trace, nchain).one_to_nchain()
         _rhats = az.rhat(trace_group).to_dict()['data_vars']
         rhat = {}
         for key in _rhats.keys():
             rhat[key] = _rhats[key]['data']
     elif type(trace) is np.ndarray:
-        trace_group = _trace_one_to_nchain(trace, nchain=nchain)
+        trace_group = TraceConverter(trace, nchain).one_to_nchain()
         rhat = az.rhat(trace_group)
     return rhat
 
@@ -478,7 +480,7 @@ def _convergence_rhat_one_chain_removal(trace, nchain=4, digit=1):
     idx_chain = []
 
     if type(trace) is dict:
-        trace_group = _trace_one_to_nchain(trace, nchain=nchain)
+        trace_group = trace_group = TraceConverter(trace, nchain).one_to_nchain()
         for key in trace_group.keys():
             for i in range(nchain):
                 extracted_row = [row for row in range(nchain) if row != i]
@@ -493,7 +495,7 @@ def _convergence_rhat_one_chain_removal(trace, nchain=4, digit=1):
                 return [flag, None]
 
     elif type(trace) is np.ndarray:
-        trace_group = _trace_one_to_nchain(trace, nchain=nchain)
+        trace_group = trace_group = TraceConverter(trace, nchain).one_to_nchain()
         
         for i in range(nchain):
             extracted_row = [row for row in range(nchain) if row != i]
@@ -617,7 +619,7 @@ def _trace_convergence(mcmc_files, out_dir=None, nskip=100, nchain=4, expected_n
                 if rhat_flag and (idx is not None):
                     extracted_row = [row for row in range(nchain) if row != idx]
                     print(extracted_row)
-                    trace_group = _trace_one_to_nchain(multi_trace, args.nchain)
+                    trace_group = TraceConverter(multi_trace, nchain).one_to_nchain()
                     extracted_trace = {key: trace_group[key][extracted_row].flatten() for key in trace_group.keys()}
                     
                     #Using pymbar to check the convergence and extract trace again
@@ -633,7 +635,7 @@ def _trace_convergence(mcmc_files, out_dir=None, nskip=100, nchain=4, expected_n
 
         if convergence_flag:
             pickle.dump(trace, open(os.path.join(out_dir, converged_trace_name+".pickle"), "wb"))
-            trace_group = _trace_one_to_nchain(trace, nchain=nchain_update)
+            trace_group = trace_group = TraceConverter(trace, nchain_update).one_to_nchain()
             az.summary(trace_group).to_csv(os.path.join(out_dir, "Converged_summary.csv"))
 
     return [trace, convergence_flag, nchain_update]
