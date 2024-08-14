@@ -36,7 +36,7 @@ from _CRC_fitting import _run_mcmc_CRC, _expt_check_noise_trend
 
 from _MAP_mpro import _map_running
 from _params_extraction import extract_logK_n_idx, extract_kcat_n_idx
-from _trace_analysis import TraceConverter, _trace_convergence, _convergence_rhat
+from _trace_analysis import TraceExtraction, TraceConverter, _trace_convergence, _convergence_rhat
 from _plotting import plot_data_conc_log, plotting_trace
 
 from _pIC50 import _adjust_trace, _pIC_hill
