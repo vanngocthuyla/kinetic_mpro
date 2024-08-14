@@ -32,7 +32,7 @@ def _run_mcmc(expts, prior_infor, shared_params, init_values, args):
     
     Return mcmc.trace
     """
-    rng_key, rng_key_ = random.split(random.PRNGKey(args.random_key))
+    rng_key, rng_key_ = random.split(random.PRNGKey(args.random_key), args.nchain)
     os.chdir(args.out_dir)
     traces_name = args.traces_name
 
@@ -51,7 +51,7 @@ def _run_mcmc(expts, prior_infor, shared_params, init_values, args):
                      prior_infor=prior_infor, shared_params=shared_params, args=args)
         else:
             mcmc = MCMC(kernel, num_warmup=args.nburn, num_samples=args.niters, num_chains=args.nchain, progress_bar=True)
-            mcmc.run(rng_key_, experiments=expts, prior_infor=prior_infor, shared_params=shared_params, args=args)
+            mcmc.run(rng_key, experiments=expts, prior_infor=prior_infor, shared_params=shared_params, args=args)
         
         mcmc.print_summary()
 
@@ -95,7 +95,7 @@ def _run_mcmc_EI(expts, prior_infor, shared_params, init_values, args):
     
     Return mcmc.trace
     """
-    rng_key, rng_key_ = random.split(random.PRNGKey(args.random_key))
+    rng_key, rng_key_ = random.split(random.PRNGKey(args.random_key), args.nchain)
     os.chdir(args.out_dir)
     traces_name = args.traces_name
 
@@ -114,7 +114,7 @@ def _run_mcmc_EI(expts, prior_infor, shared_params, init_values, args):
                      prior_infor=prior_infor, shared_params=shared_params, args=args)
         else:
             mcmc = MCMC(kernel, num_warmup=args.nburn, num_samples=args.niters, num_chains=args.nchain, progress_bar=True)
-            mcmc.run(rng_key_, experiments=expts, prior_infor=prior_infor, shared_params=shared_params, args=args)
+            mcmc.run(rng_key, experiments=expts, prior_infor=prior_infor, shared_params=shared_params, args=args)
         
         mcmc.print_summary()
 
