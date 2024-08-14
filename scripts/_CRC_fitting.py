@@ -41,7 +41,7 @@ def _run_mcmc_CRC(expts, prior_infor, shared_params, init_values, last_run_dir, 
 
     This function is modified from _model_fitting/_run_mcmc
     """
-    rng_key, rng_key_ = random.split(random.PRNGKey(args.random_key), args.nchain)
+    rng_key = random.split(random.PRNGKey(args.random_key), args.nchain)
     os.chdir(out_dir)
     traces_name = args.traces_name
 

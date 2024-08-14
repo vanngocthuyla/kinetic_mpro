@@ -32,7 +32,7 @@ def _run_mcmc(expts, prior_infor, shared_params, init_values, args):
     
     Return mcmc.trace
     """
-    rng_key, rng_key_ = random.split(random.PRNGKey(args.random_key), args.nchain)
+    rng_key = random.split(random.PRNGKey(args.random_key), args.nchain)
     os.chdir(args.out_dir)
     traces_name = args.traces_name
 
@@ -95,7 +95,7 @@ def _run_mcmc_EI(expts, prior_infor, shared_params, init_values, args):
     
     Return mcmc.trace
     """
-    rng_key, rng_key_ = random.split(random.PRNGKey(args.random_key), args.nchain)
+    rng_key = random.split(random.PRNGKey(args.random_key), args.nchain)
     os.chdir(args.out_dir)
     traces_name = args.traces_name
 
