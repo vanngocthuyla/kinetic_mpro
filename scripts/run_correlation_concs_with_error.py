@@ -41,8 +41,8 @@ parser.add_argument( "--cellular_pIC50_file",           type=str,               
 parser.add_argument( "--control_pIC50_file",            type=str,               default="")
 parser.add_argument( "--inhibit_pIC50_file",            type=str,               default="")
 
-parser.add_argument( "--enzyme_conc_nM",                type=int,               default=100)
-parser.add_argument( "--substrate_conc_nM",             type=int,               default=1350)
+parser.add_argument( "--enzyme_conc_nM",                type=float,             default=100.0)
+parser.add_argument( "--substrate_conc_nM",             type=float,             default=1350.0)
 parser.add_argument( "--conc_uncertainnty_log",         type=float,             default=0.1)
 
 parser.add_argument( "--set_K_S_DS_equal_K_S_D",        action="store_true",    default=False)
